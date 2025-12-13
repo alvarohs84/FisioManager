@@ -1,0 +1,45 @@
+{% extends "layout.html" %}
+
+{% block content %}
+<h2>Painel de Controle</h2>
+<p class="text-muted">Bem-vindo à gestão da sua clínica.</p>
+<hr>
+
+<div class="row mt-4">
+    <div class="col-md-4">
+        <div class="card border-0 shadow-sm p-3 mb-3">
+            <div class="d-flex justify-content-between align-items-center">
+                <div>
+                    <h6 class="text-muted">Total de Pacientes</h6>
+                    <h3>{{ total_pacientes }}</h3>
+                </div>
+                <i class="bi bi-people fs-1 text-primary"></i>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-md-4">
+        <div class="card border-0 shadow-sm p-3 mb-3">
+            <div class="d-flex justify-content-between align-items-center">
+                <div>
+                    <h6 class="text-muted">Consultas</h6>
+                    <h3>{{ total_agendamentos }}</h3>
+                </div>
+                <i class="bi bi-calendar-check fs-1 text-success"></i>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-md-4">
+        <div class="card border-0 shadow-sm p-3 mb-3">
+            <div class="d-flex justify-content-between align-items-center">
+                <div>
+                    <h6 class="text-muted">Faturamento</h6>
+                    <h3>R$ --</h3>
+                </div>
+                <i class="bi bi-wallet2 fs-1 text-warning"></i>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
