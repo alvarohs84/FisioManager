@@ -10,33 +10,53 @@ st.set_page_config(page_title="FisioManager", page_icon="🩺", layout="centered
 # --- Conexão com Banco de Dados (Robusta) ---
 def get_db_connection():
     try:
-        # Verifica se está rodando localmente (secrets.toml) ou no Render (Variáveis)
-        if ".streamlit/secrets.toml" in os.listdir() or os.path.exists(".streamlit/secrets.toml"):
+        # Verifica se está rodando localmente (secrets.toml) ou no Render (Variáveis de Ambiente)
+        # Tenta conectar via secrets local
+        if os.path.exists(".streamlit/secrets.toml"):
              db_config = st.secrets["postgres"]
-             conn = psycopg2.connect(**db_config)
+             return psycopg2.connect(**db_config)
+        
+        # Tenta conectar via Variáveis do Render
         else:
-            # Conexão via Render (Variáveis de Ambiente)
-            conn = psycopg2.connect(
+            return psycopg2.connect(
                 host=os.environ["DB_HOST"],
                 database=os.environ["DB_NAME"],
                 user=os.environ["DB_USER"],
                 password=os.environ["DB_PASS"],
                 port=os.environ["DB_PORT"]
             )
-        return conn
     except Exception as e:
         st.error(f"❌ Erro de Conexão: {e}")
         return None
 
+def run_query(query, params=(), fetch=False):
+    conn = get_db_connection()
+    if conn:
+        c = conn.cursor()
+        try:
+            c.execute(query, params)
+            if fetch:
+                data = c.fetchall()
+                conn.close()
+                return data
+            conn.commit()
+            conn.close()
+            return None
+        except Exception as e:
+            conn.close()
+            st.error(f"Erro na operação: {e}")
+            return None
+    return None
+
+# --- Inicialização do Banco (Cria tabelas se não existirem) ---
 def init_db():
     conn = get_db_connection()
     if not conn:
-        st.warning("⚠️ O sistema não conseguiu conectar ao banco. Verifique as configurações no Render.")
+        st.warning("⚠️ O sistema não conseguiu conectar ao banco. Verifique se o DB_HOST no Render está correto (apenas o endereço curto).")
         return
 
     c = conn.cursor()
     try:
-        # Criação das tabelas se não existirem
         c.execute('''CREATE TABLE IF NOT EXISTS pacientes (
                         id SERIAL PRIMARY KEY, 
                         nome TEXT NOT NULL, 
@@ -59,25 +79,7 @@ def init_db():
         c.close()
         conn.close()
 
-def run_query(query, params=(), fetch=False):
-    conn = get_db_connection()
-    if conn:
-        c = conn.cursor()
-        try:
-            c.execute(query, params)
-            if fetch:
-                data = c.fetchall()
-                return data
-            conn.commit()
-        except Exception as e:
-            st.error(f"Erro na operação: {e}")
-        finally:
-            c.close()
-            conn.close()
-    return None
-
-# --- Inicialização ---
-# Tenta criar as tabelas ao carregar
+# Executa a criação das tabelas ao abrir o app
 init_db()
 
 # --- Interface Visual do Usuário ---
@@ -93,16 +95,20 @@ choice = st.sidebar.selectbox("Menu", menu)
 if choice == "🏠 Início":
     st.subheader("Painel Geral")
     try:
-        total_pacientes = run_query("SELECT COUNT(*) FROM pacientes", fetch=True)[0][0]
-        total_agendamentos = run_query("SELECT COUNT(*) FROM agendamentos", fetch=True)[0][0]
+        # Pega as contagens com tratamento de erro caso as tabelas estejam vazias
+        res_pacientes = run_query("SELECT COUNT(*) FROM pacientes", fetch=True)
+        total_pacientes = res_pacientes[0][0] if res_pacientes else 0
+        
+        res_agendamentos = run_query("SELECT COUNT(*) FROM agendamentos", fetch=True)
+        total_agendamentos = res_agendamentos[0][0] if res_agendamentos else 0
         
         c1, c2 = st.columns(2)
         c1.metric("Total de Pacientes", total_pacientes)
         c2.metric("Consultas Agendadas", total_agendamentos)
         
         st.info("Sistema online e conectado ao Banco de Dados PostgreSQL.")
-    except:
-        st.warning("Não foi possível carregar os dados. Verifique a conexão.")
+    except Exception as e:
+        st.warning(f"Não foi possível carregar os dados: {e}")
 
 # --- 2. Gestão de Pacientes ---
 elif choice == "👥 Pacientes":
