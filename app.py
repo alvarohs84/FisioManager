@@ -9,83 +9,101 @@ import time
 st.set_page_config(
     page_title="FisioManager Pro",
     page_icon="🩺",
-    layout="wide", # Usa a tela inteira
+    layout="wide", # Ocupa a tela toda
     initial_sidebar_state="expanded"
 )
 
-# --- 2. ESTILO CSS PERSONALIZADO (A MÁGICA DO DESIGN) ---
+# --- 2. CSS CUSTOMIZADO (DESIGN SYSTEM) ---
+# Aqui acontece a mágica visual. Mudamos cores, fontes e bordas.
 st.markdown("""
 <style>
-    /* Fundo geral mais claro e limpo */
+    /* Fundo geral levemente cinza para não cansar a vista */
     .stApp {
-        background-color: #f8f9fa;
+        background-color: #f4f6f9;
     }
     
-    /* Estilo dos Cards (Métricas) */
-    .css-1r6slb0 {
-        background-color: white;
-        border-radius: 15px;
-        padding: 20px;
-        box-shadow: 0 4px 6px rgba(0,0,0,0.1);
-        border-left: 5px solid #007bff;
+    /* Estilo da Sidebar */
+    section[data-testid="stSidebar"] {
+        background-color: #ffffff;
+        border-right: 1px solid #e0e0e0;
     }
     
-    /* Títulos mais modernos */
-    h1, h2, h3 {
-        color: #2c3e50;
-        font-family: 'Helvetica Neue', sans-serif;
+    /* Cartões de Métricas (KPIs) */
+    div[data-testid="stMetric"] {
+        background-color: #ffffff;
+        border: 1px solid #e0e0e0;
+        padding: 15px 25px;
+        border-radius: 10px;
+        box-shadow: 0 2px 5px rgba(0,0,0,0.05);
     }
     
-    /* Botões mais profissionais */
+    /* Botões Primários (Azul Profissional) */
     .stButton>button {
         background-color: #007bff;
         color: white;
         border-radius: 8px;
         border: none;
-        padding: 10px 24px;
-        font-weight: bold;
-        width: 100%;
+        height: 3em;
+        font-weight: 600;
+        transition: all 0.3s ease;
     }
     .stButton>button:hover {
         background-color: #0056b3;
+        box-shadow: 0 4px 8px rgba(0,123,255,0.2);
     }
     
-    /* Ajuste da Sidebar */
-    section[data-testid="stSidebar"] {
-        background-color: #ffffff;
-        border-right: 1px solid #e0e0e0;
+    /* Tabelas mais limpas */
+    div[data-testid="stDataFrame"] {
+        background-color: white;
+        padding: 10px;
+        border-radius: 10px;
+        box-shadow: 0 2px 5px rgba(0,0,0,0.05);
+    }
+    
+    /* Cabeçalhos */
+    h1, h2, h3 {
+        color: #2c3e50;
+        font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
     }
 </style>
 """, unsafe_allow_html=True)
 
-# --- 3. LÓGICA DE LOGIN E BANCO DE DADOS (MANTIDA) ---
+# --- 3. FUNÇÕES DE BACKEND (Conexão e Lógica) ---
 
 def check_password():
+    """Gerencia o login com visual aprimorado"""
     if "logged_in" not in st.session_state:
         st.session_state["logged_in"] = False
 
     if st.session_state["logged_in"]:
         return True
 
-    # Tela de Login Centralizada e Bonita
-    c1, c2, c3 = st.columns([1, 2, 1])
-    with c2:
-        st.markdown("<br><br><h2 style='text-align: center;'>🔐 Acesso FisioManager</h2>", unsafe_allow_html=True)
-        with st.form("login_form"):
-            senha_digitada = st.text_input("Senha de Acesso", type="password")
-            submitted = st.form_submit_button("Entrar no Sistema")
+    # Layout de Login Centralizado
+    col1, col2, col3 = st.columns([1, 2, 1])
+    with col2:
+        st.markdown("<br><br>", unsafe_allow_html=True)
+        container = st.container()
+        with container:
+            st.markdown("<h2 style='text-align: center;'>🔐 Acesso Clínico</h2>", unsafe_allow_html=True)
+            st.info("Ambiente Seguro - FisioManager")
             
-            if submitted:
-                senha_correta = os.environ.get("SYS_PASSWORD")
-                if not senha_correta and os.path.exists(".streamlit/secrets.toml"):
-                    senha_correta = st.secrets["general"]["password"]
+            with st.form("login_form"):
+                senha = st.text_input("Senha de Acesso", type="password")
+                submit = st.form_submit_button("Entrar no Sistema", use_container_width=True)
                 
-                if senha_digitada == senha_correta:
-                    st.session_state["logged_in"] = True
-                    st.success("Acesso autorizado!")
-                    st.rerun()
-                else:
-                    st.error("Senha incorreta.")
+                if submit:
+                    # Busca senha no Render ou Local
+                    senha_correta = os.environ.get("SYS_PASSWORD")
+                    if not senha_correta and os.path.exists(".streamlit/secrets.toml"):
+                        senha_correta = st.secrets["general"]["password"]
+                    
+                    if senha == senha_correta:
+                        st.session_state["logged_in"] = True
+                        st.toast("Login realizado com sucesso!", icon="✅")
+                        time.sleep(1)
+                        st.rerun()
+                    else:
+                        st.error("Acesso negado.")
     return False
 
 def get_db_connection():
@@ -102,7 +120,7 @@ def get_db_connection():
                 port=os.environ["DB_PORT"]
             )
     except Exception as e:
-        st.error(f"❌ Erro de Conexão: {e}")
+        st.error(f"❌ Falha de Conexão: {e}")
         return None
 
 def run_query(query, params=(), fetch=False):
@@ -120,7 +138,7 @@ def run_query(query, params=(), fetch=False):
             return None
         except Exception as e:
             conn.close()
-            st.error(f"Erro na operação: {e}")
+            st.error(f"Erro de Execução: {e}")
             return None
     return None
 
@@ -136,109 +154,104 @@ def init_db():
         c.close()
         conn.close()
 
-# --- 4. EXECUÇÃO PRINCIPAL ---
+# --- 4. APLICAÇÃO PRINCIPAL ---
 
 if not check_password():
     st.stop()
 
-init_db()
+init_db() # Garante tabelas criadas
 
-# --- MENU LATERAL (SIDEBAR) ---
+# --- SIDEBAR (MENU LATERAL) ---
 with st.sidebar:
-    st.image("https://cdn-icons-png.flaticon.com/512/3063/3063176.png", width=70) # Ícone médico genérico
-    st.title("FisioManager")
-    st.caption("Gestão Clínica Inteligente")
+    st.title("🩺 FisioManager")
+    st.caption("v 2.0 Professional")
     st.markdown("---")
     
-    menu_options = {
-        "Início": "🏠",
-        "Pacientes": "👥",
-        "Agenda": "📅",
-        "Novo Agendamento": "➕",
-        "Sair": "🚪"
-    }
-    
-    choice = st.radio("Navegação", list(menu_options.keys()))
+    # Menu com ícones visuais
+    choice = st.radio(
+        "Navegação", 
+        ["Dashboard", "Pacientes", "Agenda", "Novo Agendamento"],
+        captions=["Visão Geral", "Base de Dados", "Calendário", "Marcar Sessão"]
+    )
     
     st.markdown("---")
-    st.info("💡 Suporte: (XX) 9999-9999")
+    st.info("📞 Suporte Técnico\n(XX) 9999-9999")
+    
+    if st.button("Sair (Logout)"):
+        st.session_state["logged_in"] = False
+        st.rerun()
 
 # --- CONTEÚDO DAS PÁGINAS ---
 
-# 🏠 PÁGINA INICIAL (DASHBOARD)
-if choice == "Início":
-    st.title(f"{menu_options[choice]} Dashboard Geral")
-    st.markdown("Visão geral da sua clínica hoje.")
+# 🏠 DASHBOARD (Página Inicial)
+if choice == "Dashboard":
+    st.title("📊 Painel de Controle")
+    st.markdown("Visão geral da performance da clínica.")
     
-    # Cards de Métricas Estilizados
+    # Bloco de Métricas (Cards)
     try:
         res_pacientes = run_query("SELECT COUNT(*) FROM pacientes", fetch=True)
-        total_pacientes = res_pacientes[0][0] if res_pacientes else 0
+        total_p = res_pacientes[0][0] if res_pacientes else 0
         
-        res_agendamentos = run_query("SELECT COUNT(*) FROM agendamentos", fetch=True)
-        total_agendamentos = res_agendamentos[0][0] if res_agendamentos else 0
+        res_agend = run_query("SELECT COUNT(*) FROM agendamentos", fetch=True)
+        total_a = res_agend[0][0] if res_agend else 0
         
-        # Layout de Cards
+        # Colunas para layout horizontal
         c1, c2, c3, c4 = st.columns(4)
-        with c1:
-            st.metric(label="Total de Pacientes", value=total_pacientes, delta="Ativos")
-        with c2:
-            st.metric(label="Consultas Agendadas", value=total_agendamentos, delta="No sistema")
-        with c3:
-            st.metric(label="Faturamento (Est.)", value="R$ --", delta="Em breve", delta_color="off")
+        c1.metric("Pacientes Totais", total_p, delta="Cadastrados")
+        c2.metric("Consultas Agendadas", total_a, delta="No sistema")
+        c3.metric("Faturamento (Mês)", "R$ --", delta="Em breve", delta_color="off")
+        c4.metric("Status do Sistema", "Online", delta="PostgreSQL")
         
     except Exception as e:
-        st.error("Erro ao carregar dashboard.")
-
+        st.error("Erro ao carregar métricas.")
+        
     st.markdown("---")
-    st.subheader("Atalhos Rápidos")
+    st.subheader("Acesso Rápido")
     col_a, col_b = st.columns(2)
     with col_a:
-        st.info("👉 Vá para a aba **'Novo Agendamento'** para marcar uma sessão.")
+        st.info("👉 Para cadastrar um novo paciente, vá na aba **Pacientes**.")
     with col_b:
-        st.success("👉 Vá para a aba **'Pacientes'** para ver fichas completas.")
+        st.success("👉 Para marcar uma consulta, use a aba **Novo Agendamento**.")
 
-# 👥 PÁGINA DE PACIENTES
+# 👥 PACIENTES
 elif choice == "Pacientes":
-    c1, c2 = st.columns([3, 1])
-    with c1:
-        st.title("Gerenciar Pacientes")
-    with c2:
-        # Botão que simula ação principal (apenas visual aqui)
-        st.write("") 
+    col_header, col_btn = st.columns([4, 1])
+    col_header.title("Gestão de Pacientes")
     
-    tab1, tab2 = st.tabs(["📋 Base de Dados", "➕ Novo Cadastro"])
+    tab_list, tab_new = st.tabs(["📂 Base de Pacientes", "➕ Novo Cadastro"])
     
-    with tab1:
+    with tab_list:
         dados = run_query("SELECT id, nome, idade, telefone, historico FROM pacientes ORDER BY id DESC", fetch=True)
         if dados:
-            df = pd.DataFrame(dados, columns=["ID", "Nome", "Idade", "Contato", "Histórico Clínico"])
-            # Dataframe com estilo
+            df = pd.DataFrame(dados, columns=["ID", "Nome", "Idade", "Telefone", "Histórico"])
+            # Tabela Interativa e Bonita
             st.dataframe(
                 df, 
                 use_container_width=True,
                 hide_index=True,
                 column_config={
                     "ID": st.column_config.NumberColumn(width="small"),
-                    "Histórico Clínico": st.column_config.TextColumn(width="large"),
+                    "Histórico": st.column_config.TextColumn(width="large"),
                 }
             )
         else:
-            st.warning("Nenhum paciente encontrado.")
+            st.warning("Nenhum paciente encontrado na base de dados.")
 
-    with tab2:
+    with tab_new:
         st.markdown("### Ficha Cadastral")
         with st.form("form_paciente", clear_on_submit=True):
-            col_nome, col_idade = st.columns([3, 1])
-            nome = col_nome.text_input("Nome Completo")
-            idade = col_idade.number_input("Idade", min_value=0, max_value=120)
+            # Layout em Grid (Lado a Lado)
+            c_nome, c_idade = st.columns([3, 1])
+            nome = c_nome.text_input("Nome Completo")
+            idade = c_idade.number_input("Idade", min_value=0, step=1)
             
-            col_tel, col_vazia = st.columns([1, 1])
-            telefone = col_tel.text_input("Telefone / WhatsApp")
+            c_tel, c_blank = st.columns([1, 1])
+            telefone = c_tel.text_input("Telefone / Celular")
             
-            historico = st.text_area("Anamnese / Queixa Principal", height=150)
+            historico = st.text_area("Anamnese / Observações Clínicas", height=150)
             
-            if st.form_submit_button("💾 Salvar Paciente"):
+            if st.form_submit_button("💾 Salvar Ficha do Paciente"):
                 if nome:
                     run_query("INSERT INTO pacientes (nome, idade, telefone, historico) VALUES (%s, %s, %s, %s)", 
                               (nome, idade, telefone, historico))
@@ -246,21 +259,21 @@ elif choice == "Pacientes":
                     time.sleep(1)
                     st.rerun()
                 else:
-                    st.error("Nome é obrigatório.")
+                    st.error("O campo Nome é obrigatório.")
 
-# 📅 PÁGINA DE AGENDA
+# 📅 AGENDA
 elif choice == "Agenda":
-    st.title("Agenda de Consultas")
+    st.title("Agenda Clínica")
     
-    col_filter, col_calendar = st.columns([1, 3])
+    col_kpi, col_table = st.columns([1, 3])
     
-    with col_filter:
-        st.markdown("### Filtros")
-        data_filtro = st.date_input("Filtrar por data", datetime.today())
-        st.info("Em breve: Visualização mensal completa.")
+    with col_kpi:
+        st.markdown("### 🔍 Filtros")
+        data_sel = st.date_input("Filtrar Data", datetime.today())
+        st.caption("Selecione uma data para ver os horários.")
+        st.info("Dica: A agenda mostra os próximos compromissos em ordem.")
 
-    with col_calendar:
-        # Busca apenas agendamentos a partir de hoje (exemplo de melhoria) ou todos
+    with col_table:
         agenda = run_query('''
             SELECT a.data, a.hora, p.nome, a.obs 
             FROM agendamentos a
@@ -270,7 +283,7 @@ elif choice == "Agenda":
         
         if agenda:
             df_agenda = pd.DataFrame(agenda, columns=["Data", "Hora", "Paciente", "Observação"])
-            # Formata a data para ficar bonita (DD/MM/AAAA)
+            # Formatação de Data Brasileira
             df_agenda['Data'] = pd.to_datetime(df_agenda['Data']).dt.strftime('%d/%m/%Y')
             
             st.dataframe(
@@ -279,6 +292,7 @@ elif choice == "Agenda":
                 hide_index=True,
                 column_config={
                     "Hora": st.column_config.TimeColumn(format="HH:mm"),
+                    "Observação": st.column_config.TextColumn(width="medium")
                 }
             )
         else:
@@ -287,32 +301,30 @@ elif choice == "Agenda":
 # ➕ NOVO AGENDAMENTO
 elif choice == "Novo Agendamento":
     st.title("Agendar Sessão")
+    st.markdown("Preencha os dados abaixo para reservar um horário.")
     
-    with st.container():
-        st.markdown("Preencha os dados abaixo para confirmar a reserva.")
+    pacientes = run_query("SELECT id, nome FROM pacientes", fetch=True)
+    
+    if not pacientes:
+        st.warning("⚠️ Você precisa cadastrar pacientes antes de agendar.")
+    else:
+        lista_nomes = {nome: id_p for id_p, nome in pacientes}
         
-        pacientes = run_query("SELECT id, nome FROM pacientes", fetch=True)
-        
-        if not pacientes:
-            st.error("⚠️ Cadastre pacientes primeiro.")
-        else:
-            lista_nomes = {nome: id_p for id_p, nome in pacientes}
-            
+        with st.container(): # Container para dar um visual de "bloco"
             with st.form("form_agendamento"):
-                col_p, col_d = st.columns([2, 1])
-                selecionado = col_p.selectbox("Paciente", list(lista_nomes.keys()))
-                data = col_d.date_input("Data da Sessão", datetime.today())
+                # Linha 1: Paciente e Data
+                c1, c2 = st.columns([2, 1])
+                selecionado = c1.selectbox("Selecione o Paciente", list(lista_nomes.keys()))
+                data = c2.date_input("Data da Consulta", datetime.today())
                 
-                col_h, col_o = st.columns([1, 2])
-                hora = col_h.time_input("Horário", datetime.now().time())
-                obs = col_o.text_input("Observação Rápida (Ex: Sessão 3/10)")
+                # Linha 2: Hora e Obs
+                c3, c4 = st.columns([1, 2])
+                hora = c3.time_input("Horário", datetime.now().time())
+                obs = c4.text_input("Motivo / Observação (Opcional)")
                 
-                if st.form_submit_button("Confirmar Agendamento"):
+                # Botão de Ação Full Width
+                if st.form_submit_button("✅ Confirmar Agendamento", use_container_width=True):
                     id_paciente = lista_nomes[selecionado]
                     run_query("INSERT INTO agendamentos (paciente_id, data, hora, obs) VALUES (%s, %s, %s, %s)",
                               (id_paciente, data, hora, obs))
-                    st.toast("Agendamento Confirmado!", icon="📆")
-
-elif choice == "Sair":
-    st.session_state["logged_in"] = False
-    st.rerun()
+                    st.toast("Agendamento realizado com sucesso!", icon="📆")
