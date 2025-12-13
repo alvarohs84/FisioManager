@@ -1,0 +1,8 @@
+
+
+DB_HOST: postgresql://fisiomanager_db_e40s_user:qD6t3f2p8CMWRFFWjinESwav4pzEYTIh@dpg-d4ucqs0gjchc73c6jlp0-a/fisiomanager_db_e40s
+DB_NAME: fisiomanager_db
+DB_USER: fisiomanager_db_e40s_user
+DB_PASS: qD6t3f2p8CMWRFFWjinESwav4pzEYTIh
+DB_PORT: 5432
+PYTHON_VERSION: 3.9.13
