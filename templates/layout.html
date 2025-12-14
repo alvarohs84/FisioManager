@@ -4,65 +4,105 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>FisioManager Pro</title>
+    
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.0/font/bootstrap-icons.css">
+    
     <style>
-        body { background-color: #f4f7f6; font-family: 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; }
+        body { 
+            background-color: #f4f7f6; 
+            font-family: 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; 
+        }
         
-        /* --- Estilo da Barra Lateral --- */
+        /* --- Estilo da Barra Lateral (Sidebar) --- */
         .sidebar { 
             min-height: 100vh; 
             background-color: #ffffff; 
             border-right: 1px solid #e0e0e0;
-            box-shadow: 2px 0 5px rgba(0,0,0,0.03);
+            box-shadow: 2px 0 10px rgba(0,0,0,0.03);
+            position: sticky;
+            top: 0;
+            height: 100vh;
+            overflow-y: auto;
         }
         
-        /* Logotipo */
-        .logo-img {
-            width: 50px; /* Tamanho do ícone */
-            height: auto;
-            margin-right: 10px;
-        }
-        
-        /* Título Principal Maior */
-        .brand-title {
-            font-size: 1.8rem; /* Aumentado de h4 padrão */
-            font-weight: 700;
-            color: #007bff; /* Azul profissional */
-            letter-spacing: -0.5px;
+        /* Logotipo e Título */
+        .brand-container {
             display: flex;
             align-items: center;
+            padding: 10px 0;
+            margin-bottom: 40px;
+        }
+
+        .logo-img {
+            width: 55px; /* Tamanho do ícone */
+            height: auto;
+            margin-right: 12px;
+        }
+        
+        .brand-title {
+            font-size: 1.8rem; /* Fonte Grande e Imponente */
+            font-weight: 800;
+            color: #007bff; /* Azul Profissional */
+            letter-spacing: -0.5px;
+            line-height: 1.2;
         }
         
         /* Links do Menu */
         .nav-link { 
             color: #555; 
             font-weight: 500; 
+            font-size: 1.05rem;
             margin-bottom: 8px; 
             padding: 12px 15px;
-            border-radius: 8px;
-            transition: all 0.2s;
-        }
-        .nav-link:hover, .nav-link.active { 
-            background-color: #e9ecef; 
-            color: #007bff; 
-            font-weight: 600;
-        }
-        .nav-link i {
-            margin-right: 10px;
-            font-size: 1.1rem;
+            border-radius: 10px;
+            transition: all 0.2s ease-in-out;
+            display: flex;
+            align-items: center;
         }
         
-        .main-content { padding: 30px; }
+        .nav-link:hover { 
+            background-color: #f0f4f8; 
+            color: #007bff; 
+            transform: translateX(5px);
+        }
+
+        /* Estado Ativo (Página Atual) */
+        .nav-link.active { 
+            background-color: #e7f1ff; 
+            color: #007bff; 
+            font-weight: 700;
+            border-left: 4px solid #007bff;
+        }
+        
+        .nav-link i {
+            margin-right: 12px;
+            font-size: 1.2rem;
+        }
+        
+        /* Área Principal */
+        .main-content { 
+            padding: 30px; 
+            width: 100%;
+        }
+
+        /* Botão de Sair */
+        .logout-link {
+            color: #dc3545 !important; /* Vermelho */
+        }
+        .logout-link:hover {
+            background-color: #fde8e8 !important;
+        }
     </style>
 </head>
 <body>
 
 <div class="d-flex">
-    <div class="sidebar p-4 d-none d-md-block" style="width: 280px;">
-        <div class="brand-title mb-5">
+    <div class="sidebar p-4 d-none d-md-block" style="width: 280px; flex-shrink: 0;">
+        
+        <div class="brand-container">
             <img src="{{ url_for('static', filename='logo_fisio.png') }}" alt="Logo" class="logo-img">
-            FisioManager
+            <span class="brand-title">FisioManager</span>
         </div>
         
         <ul class="nav flex-column">
@@ -77,12 +117,13 @@
                 </a>
             </li>
             <li class="nav-item">
-                <a class="nav-link" href="#">
-                    <i class="bi bi-calendar-event"></i> Agenda <span class="badge bg-light text-dark ms-2">Em breve</span>
+                <a class="nav-link {% if request.endpoint == 'agenda' %}active{% endif %}" href="{{ url_for('agenda') }}">
+                    <i class="bi bi-calendar-check-fill"></i> Agenda Inteligente
                 </a>
             </li>
+            
             <li class="nav-item mt-5 pt-5 border-top">
-                <a class="nav-link text-danger" href="{{ url_for('logout') }}">
+                <a class="nav-link logout-link" href="{{ url_for('logout') }}">
                     <i class="bi bi-box-arrow-left"></i> Sair do Sistema
                 </a>
             </li>
@@ -93,8 +134,8 @@
         {% with messages = get_flashed_messages() %}
             {% if messages %}
                 {% for message in messages %}
-                    <div class="alert alert-warning alert-dismissible fade show" role="alert">
-                        {{ message }}
+                    <div class="alert alert-warning alert-dismissible fade show shadow-sm" role="alert">
+                        <i class="bi bi-exclamation-triangle-fill me-2"></i> {{ message }}
                         <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
                     </div>
                 {% endfor %}

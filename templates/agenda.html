@@ -1,0 +1,220 @@
+{% extends "layout.html" %}
+
+{% block content %}
+<script src='https://cdn.jsdelivr.net/npm/fullcalendar@6.1.10/index.global.min.js'></script>
+
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h2 class="brand-title"><i class="bi bi-calendar-week text-primary me-2"></i> Agenda Inteligente</h2>
+    <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#eventModal">
+        <i class="bi bi-plus-lg"></i> Novo Agendamento
+    </button>
+</div>
+
+<div class="card shadow-sm border-0">
+    <div class="card-body p-0">
+        <div id='calendar'></div>
+    </div>
+</div>
+
+<div class="modal fade" id="eventModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header bg-light">
+                <h5 class="modal-title">Agendar Sessão</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <form id="formAgendamento">
+                    <div class="mb-3">
+                        <label class="form-label">Paciente</label>
+                        <select id="pacienteId" class="form-select" required>
+                            <option value="">Selecione...</option>
+                            {% for p in pacientes %}
+                                <option value="{{ p[0] }}">{{ p[1] }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+
+                    <div class="row mb-3">
+                        <div class="col-6">
+                            <label class="form-label">Data Início</label>
+                            <input type="datetime-local" id="startDateTime" class="form-control" required>
+                        </div>
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="form-label">Observações (Fale para escrever)</label>
+                        <div class="input-group">
+                            <textarea id="obs" class="form-control" rows="2" placeholder="Ex: Dor lombar, sessão 3..."></textarea>
+                            <button class="btn btn-outline-secondary" type="button" id="btnVoice">
+                                <i class="bi bi-mic-fill"></i>
+                            </button>
+                        </div>
+                    </div>
+
+                    <hr>
+                    
+                    <div class="mb-3">
+                        <label class="form-label fw-bold text-primary"><i class="bi bi-arrow-repeat"></i> Repetir Atendimento?</label>
+                        <div class="d-flex justify-content-between mt-2">
+                            <div class="form-check"><input class="form-check-input dia-rec" type="checkbox" value="0"><label>Seg</label></div>
+                            <div class="form-check"><input class="form-check-input dia-rec" type="checkbox" value="1"><label>Ter</label></div>
+                            <div class="form-check"><input class="form-check-input dia-rec" type="checkbox" value="2"><label>Qua</label></div>
+                            <div class="form-check"><input class="form-check-input dia-rec" type="checkbox" value="3"><label>Qui</label></div>
+                            <div class="form-check"><input class="form-check-input dia-rec" type="checkbox" value="4"><label>Sex</label></div>
+                        </div>
+                        <div class="mt-2">
+                            <label class="form-label">Por quantas semanas?</label>
+                            <input type="number" id="semanasRec" class="form-control" value="1" min="1" max="12">
+                        </div>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                <button type="button" class="btn btn-primary" onclick="salvarEvento()">Salvar Agenda</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    var calendar; // Variável global
+
+    document.addEventListener('DOMContentLoaded', function() {
+        var calendarEl = document.getElementById('calendar');
+        
+        calendar = new FullCalendar.Calendar(calendarEl, {
+            initialView: 'timeGridWeek', // Visão semanal por padrão
+            locale: 'pt-br',
+            headerToolbar: {
+                left: 'prev,next today',
+                center: 'title',
+                right: 'dayGridMonth,timeGridWeek,timeGridDay'
+            },
+            slotMinTime: "07:00:00", // Começa as 7h
+            slotMaxTime: "20:00:00", // Termina as 20h
+            allDaySlot: false,
+            editable: true, // PERMITE ARRASTAR E SOLTAR
+            selectable: true, // Permite clicar na hora vazia
+            events: '/api/eventos', // Puxa do Flask
+            
+            // Clicar em data vazia
+            dateClick: function(info) {
+                // Abre o modal e preenche a data clicada
+                var dateStr = info.dateStr.substring(0, 16); // Formata para input
+                document.getElementById('startDateTime').value = dateStr;
+                var modal = new bootstrap.Modal(document.getElementById('eventModal'));
+                modal.show();
+            },
+            
+            // Arrastar e Soltar (Drag & Drop)
+            eventDrop: function(info) {
+                if (!confirm("Confirmar mudança de horário para " + info.event.start.toLocaleString() + "?")) {
+                    info.revert();
+                    return;
+                }
+                
+                // Envia para o backend
+                fetch('/api/mover_evento', {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify({
+                        id: info.event.id,
+                        start: info.event.start.toISOString(),
+                        end: info.event.end.toISOString()
+                    })
+                });
+            },
+            
+            // Clicar no evento (Para deletar - Básico)
+            eventClick: function(info) {
+                if(confirm("Deseja cancelar/deletar este agendamento?")) {
+                    fetch('/api/deletar_evento', {
+                        method: 'POST',
+                        headers: {'Content-Type': 'application/json'},
+                        body: JSON.stringify({id: info.event.id})
+                    }).then(() => {
+                        info.event.remove();
+                    });
+                }
+            }
+        });
+        
+        calendar.render();
+    });
+
+    // --- FUNÇÃO DE SALVAR ---
+    function salvarEvento() {
+        var pacienteId = document.getElementById('pacienteId').value;
+        var start = document.getElementById('startDateTime').value;
+        var obs = document.getElementById('obs').value;
+        var semanas = document.getElementById('semanasRec').value;
+        
+        // Pega dias marcados (Recorrência)
+        var dias = [];
+        document.querySelectorAll('.dia-rec:checked').forEach((cb) => {
+            dias.push(cb.value);
+        });
+
+        if (!pacienteId || !start) {
+            alert("Preencha o paciente e a data!");
+            return;
+        }
+
+        fetch('/api/criar_evento', {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify({
+                paciente_id: pacienteId,
+                start: start,
+                obs: obs,
+                dias_recorrentes: dias,
+                semanas: semanas
+            })
+        }).then(response => response.json())
+          .then(data => {
+              // Fecha modal e atualiza calendário
+              var modalEl = document.getElementById('eventModal');
+              var modal = bootstrap.Modal.getInstance(modalEl);
+              modal.hide();
+              calendar.refetchEvents(); // Recarrega do banco
+              alert("Agendamento(s) realizado(s)!");
+          });
+    }
+
+    // --- RECONHECIMENTO DE VOZ (Web Speech API) ---
+    const btnVoice = document.getElementById('btnVoice');
+    const txtObs = document.getElementById('obs');
+
+    if ('webkitSpeechRecognition' in window) {
+        const recognition = new webkitSpeechRecognition();
+        recognition.lang = 'pt-BR';
+        recognition.continuous = false;
+
+        btnVoice.addEventListener('click', () => {
+            recognition.start();
+            btnVoice.classList.add('btn-danger'); // Fica vermelho gravando
+        });
+
+        recognition.onresult = (event) => {
+            const transcript = event.results[0][0].transcript;
+            txtObs.value += transcript + ". ";
+            btnVoice.classList.remove('btn-danger');
+        };
+        
+        recognition.onerror = () => {
+            btnVoice.classList.remove('btn-danger');
+            alert("Erro no reconhecimento de voz. Verifique o microfone.");
+        };
+    } else {
+        btnVoice.style.display = 'none'; // Esconde se navegador não suportar
+    }
+</script>
+
+<style>
+    /* Ajustes do FullCalendar */
+    .fc-event { cursor: pointer; }
+    #calendar { padding: 20px; min-height: 80vh; }
+</style>
+{% endblock %}
