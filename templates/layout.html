@@ -46,6 +46,11 @@
                     <i class="bi bi-calendar-check-fill"></i> Agenda Inteligente
                 </a>
             </li>
+            <li class="nav-item">
+                <a class="nav-link {% if request.endpoint == 'prontuarios' %}active{% endif %}" href="{{ url_for('prontuarios') }}">
+                    <i class="bi bi-journal-medical"></i> Prontuários
+                </a>
+            </li>
             
             <li class="nav-item mt-5 pt-5 border-top">
                 <a class="nav-link logout-link" href="{{ url_for('logout') }}">

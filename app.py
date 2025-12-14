@@ -1,7 +1,7 @@
 from flask import Flask, render_template, request, redirect, url_for, session, flash, jsonify
 import psycopg2
 import os
-from datetime import datetime, timedelta, date # <--- O erro estava aqui (faltava importar 'date')
+from datetime import datetime, timedelta, date
 
 app = Flask(__name__)
 app.secret_key = "segredo_super_secreto"
@@ -22,7 +22,7 @@ def get_db_connection():
         print(f"Erro DB: {e}")
         return None
 
-# --- MIGRAÇÃO DE STATUS ---
+# --- MIGRAÇÕES E ATUALIZAÇÕES DE BANCO ---
 @app.route('/update-db-status')
 def update_db_status():
     if not session.get('logged_in'): return redirect(url_for('login'))
@@ -39,7 +39,31 @@ def update_db_status():
         conn.close()
     return msg
 
-# --- Rotas Padrão ---
+@app.route('/update-db-prontuario')
+def update_db_prontuario():
+    if not session.get('logged_in'): return redirect(url_for('login'))
+    conn = get_db_connection()
+    cursor = conn.cursor()
+    try:
+        cursor.execute('''
+            CREATE TABLE IF NOT EXISTS evolucoes (
+                id SERIAL PRIMARY KEY, 
+                paciente_id INTEGER REFERENCES pacientes(id) ON DELETE CASCADE,
+                data TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                texto TEXT
+            );
+        ''')
+        conn.commit()
+        msg = "Sucesso! Tabela de Prontuário criada."
+    except Exception as e:
+        conn.rollback()
+        msg = f"Erro: {e}"
+    finally:
+        conn.close()
+    return msg
+
+# --- ROTAS PRINCIPAIS ---
+
 @app.route('/', methods=['GET', 'POST'])
 def login():
     if request.method == 'POST':
@@ -62,64 +86,62 @@ def dashboard():
     cursor = conn.cursor()
     cursor.execute("SELECT COUNT(*) FROM pacientes;")
     total_pacientes = cursor.fetchone()[0]
-    
-    # Tenta contar agendamentos, se tabela existir
     try:
         cursor.execute("SELECT COUNT(*) FROM agendamentos;")
         total_agendamentos = cursor.fetchone()[0]
     except:
         conn.rollback()
         total_agendamentos = 0
-        
     conn.close()
     return render_template('dashboard.html', total_pacientes=total_pacientes, total_agendamentos=total_agendamentos)
 
-# --- ROTA DE PACIENTES (COM CADASTRO RÁPIDO) ---
 @app.route('/pacientes', methods=['GET', 'POST'])
 def pacientes():
     if not session.get('logged_in'): return redirect(url_for('login'))
-    
     conn = get_db_connection()
     cursor = conn.cursor()
     
     if request.method == 'POST':
         nome = request.form['nome']
-        nascimento = request.form.get('nascimento') # .get evita erro se vier vazio
+        nascimento = request.form.get('nascimento')
         telefone = request.form.get('telefone')
-        
-        # Lógica para aceitar Data Vazia (Null)
-        if not nascimento:
-            nascimento = None
-            
+        if not nascimento: nascimento = None
         cursor.execute("INSERT INTO pacientes (nome, nascimento, telefone) VALUES (%s, %s, %s)", 
                        (nome, nascimento, telefone))
         conn.commit()
     
-    # Busca e exibe
     cursor.execute("SELECT id, nome, nascimento, telefone FROM pacientes ORDER BY id DESC")
     dados_brutos = cursor.fetchall()
     
     lista_pacientes = []
-    hoje = date.today() # Agora vai funcionar porque importamos 'date' lá em cima
-    
+    hoje = date.today()
     for p in dados_brutos:
         id_p, nome_p, nasc_p, tel_p = p
-        
         idade_calculada = "---"
         if nasc_p:
             try:
                 idade_int = hoje.year - nasc_p.year - ((hoje.month, hoje.day) < (nasc_p.month, nasc_p.day))
                 idade_calculada = f"{idade_int} anos"
-            except:
-                pass
-            
+            except: pass
         lista_pacientes.append((id_p, nome_p, idade_calculada, tel_p))
         
     conn.close()
-    
     return render_template('pacientes.html', pacientes=lista_pacientes)
 
-# --- ROTAS DA AGENDA (API) ---
+# --- ROTA DE PRONTUÁRIOS (NOVO) ---
+@app.route('/prontuarios')
+def prontuarios():
+    if not session.get('logged_in'): return redirect(url_for('login'))
+    
+    conn = get_db_connection()
+    cursor = conn.cursor()
+    cursor.execute("SELECT id, nome, nascimento FROM pacientes ORDER BY nome ASC")
+    pacientes = cursor.fetchall()
+    conn.close()
+    
+    return render_template('prontuarios.html', pacientes=pacientes)
+
+# --- ROTAS DA AGENDA ---
 
 @app.route('/agenda')
 def agenda():
@@ -131,35 +153,23 @@ def agenda():
     conn.close()
     return render_template('agenda.html', pacientes=pacientes)
 
+# --- APIS (JSON) ---
+
 @app.route('/api/eventos')
 def api_eventos():
     conn = get_db_connection()
     cur = conn.cursor()
-    query = """
-        SELECT a.id, p.nome, a.start_time, a.end_time, a.obs, a.status 
-        FROM agendamentos a
-        JOIN pacientes p ON a.paciente_id = p.id
-    """
+    query = "SELECT a.id, p.nome, a.start_time, a.end_time, a.obs, a.status FROM agendamentos a JOIN pacientes p ON a.paciente_id = p.id"
     cur.execute(query)
     rows = cur.fetchall()
     conn.close()
-    
     eventos = []
-    cores = {
-        'Agendado': '#007bff', 'Confirmado': '#17a2b8', 
-        'Realizado': '#198754', 'Faltou': '#dc3545', 'Cancelado': '#6c757d'
-    }
-
+    cores = {'Agendado': '#007bff', 'Confirmado': '#17a2b8', 'Realizado': '#198754', 'Faltou': '#dc3545', 'Cancelado': '#6c757d'}
     for row in rows:
         status = row[5] if row[5] else 'Agendado'
         eventos.append({
-            'id': row[0],
-            'title': f"{row[1]}", # Nome Limpo
-            'start': row[2].isoformat(),
-            'end': row[3].isoformat(),
-            'description': row[4],
-            'extendedProps': {'status': status},
-            'color': cores.get(status, '#007bff')
+            'id': row[0], 'title': f"{row[1]}", 'start': row[2].isoformat(), 'end': row[3].isoformat(),
+            'description': row[4], 'extendedProps': {'status': status}, 'color': cores.get(status, '#007bff')
         })
     return jsonify(eventos)
 
@@ -174,17 +184,14 @@ def criar_evento():
     
     conn = get_db_connection()
     cur = conn.cursor()
-    
     try:
         if not dias_recorrentes:
             fim = data_inicio + timedelta(hours=1)
-            cur.execute("INSERT INTO agendamentos (paciente_id, start_time, end_time, obs, status) VALUES (%s, %s, %s, %s, 'Agendado')",
-                        (paciente_id, data_inicio, fim, obs))
+            cur.execute("INSERT INTO agendamentos (paciente_id, start_time, end_time, obs, status) VALUES (%s, %s, %s, %s, 'Agendado')", (paciente_id, data_inicio, fim, obs))
         else:
             current_day = data_inicio
             start_of_week = current_day - timedelta(days=current_day.weekday())
             if current_day.weekday() == 6: start_of_week = current_day - timedelta(days=6)
-
             for i in range(semanas):
                 week_start = start_of_week + timedelta(weeks=i)
                 for dia_semana in dias_recorrentes:
@@ -193,9 +200,7 @@ def criar_evento():
                     event_start = event_date.replace(hour=data_inicio.hour, minute=data_inicio.minute)
                     if event_start >= datetime.now().replace(hour=0, minute=0):
                         event_end = event_start + timedelta(hours=1)
-                        cur.execute("INSERT INTO agendamentos (paciente_id, start_time, end_time, obs, status) VALUES (%s, %s, %s, %s, 'Agendado')",
-                                    (paciente_id, event_start, event_end, obs))
-        
+                        cur.execute("INSERT INTO agendamentos (paciente_id, start_time, end_time, obs, status) VALUES (%s, %s, %s, %s, 'Agendado')", (paciente_id, event_start, event_end, obs))
         conn.commit()
         return jsonify({'status': 'success'})
     except Exception as e:
@@ -209,8 +214,7 @@ def mover_evento():
     data = request.json
     conn = get_db_connection()
     cur = conn.cursor()
-    cur.execute("UPDATE agendamentos SET start_time = %s, end_time = %s WHERE id = %s",
-                (data['start'], data['end'], data['id']))
+    cur.execute("UPDATE agendamentos SET start_time = %s, end_time = %s WHERE id = %s", (data['start'], data['end'], data['id']))
     conn.commit()
     conn.close()
     return jsonify({'status': 'success'})
@@ -220,8 +224,7 @@ def atualizar_evento():
     data = request.json
     conn = get_db_connection()
     cur = conn.cursor()
-    cur.execute("UPDATE agendamentos SET status = %s, obs = %s WHERE id = %s",
-                (data['status'], data['obs'], data['id']))
+    cur.execute("UPDATE agendamentos SET status = %s, obs = %s WHERE id = %s", (data['status'], data['obs'], data['id']))
     conn.commit()
     conn.close()
     return jsonify({'status': 'success'})
@@ -239,19 +242,13 @@ def deletar_evento():
 @app.route('/api/deletar_paciente', methods=['POST'])
 def deletar_paciente():
     if not session.get('logged_in'): return jsonify({'status': 'error'}), 403
-    
     data = request.json
     paciente_id = data['id']
-    
     conn = get_db_connection()
     cur = conn.cursor()
     try:
-        # 1. Primeiro deleta os agendamentos desse paciente (Limpeza)
         cur.execute("DELETE FROM agendamentos WHERE paciente_id = %s", (paciente_id,))
-        
-        # 2. Depois deleta o paciente
         cur.execute("DELETE FROM pacientes WHERE id = %s", (paciente_id,))
-        
         conn.commit()
         return jsonify({'status': 'success'})
     except Exception as e:
@@ -260,49 +257,18 @@ def deletar_paciente():
     finally:
         conn.close()
 
-
-# --- ROTA DE MIGRAÇÃO DO PRONTUÁRIO (NOVO) ---
-@app.route('/update-db-prontuario')
-def update_db_prontuario():
-    if not session.get('logged_in'): return redirect(url_for('login'))
-    conn = get_db_connection()
-    cursor = conn.cursor()
-    try:
-        # Cria tabela de evoluções ligada ao paciente
-        cursor.execute('''
-            CREATE TABLE IF NOT EXISTS evolucoes (
-                id SERIAL PRIMARY KEY, 
-                paciente_id INTEGER REFERENCES pacientes(id) ON DELETE CASCADE,
-                data TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-                texto TEXT
-            );
-        ''')
-        conn.commit()
-        msg = "Sucesso! Tabela de Prontuário criada."
-    except Exception as e:
-        conn.rollback()
-        msg = f"Erro: {e}"
-    finally:
-        conn.close()
-    return msg
-
-# --- API DE PRONTUÁRIO (LER E SALVAR) ---
-
+# --- API EVOLUÇÕES ---
 @app.route('/api/evolucoes/<int:paciente_id>', methods=['GET'])
 def get_evolucoes(paciente_id):
     conn = get_db_connection()
     cur = conn.cursor()
-    # Busca da mais recente para a mais antiga
     cur.execute("SELECT data, texto FROM evolucoes WHERE paciente_id = %s ORDER BY data DESC", (paciente_id,))
     dados = cur.fetchall()
     conn.close()
-    
     lista = []
     for row in dados:
-        # Formata data bonita: 14/12/2025 às 15:30
         data_formatada = row[0].strftime("%d/%m/%Y às %H:%M")
         lista.append({'data': data_formatada, 'texto': row[1]})
-        
     return jsonify(lista)
 
 @app.route('/api/nova_evolucao', methods=['POST'])
@@ -311,8 +277,7 @@ def nova_evolucao():
     conn = get_db_connection()
     cur = conn.cursor()
     try:
-        cur.execute("INSERT INTO evolucoes (paciente_id, texto, data) VALUES (%s, %s, NOW())", 
-                    (data['paciente_id'], data['texto']))
+        cur.execute("INSERT INTO evolucoes (paciente_id, texto, data) VALUES (%s, %s, NOW())", (data['paciente_id'], data['texto']))
         conn.commit()
         return jsonify({'status': 'success'})
     except Exception as e:
