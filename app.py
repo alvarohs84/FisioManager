@@ -22,27 +22,23 @@ def get_db_connection():
         print(f"Erro DB: {e}")
         return None
 
-# --- ATUALIZAÇÃO DO BANCO (MIGRAÇÃO) ---
-@app.route('/update-db-agenda')
-def update_db_agenda():
+# --- MIGRAÇÃO DE STATUS (NOVO) ---
+@app.route('/update-db-status')
+def update_db_status():
     if not session.get('logged_in'): return redirect(url_for('login'))
     conn = get_db_connection()
     cursor = conn.cursor()
-    
-    # Recriar tabela agendamentos para suportar inicio/fim e timestamps reais
-    cursor.execute("DROP TABLE IF EXISTS agendamentos;")
-    cursor.execute('''
-        CREATE TABLE agendamentos (
-            id SERIAL PRIMARY KEY, 
-            paciente_id INTEGER REFERENCES pacientes(id), 
-            start_time TIMESTAMP NOT NULL,
-            end_time TIMESTAMP NOT NULL,
-            obs TEXT
-        );
-    ''')
-    conn.commit()
-    conn.close()
-    return "Banco de dados de Agenda atualizado! Volte para o sistema."
+    try:
+        # Adiciona coluna status se não existir
+        cursor.execute("ALTER TABLE agendamentos ADD COLUMN IF NOT EXISTS status TEXT DEFAULT 'Agendado';")
+        conn.commit()
+        msg = "Banco de dados atualizado com campo STATUS!"
+    except Exception as e:
+        conn.rollback()
+        msg = f"Erro na atualização: {e}"
+    finally:
+        conn.close()
+    return msg
 
 # --- Rotas Padrão ---
 @app.route('/', methods=['GET', 'POST'])
@@ -86,12 +82,11 @@ def pacientes():
     conn.close()
     return render_template('pacientes.html', pacientes=dados)
 
-# --- ROTAS DA AGENDA INTELIGENTE (API) ---
+# --- ROTAS DA AGENDA (API) ---
 
 @app.route('/agenda')
 def agenda():
     if not session.get('logged_in'): return redirect(url_for('login'))
-    # Carregar pacientes para o formulário modal
     conn = get_db_connection()
     cur = conn.cursor()
     cur.execute("SELECT id, nome FROM pacientes")
@@ -99,14 +94,13 @@ def agenda():
     conn.close()
     return render_template('agenda.html', pacientes=pacientes)
 
-# 1. API para fornecer dados ao Calendário (JSON)
 @app.route('/api/eventos')
 def api_eventos():
     conn = get_db_connection()
     cur = conn.cursor()
-    # Busca eventos e o nome do paciente
+    # Agora buscamos também o STATUS
     query = """
-        SELECT a.id, p.nome, a.start_time, a.end_time, a.obs 
+        SELECT a.id, p.nome, a.start_time, a.end_time, a.obs, a.status 
         FROM agendamentos a
         JOIN pacientes p ON a.paciente_id = p.id
     """
@@ -115,57 +109,65 @@ def api_eventos():
     conn.close()
     
     eventos = []
+    # Dicionário de Cores por Status
+    cores = {
+        'Agendado': '#007bff',   # Azul
+        'Confirmado': '#17a2b8', # Turquesa
+        'Realizado': '#198754',  # Verde
+        'Faltou': '#dc3545',     # Vermelho
+        'Cancelado': '#6c757d'   # Cinza
+    }
+
     for row in rows:
+        status = row[5] if row[5] else 'Agendado'
+        cor_evento = cores.get(status, '#007bff')
+        
         eventos.append({
             'id': row[0],
-            'title': row[1], # O nome do paciente será o título
+            'title': f"{row[1]} ({status})", # Mostra status no título
             'start': row[2].isoformat(),
             'end': row[3].isoformat(),
             'description': row[4],
-            'color': '#007bff' # Azul padrão
+            'extendedProps': {'status': status}, # Para o JS ler
+            'color': cor_evento
         })
     return jsonify(eventos)
 
-# 2. API para Salvar/Criar (Com Recorrência)
 @app.route('/api/criar_evento', methods=['POST'])
 def criar_evento():
     data = request.json
     paciente_id = data['paciente_id']
-    data_inicio = datetime.fromisoformat(data['start']) # Ex: 2025-10-20T10:00
+    data_inicio = datetime.fromisoformat(data['start'])
     obs = data.get('obs', '')
-    dias_recorrentes = data.get('dias_recorrentes', []) # Lista de dias [0, 2, 4] (Seg, Qua, Sex)
-    semanas = int(data.get('semanas', 1)) # Quantas semanas repetir
+    dias_recorrentes = data.get('dias_recorrentes', [])
+    semanas = int(data.get('semanas', 1))
     
     conn = get_db_connection()
     cur = conn.cursor()
     
     try:
         if not dias_recorrentes:
-            # Agendamento Único (Padrão 1 hora de duração)
             fim = data_inicio + timedelta(hours=1)
-            cur.execute("INSERT INTO agendamentos (paciente_id, start_time, end_time, obs) VALUES (%s, %s, %s, %s)",
+            # Cria com status padrão 'Agendado'
+            cur.execute("INSERT INTO agendamentos (paciente_id, start_time, end_time, obs, status) VALUES (%s, %s, %s, %s, 'Agendado')",
                         (paciente_id, data_inicio, fim, obs))
         else:
-            # Lógica de Recorrência
-            # Loop pelas próximas X semanas
             current_day = data_inicio
-            # Ajusta para o inicio da semana atual para calcular os dias
             start_of_week = current_day - timedelta(days=current_day.weekday())
-            
+            # Ajuste para começar da segunda-feira correta (se hoje for domingo e week start for segunda)
+            if current_day.weekday() == 6: # Se for domingo
+                 start_of_week = current_day - timedelta(days=6)
+
             for i in range(semanas):
                 week_start = start_of_week + timedelta(weeks=i)
-                for dia_semana in dias_recorrentes: # 0=Seg, 1=Ter...
+                for dia_semana in dias_recorrentes:
                     dia_semana = int(dia_semana)
-                    # Cria a data do evento
                     event_date = week_start + timedelta(days=dia_semana)
-                    
-                    # Mantém a hora original
                     event_start = event_date.replace(hour=data_inicio.hour, minute=data_inicio.minute)
                     
-                    # Só agenda se for futuro ou hoje
                     if event_start >= datetime.now().replace(hour=0, minute=0):
                         event_end = event_start + timedelta(hours=1)
-                        cur.execute("INSERT INTO agendamentos (paciente_id, start_time, end_time, obs) VALUES (%s, %s, %s, %s)",
+                        cur.execute("INSERT INTO agendamentos (paciente_id, start_time, end_time, obs, status) VALUES (%s, %s, %s, %s, 'Agendado')",
                                     (paciente_id, event_start, event_end, obs))
         
         conn.commit()
@@ -176,23 +178,29 @@ def criar_evento():
     finally:
         conn.close()
 
-# 3. API para Arrastar e Soltar (Atualizar Data/Hora)
 @app.route('/api/mover_evento', methods=['POST'])
 def mover_evento():
     data = request.json
-    evento_id = data['id']
-    novo_inicio = data['start']
-    novo_fim = data['end']
-    
     conn = get_db_connection()
     cur = conn.cursor()
     cur.execute("UPDATE agendamentos SET start_time = %s, end_time = %s WHERE id = %s",
-                (novo_inicio, novo_fim, evento_id))
+                (data['start'], data['end'], data['id']))
     conn.commit()
     conn.close()
     return jsonify({'status': 'success'})
 
-# 4. API para Deletar
+# --- NOVA ROTA: ATUALIZAR DETALHES (STATUS/OBS) ---
+@app.route('/api/atualizar_evento', methods=['POST'])
+def atualizar_evento():
+    data = request.json
+    conn = get_db_connection()
+    cur = conn.cursor()
+    cur.execute("UPDATE agendamentos SET status = %s, obs = %s WHERE id = %s",
+                (data['status'], data['obs'], data['id']))
+    conn.commit()
+    conn.close()
+    return jsonify({'status': 'success'})
+
 @app.route('/api/deletar_evento', methods=['POST'])
 def deletar_evento():
     data = request.json
