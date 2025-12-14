@@ -71,16 +71,47 @@ def dashboard():
 @app.route('/pacientes', methods=['GET', 'POST'])
 def pacientes():
     if not session.get('logged_in'): return redirect(url_for('login'))
+    
     conn = get_db_connection()
     cursor = conn.cursor()
+    
     if request.method == 'POST':
+        nome = request.form['nome']
+        nascimento = request.form['nascimento']
+        telefone = request.form['telefone']
+        
+        # Lógica para aceitar Data Vazia (Cadastro Rápido)
+        if not nascimento:
+            nascimento = None # Envia NULL para o banco
+            
         cursor.execute("INSERT INTO pacientes (nome, nascimento, telefone) VALUES (%s, %s, %s)", 
-                       (request.form['nome'], request.form['nascimento'], request.form['telefone']))
+                       (nome, nascimento, telefone))
         conn.commit()
+    
+    # Busca os dados
     cursor.execute("SELECT id, nome, nascimento, telefone FROM pacientes ORDER BY id DESC")
-    dados = cursor.fetchall()
+    dados_brutos = cursor.fetchall()
+    
+    # Processa a idade para exibição
+    lista_pacientes = []
+    hoje = date.today()
+    
+    for p in dados_brutos:
+        id_p, nome_p, nasc_p, tel_p = p
+        
+        idade_calculada = "---"
+        if nasc_p:
+            try:
+                idade_int = hoje.year - nasc_p.year - ((hoje.month, hoje.day) < (nasc_p.month, nasc_p.day))
+                idade_calculada = f"{idade_int} anos"
+            except:
+                pass
+            
+        lista_pacientes.append((id_p, nome_p, idade_calculada, tel_p))
+        
     conn.close()
-    return render_template('pacientes.html', pacientes=dados)
+    
+    return render_template('pacientes.html', pacientes=lista_pacientes)
 
 # --- ROTAS DA AGENDA (API) ---
 
