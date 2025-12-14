@@ -2,6 +2,7 @@
 
 {% block content %}
 <script src='https://cdn.jsdelivr.net/npm/fullcalendar@6.1.10/index.global.min.js'></script>
+<script src='https://cdn.jsdelivr.net/npm/fullcalendar@6.1.10/locales-all.global.min.js'></script>
 
 <div class="d-flex justify-content-between align-items-center mb-4">
     <h2 class="brand-title"><i class="bi bi-calendar-week text-primary me-2"></i> Agenda Inteligente</h2>
@@ -79,43 +80,45 @@
 </div>
 
 <script>
-    var calendar; // Variável global
+    var calendar; 
 
     document.addEventListener('DOMContentLoaded', function() {
         var calendarEl = document.getElementById('calendar');
         
         calendar = new FullCalendar.Calendar(calendarEl, {
-            initialView: 'timeGridWeek', // Visão semanal por padrão
-            locale: 'pt-br',
+            initialView: 'timeGridWeek',
+            locale: 'pt-br', // Define o idioma
             headerToolbar: {
                 left: 'prev,next today',
                 center: 'title',
                 right: 'dayGridMonth,timeGridWeek,timeGridDay'
             },
-            slotMinTime: "07:00:00", // Começa as 7h
-            slotMaxTime: "20:00:00", // Termina as 20h
+            buttonText: { // Força a tradução dos botões caso o locale falhe
+                today:    'Hoje',
+                month:    'Mês',
+                week:     'Semana',
+                day:      'Dia',
+                list:     'Lista'
+            },
+            slotMinTime: "07:00:00",
+            slotMaxTime: "20:00:00",
             allDaySlot: false,
-            editable: true, // PERMITE ARRASTAR E SOLTAR
-            selectable: true, // Permite clicar na hora vazia
-            events: '/api/eventos', // Puxa do Flask
+            editable: true,
+            selectable: true, 
+            events: '/api/eventos',
             
-            // Clicar em data vazia
             dateClick: function(info) {
-                // Abre o modal e preenche a data clicada
-                var dateStr = info.dateStr.substring(0, 16); // Formata para input
+                var dateStr = info.dateStr.substring(0, 16);
                 document.getElementById('startDateTime').value = dateStr;
                 var modal = new bootstrap.Modal(document.getElementById('eventModal'));
                 modal.show();
             },
             
-            // Arrastar e Soltar (Drag & Drop)
             eventDrop: function(info) {
-                if (!confirm("Confirmar mudança de horário para " + info.event.start.toLocaleString() + "?")) {
+                if (!confirm("Mudar atendimento para " + info.event.start.toLocaleString() + "?")) {
                     info.revert();
                     return;
                 }
-                
-                // Envia para o backend
                 fetch('/api/mover_evento', {
                     method: 'POST',
                     headers: {'Content-Type': 'application/json'},
@@ -127,9 +130,8 @@
                 });
             },
             
-            // Clicar no evento (Para deletar - Básico)
             eventClick: function(info) {
-                if(confirm("Deseja cancelar/deletar este agendamento?")) {
+                if(confirm("Deseja cancelar este agendamento?")) {
                     fetch('/api/deletar_evento', {
                         method: 'POST',
                         headers: {'Content-Type': 'application/json'},
@@ -144,18 +146,13 @@
         calendar.render();
     });
 
-    // --- FUNÇÃO DE SALVAR ---
     function salvarEvento() {
         var pacienteId = document.getElementById('pacienteId').value;
         var start = document.getElementById('startDateTime').value;
         var obs = document.getElementById('obs').value;
         var semanas = document.getElementById('semanasRec').value;
-        
-        // Pega dias marcados (Recorrência)
         var dias = [];
-        document.querySelectorAll('.dia-rec:checked').forEach((cb) => {
-            dias.push(cb.value);
-        });
+        document.querySelectorAll('.dia-rec:checked').forEach((cb) => { dias.push(cb.value); });
 
         if (!pacienteId || !start) {
             alert("Preencha o paciente e a data!");
@@ -166,24 +163,18 @@
             method: 'POST',
             headers: {'Content-Type': 'application/json'},
             body: JSON.stringify({
-                paciente_id: pacienteId,
-                start: start,
-                obs: obs,
-                dias_recorrentes: dias,
-                semanas: semanas
+                paciente_id: pacienteId, start: start, obs: obs, dias_recorrentes: dias, semanas: semanas
             })
         }).then(response => response.json())
           .then(data => {
-              // Fecha modal e atualiza calendário
               var modalEl = document.getElementById('eventModal');
               var modal = bootstrap.Modal.getInstance(modalEl);
               modal.hide();
-              calendar.refetchEvents(); // Recarrega do banco
-              alert("Agendamento(s) realizado(s)!");
+              calendar.refetchEvents();
+              alert("Agendamento realizado!");
           });
     }
 
-    // --- RECONHECIMENTO DE VOZ (Web Speech API) ---
     const btnVoice = document.getElementById('btnVoice');
     const txtObs = document.getElementById('obs');
 
@@ -191,30 +182,24 @@
         const recognition = new webkitSpeechRecognition();
         recognition.lang = 'pt-BR';
         recognition.continuous = false;
-
         btnVoice.addEventListener('click', () => {
             recognition.start();
-            btnVoice.classList.add('btn-danger'); // Fica vermelho gravando
+            btnVoice.classList.add('btn-danger');
         });
-
         recognition.onresult = (event) => {
-            const transcript = event.results[0][0].transcript;
-            txtObs.value += transcript + ". ";
+            txtObs.value += event.results[0][0].transcript + ". ";
             btnVoice.classList.remove('btn-danger');
-        };
-        
-        recognition.onerror = () => {
-            btnVoice.classList.remove('btn-danger');
-            alert("Erro no reconhecimento de voz. Verifique o microfone.");
         };
     } else {
-        btnVoice.style.display = 'none'; // Esconde se navegador não suportar
+        btnVoice.style.display = 'none';
     }
 </script>
 
 <style>
-    /* Ajustes do FullCalendar */
     .fc-event { cursor: pointer; }
     #calendar { padding: 20px; min-height: 80vh; }
+    /* Ajuste de cor dos botões do calendário */
+    .fc-button-primary { background-color: #007bff !important; border-color: #007bff !important; }
+    .fc-button-active { background-color: #0056b3 !important; }
 </style>
 {% endblock %}
