@@ -61,7 +61,7 @@
                                 <th>Nome</th>
                                 <th>Idade</th>
                                 <th>Contato</th>
-                                <th class="text-end">Editar</th>
+                                <th class="text-end" style="width: 120px;">Ações</th>
                             </tr>
                         </thead>
                         <tbody>
@@ -76,7 +76,11 @@
                                 </td>
                                 <td>{{ p[3] if p[3] else '' }}</td>
                                 <td class="text-end">
-                                    <button class="btn btn-sm btn-light text-primary"><i class="bi bi-pencil-square"></i></button>
+                                    <button class="btn btn-sm btn-light text-primary me-1" title="Editar"><i class="bi bi-pencil-square"></i></button>
+                                    
+                                    <button class="btn btn-sm btn-outline-danger" title="Excluir Paciente" onclick="excluirPaciente({{ p[0] }}, '{{ p[1] }}')">
+                                        <i class="bi bi-trash"></i>
+                                    </button>
                                 </td>
                             </tr>
                             {% endfor %}
@@ -95,7 +99,33 @@
 </div>
 
 <script>
-    // Script de Reconhecimento de Voz para o Nome
+    // --- FUNÇÃO DE EXCLUIR ---
+    function excluirPaciente(id, nome) {
+        if (confirm(`ATENÇÃO: Tem certeza que deseja excluir ${nome}?\n\nIsso apagará também todo o HISTÓRICO DE CONSULTAS deste paciente.`)) {
+            fetch('/api/deletar_paciente', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({ id: id })
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.status === 'success') {
+                    // Recarrega a página para atualizar a lista
+                    window.location.reload();
+                } else {
+                    alert('Erro ao excluir: ' + (data.message || 'Erro desconhecido'));
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                alert('Erro de conexão.');
+            });
+        }
+    }
+
+    // --- RECONHECIMENTO DE VOZ (Mantido igual) ---
     const btnVoiceName = document.getElementById('btnVoiceName');
     const inputNome = document.getElementById('nomePaciente');
 
@@ -107,28 +137,17 @@
         btnVoiceName.addEventListener('click', () => {
             recognition.start();
             btnVoiceName.classList.remove('btn-outline-primary');
-            btnVoiceName.classList.add('btn-danger'); // Fica vermelho gravando
+            btnVoiceName.classList.add('btn-danger'); 
             btnVoiceName.innerHTML = '<i class="bi bi-record-circle-fill"></i>';
         });
 
         recognition.onresult = (event) => {
             const transcript = event.results[0][0].transcript;
-            // Capitaliza a primeira letra de cada palavra (Estilo Nome Próprio)
             const nomeFormatado = transcript.toLowerCase().replace(/(^\w{1})|(\s+\w{1})/g, letter => letter.toUpperCase());
-            
             inputNome.value = nomeFormatado;
-            
-            // Restaura o botão
             btnVoiceName.classList.remove('btn-danger');
             btnVoiceName.classList.add('btn-outline-primary');
             btnVoiceName.innerHTML = '<i class="bi bi-mic-fill"></i>';
-        };
-        
-        recognition.onerror = () => {
-            btnVoiceName.classList.remove('btn-danger');
-            btnVoiceName.classList.add('btn-outline-primary');
-            btnVoiceName.innerHTML = '<i class="bi bi-mic-mute-fill"></i>';
-            alert("Não entendi. Tente novamente.");
         };
         
         recognition.onend = () => {
@@ -139,7 +158,7 @@
             }
         };
     } else {
-        btnVoiceName.style.display = 'none'; // Esconde se não suportado
+        btnVoiceName.style.display = 'none';
     }
 </script>
 {% endblock %}

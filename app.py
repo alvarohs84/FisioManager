@@ -236,5 +236,30 @@ def deletar_evento():
     conn.close()
     return jsonify({'status': 'success'})
 
+@app.route('/api/deletar_paciente', methods=['POST'])
+def deletar_paciente():
+    if not session.get('logged_in'): return jsonify({'status': 'error'}), 403
+    
+    data = request.json
+    paciente_id = data['id']
+    
+    conn = get_db_connection()
+    cur = conn.cursor()
+    try:
+        # 1. Primeiro deleta os agendamentos desse paciente (Limpeza)
+        cur.execute("DELETE FROM agendamentos WHERE paciente_id = %s", (paciente_id,))
+        
+        # 2. Depois deleta o paciente
+        cur.execute("DELETE FROM pacientes WHERE id = %s", (paciente_id,))
+        
+        conn.commit()
+        return jsonify({'status': 'success'})
+    except Exception as e:
+        conn.rollback()
+        return jsonify({'status': 'error', 'message': str(e)}), 500
+    finally:
+        conn.close()
+
+
 if __name__ == '__main__':
     app.run(debug=True)
