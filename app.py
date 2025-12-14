@@ -285,6 +285,79 @@ def nova_evolucao():
         return jsonify({'status': 'error', 'msg': str(e)}), 500
     finally:
         conn.close()
+        
+        # --- MIGRAÇÃO DA AVALIAÇÃO (NOVO) ---
+@app.route('/update-db-avaliacao')
+def update_db_avaliacao():
+    if not session.get('logged_in'): return redirect(url_for('login'))
+    conn = get_db_connection()
+    cursor = conn.cursor()
+    try:
+        # Tabela completa de avaliação
+        cursor.execute('''
+            CREATE TABLE IF NOT EXISTS avaliacoes (
+                id SERIAL PRIMARY KEY, 
+                paciente_id INTEGER REFERENCES pacientes(id) ON DELETE CASCADE,
+                data_avaliacao TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                queixa_principal TEXT,
+                hda TEXT,
+                nivel_dor INTEGER,
+                objetivos TEXT
+            );
+        ''')
+        conn.commit()
+        msg = "Sucesso! Tabela de Avaliação criada."
+    except Exception as e:
+        conn.rollback()
+        msg = f"Erro: {e}"
+    finally:
+        conn.close()
+    return msg
+
+# --- API AVALIAÇÃO ---
+
+@app.route('/api/salvar_avaliacao', methods=['POST'])
+def salvar_avaliacao():
+    data = request.json
+    conn = get_db_connection()
+    cur = conn.cursor()
+    try:
+        # Salva uma nova avaliação
+        cur.execute("""
+            INSERT INTO avaliacoes (paciente_id, queixa_principal, hda, nivel_dor, objetivos) 
+            VALUES (%s, %s, %s, %s, %s)
+        """, (data['paciente_id'], data['queixa'], data['hda'], data['dor'], data['objetivos']))
+        conn.commit()
+        return jsonify({'status': 'success'})
+    except Exception as e:
+        conn.rollback()
+        return jsonify({'status': 'error', 'msg': str(e)}), 500
+    finally:
+        conn.close()
+
+@app.route('/api/get_avaliacao/<int:paciente_id>', methods=['GET'])
+def get_avaliacao(paciente_id):
+    conn = get_db_connection()
+    cur = conn.cursor()
+    # Pega a avaliação mais recente
+    cur.execute("""
+        SELECT queixa_principal, hda, nivel_dor, objetivos, data_avaliacao 
+        FROM avaliacoes WHERE paciente_id = %s ORDER BY id DESC LIMIT 1
+    """, (paciente_id,))
+    row = cur.fetchone()
+    conn.close()
+    
+    if row:
+        return jsonify({
+            'encontrado': True,
+            'queixa': row[0],
+            'hda': row[1],
+            'dor': row[2],
+            'objetivos': row[3],
+            'data': row[4].strftime("%d/%m/%Y")
+        })
+    else:
+        return jsonify({'encontrado': False})
 
 if __name__ == '__main__':
     app.run(debug=True)

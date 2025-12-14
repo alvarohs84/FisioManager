@@ -9,7 +9,7 @@
     <div class="card-body">
         <div class="input-group">
             <span class="input-group-text bg-white border-end-0"><i class="bi bi-search text-muted"></i></span>
-            <input type="text" id="filtroPaciente" class="form-control border-start-0" placeholder="Digite o nome do paciente para buscar..." onkeyup="filtrarLista()">
+            <input type="text" id="filtroPaciente" class="form-control border-start-0" placeholder="Buscar paciente..." onkeyup="filtrarLista()">
         </div>
     </div>
 </div>
@@ -24,8 +24,7 @@
                 </div>
                 <h5 class="card-title fw-bold text-dark mb-1 nome-paciente">{{ p[1] }}</h5>
                 <p class="text-muted small mb-3">
-                    <i class="bi bi-cake2"></i> 
-                    {% if p[2] %} {{ p[2].strftime('%d/%m/%Y') }} {% else %} Data n/d {% endif %}
+                    <i class="bi bi-cake2"></i> {% if p[2] %} {{ p[2].strftime('%d/%m/%Y') }} {% else %} Data n/d {% endif %}
                 </p>
                 <button class="btn btn-primary w-100 mt-auto rounded-pill" onclick="abrirProntuario({{ p[0] }}, '{{ p[1] }}')">
                     <i class="bi bi-folder2-open"></i> Abrir Ficha
@@ -34,49 +33,100 @@
         </div>
     </div>
     {% else %}
-    <div class="col-12 text-center py-5">
-        <p class="text-muted">Nenhum paciente cadastrado para exibir.</p>
-    </div>
+    <div class="col-12 text-center py-5"><p class="text-muted">Nenhum paciente encontrado.</p></div>
     {% endfor %}
 </div>
 
 <div class="modal fade" id="modalProntuario" tabindex="-1">
-    <div class="modal-dialog modal-lg">
-        <div class="modal-content">
+    <div class="modal-dialog modal-xl"> <div class="modal-content">
             <div class="modal-header bg-primary text-white">
-                <h5 class="modal-title"><i class="bi bi-clipboard2-pulse"></i> Prontuário: <span id="tituloProntuario" class="fw-bold"></span></h5>
+                <h5 class="modal-title"><i class="bi bi-clipboard2-pulse"></i> Ficha: <span id="tituloProntuario" class="fw-bold"></span></h5>
                 <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
             </div>
+            
             <div class="modal-body bg-light">
-                <div class="row">
-                    <div class="col-md-5 border-end">
-                        <h6 class="text-primary fw-bold mb-3">Nova Evolução</h6>
-                        <input type="hidden" id="idPacienteProntuario">
-                        
-                        <div class="mb-3">
-                            <label class="form-label small text-muted">Descrição do Atendimento</label>
-                            <div class="input-group">
-                                <textarea id="textoEvolucao" class="form-control" rows="8" placeholder="Relate o procedimento..."></textarea>
-                                <button class="btn btn-outline-secondary" type="button" id="btnVoiceEvo">
-                                    <i class="bi bi-mic-fill"></i>
-                                </button>
+                <input type="hidden" id="idPacienteProntuario">
+
+                <ul class="nav nav-tabs mb-3" id="prontuarioTabs" role="tablist">
+                    <li class="nav-item" role="presentation">
+                        <button class="nav-link active fw-bold" id="evolucao-tab" data-bs-toggle="tab" data-bs-target="#tab-evolucao" type="button">
+                            <i class="bi bi-list-check"></i> Evolução Diária
+                        </button>
+                    </li>
+                    <li class="nav-item" role="presentation">
+                        <button class="nav-link fw-bold" id="avaliacao-tab" data-bs-toggle="tab" data-bs-target="#tab-avaliacao" type="button">
+                            <i class="bi bi-person-lines-fill"></i> Avaliação Geral
+                        </button>
+                    </li>
+                </ul>
+
+                <div class="tab-content">
+                    
+                    <div class="tab-pane fade show active" id="tab-evolucao">
+                        <div class="row">
+                            <div class="col-md-5 border-end">
+                                <h6 class="text-primary fw-bold mb-3">Nova Evolução</h6>
+                                <div class="mb-3">
+                                    <div class="input-group">
+                                        <textarea id="textoEvolucao" class="form-control" rows="8" placeholder="Relate o procedimento e progressos de hoje..."></textarea>
+                                        <button class="btn btn-outline-secondary" type="button" id="btnVoiceEvo"><i class="bi bi-mic-fill"></i></button>
+                                    </div>
+                                </div>
+                                <div class="d-grid">
+                                    <button onclick="salvarEvolucao()" class="btn btn-success"><i class="bi bi-save"></i> Salvar Evolução</button>
+                                </div>
                             </div>
-                        </div>
-                        <div class="d-grid">
-                            <button onclick="salvarEvolucao()" class="btn btn-success">
-                                <i class="bi bi-save"></i> Salvar Evolução
-                            </button>
+                            <div class="col-md-7">
+                                <h6 class="text-muted fw-bold mb-3">Histórico de Visitas</h6>
+                                <div id="listaHistorico" style="max-height: 400px; overflow-y: auto;"></div>
+                            </div>
                         </div>
                     </div>
 
-                    <div class="col-md-7">
-                        <h6 class="text-muted fw-bold mb-3">Histórico Clínico</h6>
-                        <div id="listaHistorico" style="max-height: 400px; overflow-y: auto; padding-right: 5px;">
-                            <div class="text-center text-muted mt-5">
-                                <p>Selecione um paciente...</p>
+                    <div class="tab-pane fade" id="tab-avaliacao">
+                        <div class="card border-0 shadow-sm">
+                            <div class="card-body">
+                                <h5 class="card-title text-primary mb-4">Ficha de Avaliação Inicial</h5>
+                                <form id="formAvaliacao">
+                                    <div class="row mb-3">
+                                        <div class="col-md-6">
+                                            <label class="form-label fw-bold">Queixa Principal</label>
+                                            <div class="input-group">
+                                                <input type="text" id="avQueixa" class="form-control" placeholder="O que trouxe o paciente?">
+                                                <button class="btn btn-outline-secondary" type="button" id="btnVoiceQueixa"><i class="bi bi-mic-fill"></i></button>
+                                            </div>
+                                        </div>
+                                        <div class="col-md-6">
+                                            <label class="form-label fw-bold">Nível de Dor (EVA 0-10)</label>
+                                            <input type="range" id="avDor" class="form-range" min="0" max="10" step="1" oninput="document.getElementById('valorDor').innerText = this.value">
+                                            <div class="text-center fw-bold text-danger fs-5" id="valorDor">5</div>
+                                        </div>
+                                    </div>
+
+                                    <div class="mb-3">
+                                        <label class="form-label fw-bold">HDA (História da Doença Atual)</label>
+                                        <div class="input-group">
+                                            <textarea id="avHda" class="form-control" rows="3" placeholder="Como começou? Fatores de melhora/piora..."></textarea>
+                                            <button class="btn btn-outline-secondary" type="button" id="btnVoiceHda"><i class="bi bi-mic-fill"></i></button>
+                                        </div>
+                                    </div>
+
+                                    <div class="mb-3">
+                                        <label class="form-label fw-bold">Objetivos do Tratamento</label>
+                                        <textarea id="avObjetivos" class="form-control" rows="2" placeholder="Ex: Ganho de ADM, Analgesia..."></textarea>
+                                    </div>
+
+                                    <div class="d-flex justify-content-between align-items-center">
+                                        <small class="text-muted" id="dataUltimaAvaliacao">Nenhuma avaliação registrada.</small>
+                                        <button type="button" onclick="salvarAvaliacao()" class="btn btn-primary">
+                                            <i class="bi bi-file-earmark-medical"></i> Salvar Avaliação
+                                        </button>
+                                    </div>
+                                </form>
                             </div>
                         </div>
                     </div>
+
                 </div>
             </div>
         </div>
@@ -84,92 +134,120 @@
 </div>
 
 <script>
-    // --- FILTRO DE BUSCA ---
+    // --- FUNÇÕES GERAIS ---
     function filtrarLista() {
-        var input = document.getElementById("filtroPaciente");
-        var filter = input.value.toUpperCase();
+        var filter = document.getElementById("filtroPaciente").value.toUpperCase();
         var cards = document.getElementsByClassName("item-paciente");
-
         for (var i = 0; i < cards.length; i++) {
             var nome = cards[i].querySelector(".nome-paciente").innerText;
-            if (nome.toUpperCase().indexOf(filter) > -1) {
-                cards[i].style.display = "";
-            } else {
-                cards[i].style.display = "none";
-            }
+            cards[i].style.display = nome.toUpperCase().indexOf(filter) > -1 ? "" : "none";
         }
     }
 
-    // --- LÓGICA DO PRONTUÁRIO ---
     function abrirProntuario(id, nome) {
         document.getElementById('idPacienteProntuario').value = id;
         document.getElementById('tituloProntuario').innerText = nome;
-        document.getElementById('textoEvolucao').value = '';
         
+        // Limpa campos
+        document.getElementById('textoEvolucao').value = '';
+        document.getElementById('formAvaliacao').reset();
+        document.getElementById('valorDor').innerText = '5';
+        document.getElementById('dataUltimaAvaliacao').innerText = 'Carregando...';
+
         var modal = new bootstrap.Modal(document.getElementById('modalProntuario'));
         modal.show();
+
+        // Carrega as duas abas
         carregarHistorico(id);
+        carregarAvaliacao(id);
     }
 
+    // --- LÓGICA DA EVOLUÇÃO (ABA 1) ---
     function carregarHistorico(id) {
         const divLista = document.getElementById('listaHistorico');
         divLista.innerHTML = '<div class="text-center py-4"><div class="spinner-border text-primary"></div></div>';
-        
-        fetch(`/api/evolucoes/${id}`)
-            .then(response => response.json())
-            .then(data => {
-                divLista.innerHTML = '';
-                if(data.length === 0) {
-                    divLista.innerHTML = '<div class="alert alert-light text-center">Nenhum registro encontrado.</div>';
-                    return;
-                }
-                data.forEach(item => {
-                    const card = `
-                        <div class="card mb-2 border-0 shadow-sm">
-                            <div class="card-body p-3">
-                                <div class="d-flex justify-content-between mb-1">
-                                    <small class="text-primary fw-bold"><i class="bi bi-calendar-event"></i> ${item.data}</small>
-                                </div>
-                                <p class="card-text text-secondary" style="white-space: pre-wrap;">${item.texto}</p>
-                            </div>
+        fetch(`/api/evolucoes/${id}`).then(r => r.json()).then(data => {
+            divLista.innerHTML = '';
+            if(data.length === 0) { divLista.innerHTML = '<div class="alert alert-light text-center">Histórico vazio.</div>'; return; }
+            data.forEach(item => {
+                divLista.innerHTML += `
+                    <div class="card mb-2 border-0 shadow-sm">
+                        <div class="card-body p-3">
+                            <small class="text-primary fw-bold"><i class="bi bi-calendar-event"></i> ${item.data}</small>
+                            <p class="card-text text-secondary mt-1" style="white-space: pre-wrap;">${item.texto}</p>
                         </div>
-                    `;
-                    divLista.innerHTML += card;
-                });
+                    </div>`;
             });
+        });
     }
 
     function salvarEvolucao() {
         const id = document.getElementById('idPacienteProntuario').value;
         const texto = document.getElementById('textoEvolucao').value;
         if(!texto) return alert("Escreva algo!");
-        
         fetch('/api/nova_evolucao', {
-            method: 'POST',
-            headers: {'Content-Type': 'application/json'},
+            method: 'POST', headers: {'Content-Type': 'application/json'},
             body: JSON.stringify({ paciente_id: id, texto: texto })
         }).then(() => {
             document.getElementById('textoEvolucao').value = '';
             carregarHistorico(id);
+            alert("Evolução salva!");
         });
     }
 
-    // Voz
-    const btnVoice = document.getElementById('btnVoiceEvo');
-    const inputEvo = document.getElementById('textoEvolucao');
-    if ('webkitSpeechRecognition' in window) {
-        const recognition = new webkitSpeechRecognition();
-        recognition.lang = 'pt-BR';
-        recognition.continuous = false;
-        btnVoice.addEventListener('click', () => { recognition.start(); btnVoice.classList.add('btn-danger'); });
-        recognition.onresult = (e) => { 
-            inputEvo.value += e.results[0][0].transcript + ". "; 
-            btnVoice.classList.remove('btn-danger'); 
+    // --- LÓGICA DA AVALIAÇÃO (ABA 2) ---
+    function salvarAvaliacao() {
+        const id = document.getElementById('idPacienteProntuario').value;
+        const dados = {
+            paciente_id: id,
+            queixa: document.getElementById('avQueixa').value,
+            hda: document.getElementById('avHda').value,
+            dor: document.getElementById('avDor').value,
+            objetivos: document.getElementById('avObjetivos').value
         };
-    } else { btnVoice.style.display = 'none'; }
-</script>
 
-<style>
-    .hover-card:hover { transform: translateY(-3px); transition: 0.3s; }
-</style>
+        fetch('/api/salvar_avaliacao', {
+            method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify(dados)
+        }).then(() => {
+            alert("Avaliação salva com sucesso!");
+            carregarAvaliacao(id); // Recarrega para mostrar a data
+        });
+    }
+
+    function carregarAvaliacao(id) {
+        fetch(`/api/get_avaliacao/${id}`).then(r => r.json()).then(data => {
+            if(data.encontrado) {
+                document.getElementById('avQueixa').value = data.queixa;
+                document.getElementById('avHda').value = data.hda;
+                document.getElementById('avDor').value = data.dor;
+                document.getElementById('valorDor').innerText = data.dor;
+                document.getElementById('avObjetivos').value = data.objetivos;
+                document.getElementById('dataUltimaAvaliacao').innerText = "Última atualização: " + data.data;
+            } else {
+                document.getElementById('dataUltimaAvaliacao').innerText = "Nenhuma avaliação registrada.";
+            }
+        });
+    }
+
+    // --- VOZ ---
+    setupVoice('btnVoiceEvo', 'textoEvolucao');
+    setupVoice('btnVoiceQueixa', 'avQueixa');
+    setupVoice('btnVoiceHda', 'avHda');
+
+    function setupVoice(btnId, inputId) {
+        const btn = document.getElementById(btnId);
+        const input = document.getElementById(inputId);
+        if ('webkitSpeechRecognition' in window) {
+            const recognition = new webkitSpeechRecognition();
+            recognition.lang = 'pt-BR'; recognition.continuous = false;
+            btn.addEventListener('click', () => { recognition.start(); btn.classList.add('btn-danger'); });
+            recognition.onresult = (e) => { 
+                let txt = e.results[0][0].transcript;
+                if(input.tagName === 'TEXTAREA') input.value += txt + ". ";
+                else input.value = txt;
+                btn.classList.remove('btn-danger'); 
+            };
+        } else { btn.style.display = 'none'; }
+    }
+</script>
 {% endblock %}
