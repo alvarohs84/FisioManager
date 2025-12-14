@@ -261,5 +261,65 @@ def deletar_paciente():
         conn.close()
 
 
+# --- ROTA DE MIGRAÇÃO DO PRONTUÁRIO (NOVO) ---
+@app.route('/update-db-prontuario')
+def update_db_prontuario():
+    if not session.get('logged_in'): return redirect(url_for('login'))
+    conn = get_db_connection()
+    cursor = conn.cursor()
+    try:
+        # Cria tabela de evoluções ligada ao paciente
+        cursor.execute('''
+            CREATE TABLE IF NOT EXISTS evolucoes (
+                id SERIAL PRIMARY KEY, 
+                paciente_id INTEGER REFERENCES pacientes(id) ON DELETE CASCADE,
+                data TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                texto TEXT
+            );
+        ''')
+        conn.commit()
+        msg = "Sucesso! Tabela de Prontuário criada."
+    except Exception as e:
+        conn.rollback()
+        msg = f"Erro: {e}"
+    finally:
+        conn.close()
+    return msg
+
+# --- API DE PRONTUÁRIO (LER E SALVAR) ---
+
+@app.route('/api/evolucoes/<int:paciente_id>', methods=['GET'])
+def get_evolucoes(paciente_id):
+    conn = get_db_connection()
+    cur = conn.cursor()
+    # Busca da mais recente para a mais antiga
+    cur.execute("SELECT data, texto FROM evolucoes WHERE paciente_id = %s ORDER BY data DESC", (paciente_id,))
+    dados = cur.fetchall()
+    conn.close()
+    
+    lista = []
+    for row in dados:
+        # Formata data bonita: 14/12/2025 às 15:30
+        data_formatada = row[0].strftime("%d/%m/%Y às %H:%M")
+        lista.append({'data': data_formatada, 'texto': row[1]})
+        
+    return jsonify(lista)
+
+@app.route('/api/nova_evolucao', methods=['POST'])
+def nova_evolucao():
+    data = request.json
+    conn = get_db_connection()
+    cur = conn.cursor()
+    try:
+        cur.execute("INSERT INTO evolucoes (paciente_id, texto, data) VALUES (%s, %s, NOW())", 
+                    (data['paciente_id'], data['texto']))
+        conn.commit()
+        return jsonify({'status': 'success'})
+    except Exception as e:
+        conn.rollback()
+        return jsonify({'status': 'error', 'msg': str(e)}), 500
+    finally:
+        conn.close()
+
 if __name__ == '__main__':
     app.run(debug=True)
