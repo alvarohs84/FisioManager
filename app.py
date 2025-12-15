@@ -6,7 +6,7 @@ from datetime import datetime, timedelta, date
 app = Flask(__name__)
 app.secret_key = "segredo_super_secreto"
 
-# --- Conexão Banco de Dados ---
+# --- CONEXÃO COM BANCO DE DADOS ---
 def get_db_connection():
     try:
         if os.environ.get("DB_HOST"):
@@ -22,7 +22,11 @@ def get_db_connection():
         print(f"Erro DB: {e}")
         return None
 
-# --- MIGRAÇÕES E ATUALIZAÇÕES DE BANCO ---
+# ==========================================
+# ÁREA DE MIGRAÇÕES (ATUALIZAÇÃO DO BANCO)
+# ==========================================
+
+# 1. Atualiza Status na Agenda
 @app.route('/update-db-status')
 def update_db_status():
     if not session.get('logged_in'): return redirect(url_for('login'))
@@ -31,14 +35,15 @@ def update_db_status():
     try:
         cursor.execute("ALTER TABLE agendamentos ADD COLUMN IF NOT EXISTS status TEXT DEFAULT 'Agendado';")
         conn.commit()
-        msg = "Banco de dados atualizado com campo STATUS!"
+        msg = "Banco atualizado: Campo STATUS criado."
     except Exception as e:
         conn.rollback()
-        msg = f"Erro na atualização: {e}"
+        msg = f"Erro: {e}"
     finally:
         conn.close()
     return msg
 
+# 2. Cria Tabela de Evoluções (Prontuário Simples)
 @app.route('/update-db-prontuario')
 def update_db_prontuario():
     if not session.get('logged_in'): return redirect(url_for('login'))
@@ -54,7 +59,7 @@ def update_db_prontuario():
             );
         ''')
         conn.commit()
-        msg = "Sucesso! Tabela de Prontuário criada."
+        msg = "Banco atualizado: Tabela EVOLUÇÕES criada."
     except Exception as e:
         conn.rollback()
         msg = f"Erro: {e}"
@@ -62,12 +67,65 @@ def update_db_prontuario():
         conn.close()
     return msg
 
-# --- ROTAS PRINCIPAIS ---
+# 3. Cria Tabela de Avaliação Completa (Anamnese, Exame Físico, etc)
+@app.route('/update-db-avaliacao-completa')
+def update_db_avaliacao_completa():
+    if not session.get('logged_in'): return redirect(url_for('login'))
+    conn = get_db_connection()
+    cursor = conn.cursor()
+    try:
+        cursor.execute('''
+            CREATE TABLE IF NOT EXISTS avaliacoes_completa (
+                id SERIAL PRIMARY KEY, 
+                paciente_id INTEGER REFERENCES pacientes(id) ON DELETE CASCADE,
+                data_avaliacao TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                
+                -- I. Anamnese
+                ocupacao TEXT,
+                lateralidade TEXT,
+                diagnostico_medico TEXT,
+                queixa_principal TEXT,
+                hma TEXT,
+                hpp TEXT,
+                habitos TEXT,
+                
+                -- II. Exame Físico
+                sinais_vitais TEXT,
+                avaliacao_dor TEXT,
+                inspecao TEXT,
+                palpacao TEXT,
+                adm TEXT,
+                forca_muscular TEXT,
+                neuro TEXT,
+                testes_especiais TEXT,
+                
+                -- III. Diagnóstico Fisio (CIF)
+                diagnostico_cif TEXT,
+                
+                -- IV. Objetivos e Conduta
+                objetivos TEXT,
+                conduta TEXT
+            );
+        ''')
+        conn.commit()
+        msg = "Banco atualizado: Tabela AVALIAÇÃO COMPLETA criada."
+    except Exception as e:
+        conn.rollback()
+        msg = f"Erro: {e}"
+    finally:
+        conn.close()
+    return msg
+
+
+# ==========================================
+# ROTAS DE NAVEGAÇÃO (PÁGINAS)
+# ==========================================
 
 @app.route('/', methods=['GET', 'POST'])
 def login():
     if request.method == 'POST':
-        if request.form['senha'] == os.environ.get("SYS_PASSWORD", "admin123"):
+        senha_correta = os.environ.get("SYS_PASSWORD", "admin123")
+        if request.form['senha'] == senha_correta:
             session['logged_in'] = True
             return redirect(url_for('dashboard'))
         else:
@@ -84,14 +142,18 @@ def dashboard():
     if not session.get('logged_in'): return redirect(url_for('login'))
     conn = get_db_connection()
     cursor = conn.cursor()
+    
+    # Contagens
     cursor.execute("SELECT COUNT(*) FROM pacientes;")
     total_pacientes = cursor.fetchone()[0]
+    
     try:
         cursor.execute("SELECT COUNT(*) FROM agendamentos;")
         total_agendamentos = cursor.fetchone()[0]
     except:
         conn.rollback()
         total_agendamentos = 0
+        
     conn.close()
     return render_template('dashboard.html', total_pacientes=total_pacientes, total_agendamentos=total_agendamentos)
 
@@ -105,7 +167,10 @@ def pacientes():
         nome = request.form['nome']
         nascimento = request.form.get('nascimento')
         telefone = request.form.get('telefone')
+        
+        # Trata data vazia
         if not nascimento: nascimento = None
+            
         cursor.execute("INSERT INTO pacientes (nome, nascimento, telefone) VALUES (%s, %s, %s)", 
                        (nome, nascimento, telefone))
         conn.commit()
@@ -113,8 +178,10 @@ def pacientes():
     cursor.execute("SELECT id, nome, nascimento, telefone FROM pacientes ORDER BY id DESC")
     dados_brutos = cursor.fetchall()
     
+    # Calcula idade no Python
     lista_pacientes = []
     hoje = date.today()
+    
     for p in dados_brutos:
         id_p, nome_p, nasc_p, tel_p = p
         idade_calculada = "---"
@@ -128,21 +195,6 @@ def pacientes():
     conn.close()
     return render_template('pacientes.html', pacientes=lista_pacientes)
 
-# --- ROTA DE PRONTUÁRIOS (NOVO) ---
-@app.route('/prontuarios')
-def prontuarios():
-    if not session.get('logged_in'): return redirect(url_for('login'))
-    
-    conn = get_db_connection()
-    cursor = conn.cursor()
-    cursor.execute("SELECT id, nome, nascimento FROM pacientes ORDER BY nome ASC")
-    pacientes = cursor.fetchall()
-    conn.close()
-    
-    return render_template('prontuarios.html', pacientes=pacientes)
-
-# --- ROTAS DA AGENDA ---
-
 @app.route('/agenda')
 def agenda():
     if not session.get('logged_in'): return redirect(url_for('login'))
@@ -153,23 +205,52 @@ def agenda():
     conn.close()
     return render_template('agenda.html', pacientes=pacientes)
 
-# --- APIS (JSON) ---
+@app.route('/prontuarios')
+def prontuarios():
+    if not session.get('logged_in'): return redirect(url_for('login'))
+    conn = get_db_connection()
+    cursor = conn.cursor()
+    cursor.execute("SELECT id, nome, nascimento FROM pacientes ORDER BY nome ASC")
+    pacientes = cursor.fetchall()
+    conn.close()
+    return render_template('prontuarios.html', pacientes=pacientes)
 
+
+# ==========================================
+# APIs (AJAX / JSON)
+# ==========================================
+
+# --- AGENDA ---
 @app.route('/api/eventos')
 def api_eventos():
     conn = get_db_connection()
     cur = conn.cursor()
-    query = "SELECT a.id, p.nome, a.start_time, a.end_time, a.obs, a.status FROM agendamentos a JOIN pacientes p ON a.paciente_id = p.id"
+    query = """
+        SELECT a.id, p.nome, a.start_time, a.end_time, a.obs, a.status 
+        FROM agendamentos a
+        JOIN pacientes p ON a.paciente_id = p.id
+    """
     cur.execute(query)
     rows = cur.fetchall()
     conn.close()
+    
     eventos = []
-    cores = {'Agendado': '#007bff', 'Confirmado': '#17a2b8', 'Realizado': '#198754', 'Faltou': '#dc3545', 'Cancelado': '#6c757d'}
+    cores = {
+        'Agendado': '#007bff',   'Confirmado': '#17a2b8', 
+        'Realizado': '#198754',  'Faltou': '#dc3545', 
+        'Cancelado': '#6c757d'
+    }
+
     for row in rows:
         status = row[5] if row[5] else 'Agendado'
         eventos.append({
-            'id': row[0], 'title': f"{row[1]}", 'start': row[2].isoformat(), 'end': row[3].isoformat(),
-            'description': row[4], 'extendedProps': {'status': status}, 'color': cores.get(status, '#007bff')
+            'id': row[0],
+            'title': f"{row[1]}",
+            'start': row[2].isoformat(),
+            'end': row[3].isoformat(),
+            'description': row[4],
+            'extendedProps': {'status': status},
+            'color': cores.get(status, '#007bff')
         })
     return jsonify(eventos)
 
@@ -187,20 +268,25 @@ def criar_evento():
     try:
         if not dias_recorrentes:
             fim = data_inicio + timedelta(hours=1)
-            cur.execute("INSERT INTO agendamentos (paciente_id, start_time, end_time, obs, status) VALUES (%s, %s, %s, %s, 'Agendado')", (paciente_id, data_inicio, fim, obs))
+            cur.execute("INSERT INTO agendamentos (paciente_id, start_time, end_time, obs, status) VALUES (%s, %s, %s, %s, 'Agendado')",
+                        (paciente_id, data_inicio, fim, obs))
         else:
             current_day = data_inicio
             start_of_week = current_day - timedelta(days=current_day.weekday())
+            # Ajuste se hoje for domingo (6) e week start for segunda (0)
             if current_day.weekday() == 6: start_of_week = current_day - timedelta(days=6)
+
             for i in range(semanas):
                 week_start = start_of_week + timedelta(weeks=i)
                 for dia_semana in dias_recorrentes:
                     dia_semana = int(dia_semana)
                     event_date = week_start + timedelta(days=dia_semana)
                     event_start = event_date.replace(hour=data_inicio.hour, minute=data_inicio.minute)
+                    
                     if event_start >= datetime.now().replace(hour=0, minute=0):
                         event_end = event_start + timedelta(hours=1)
-                        cur.execute("INSERT INTO agendamentos (paciente_id, start_time, end_time, obs, status) VALUES (%s, %s, %s, %s, 'Agendado')", (paciente_id, event_start, event_end, obs))
+                        cur.execute("INSERT INTO agendamentos (paciente_id, start_time, end_time, obs, status) VALUES (%s, %s, %s, %s, 'Agendado')",
+                                    (paciente_id, event_start, event_end, obs))
         conn.commit()
         return jsonify({'status': 'success'})
     except Exception as e:
@@ -214,7 +300,8 @@ def mover_evento():
     data = request.json
     conn = get_db_connection()
     cur = conn.cursor()
-    cur.execute("UPDATE agendamentos SET start_time = %s, end_time = %s WHERE id = %s", (data['start'], data['end'], data['id']))
+    cur.execute("UPDATE agendamentos SET start_time = %s, end_time = %s WHERE id = %s",
+                (data['start'], data['end'], data['id']))
     conn.commit()
     conn.close()
     return jsonify({'status': 'success'})
@@ -224,7 +311,8 @@ def atualizar_evento():
     data = request.json
     conn = get_db_connection()
     cur = conn.cursor()
-    cur.execute("UPDATE agendamentos SET status = %s, obs = %s WHERE id = %s", (data['status'], data['obs'], data['id']))
+    cur.execute("UPDATE agendamentos SET status = %s, obs = %s WHERE id = %s",
+                (data['status'], data['obs'], data['id']))
     conn.commit()
     conn.close()
     return jsonify({'status': 'success'})
@@ -239,14 +327,17 @@ def deletar_evento():
     conn.close()
     return jsonify({'status': 'success'})
 
+# --- PACIENTES ---
 @app.route('/api/deletar_paciente', methods=['POST'])
 def deletar_paciente():
     if not session.get('logged_in'): return jsonify({'status': 'error'}), 403
     data = request.json
     paciente_id = data['id']
+    
     conn = get_db_connection()
     cur = conn.cursor()
     try:
+        # Cascade manual para garantir limpeza
         cur.execute("DELETE FROM agendamentos WHERE paciente_id = %s", (paciente_id,))
         cur.execute("DELETE FROM pacientes WHERE id = %s", (paciente_id,))
         conn.commit()
@@ -257,7 +348,7 @@ def deletar_paciente():
     finally:
         conn.close()
 
-# --- API EVOLUÇÕES ---
+# --- PRONTUÁRIO (EVOLUÇÕES) ---
 @app.route('/api/evolucoes/<int:paciente_id>', methods=['GET'])
 def get_evolucoes(paciente_id):
     conn = get_db_connection()
@@ -265,6 +356,7 @@ def get_evolucoes(paciente_id):
     cur.execute("SELECT data, texto FROM evolucoes WHERE paciente_id = %s ORDER BY data DESC", (paciente_id,))
     dados = cur.fetchall()
     conn.close()
+    
     lista = []
     for row in dados:
         data_formatada = row[0].strftime("%d/%m/%Y às %H:%M")
@@ -277,7 +369,8 @@ def nova_evolucao():
     conn = get_db_connection()
     cur = conn.cursor()
     try:
-        cur.execute("INSERT INTO evolucoes (paciente_id, texto, data) VALUES (%s, %s, NOW())", (data['paciente_id'], data['texto']))
+        cur.execute("INSERT INTO evolucoes (paciente_id, texto, data) VALUES (%s, %s, NOW())", 
+                    (data['paciente_id'], data['texto']))
         conn.commit()
         return jsonify({'status': 'success'})
     except Exception as e:
@@ -285,48 +378,27 @@ def nova_evolucao():
         return jsonify({'status': 'error', 'msg': str(e)}), 500
     finally:
         conn.close()
-        
-        # --- MIGRAÇÃO DA AVALIAÇÃO (NOVO) ---
-@app.route('/update-db-avaliacao')
-def update_db_avaliacao():
-    if not session.get('logged_in'): return redirect(url_for('login'))
-    conn = get_db_connection()
-    cursor = conn.cursor()
-    try:
-        # Tabela completa de avaliação
-        cursor.execute('''
-            CREATE TABLE IF NOT EXISTS avaliacoes (
-                id SERIAL PRIMARY KEY, 
-                paciente_id INTEGER REFERENCES pacientes(id) ON DELETE CASCADE,
-                data_avaliacao TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-                queixa_principal TEXT,
-                hda TEXT,
-                nivel_dor INTEGER,
-                objetivos TEXT
-            );
-        ''')
-        conn.commit()
-        msg = "Sucesso! Tabela de Avaliação criada."
-    except Exception as e:
-        conn.rollback()
-        msg = f"Erro: {e}"
-    finally:
-        conn.close()
-    return msg
 
-# --- API AVALIAÇÃO ---
-
+# --- AVALIAÇÃO COMPLETA (NOVO) ---
 @app.route('/api/salvar_avaliacao', methods=['POST'])
 def salvar_avaliacao():
     data = request.json
     conn = get_db_connection()
     cur = conn.cursor()
     try:
-        # Salva uma nova avaliação
         cur.execute("""
-            INSERT INTO avaliacoes (paciente_id, queixa_principal, hda, nivel_dor, objetivos) 
-            VALUES (%s, %s, %s, %s, %s)
-        """, (data['paciente_id'], data['queixa'], data['hda'], data['dor'], data['objetivos']))
+            INSERT INTO avaliacoes_completa 
+            (paciente_id, ocupacao, lateralidade, diagnostico_medico, queixa_principal, hma, hpp, habitos,
+             sinais_vitais, avaliacao_dor, inspecao, palpacao, adm, forca_muscular, neuro, testes_especiais,
+             diagnostico_cif, objetivos, conduta) 
+            VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
+        """, (
+            data['paciente_id'], data['ocupacao'], data['lateralidade'], data['diagnostico_medico'], 
+            data['queixa_principal'], data['hma'], data['hpp'], data['habitos'],
+            data['sinais_vitais'], data['avaliacao_dor'], data['inspecao'], data['palpacao'], 
+            data['adm'], data['forca_muscular'], data['neuro'], data['testes_especiais'],
+            data['diagnostico_cif'], data['objetivos'], data['conduta']
+        ))
         conn.commit()
         return jsonify({'status': 'success'})
     except Exception as e:
@@ -339,10 +411,11 @@ def salvar_avaliacao():
 def get_avaliacao(paciente_id):
     conn = get_db_connection()
     cur = conn.cursor()
-    # Pega a avaliação mais recente
     cur.execute("""
-        SELECT queixa_principal, hda, nivel_dor, objetivos, data_avaliacao 
-        FROM avaliacoes WHERE paciente_id = %s ORDER BY id DESC LIMIT 1
+        SELECT ocupacao, lateralidade, diagnostico_medico, queixa_principal, hma, hpp, habitos,
+               sinais_vitais, avaliacao_dor, inspecao, palpacao, adm, forca_muscular, neuro, testes_especiais,
+               diagnostico_cif, objetivos, conduta, data_avaliacao
+        FROM avaliacoes_completa WHERE paciente_id = %s ORDER BY id DESC LIMIT 1
     """, (paciente_id,))
     row = cur.fetchone()
     conn.close()
@@ -350,14 +423,15 @@ def get_avaliacao(paciente_id):
     if row:
         return jsonify({
             'encontrado': True,
-            'queixa': row[0],
-            'hda': row[1],
-            'dor': row[2],
-            'objetivos': row[3],
-            'data': row[4].strftime("%d/%m/%Y")
+            'ocupacao': row[0], 'lateralidade': row[1], 'diagnostico_medico': row[2], 'queixa_principal': row[3],
+            'hma': row[4], 'hpp': row[5], 'habitos': row[6], 'sinais_vitais': row[7], 'avaliacao_dor': row[8],
+            'inspecao': row[9], 'palpacao': row[10], 'adm': row[11], 'forca_muscular': row[12], 'neuro': row[13],
+            'testes_especiais': row[14], 'diagnostico_cif': row[15], 'objetivos': row[16], 'conduta': row[17],
+            'data': row[18].strftime("%d/%m/%Y")
         })
     else:
         return jsonify({'encontrado': False})
+
 
 if __name__ == '__main__':
     app.run(debug=True)

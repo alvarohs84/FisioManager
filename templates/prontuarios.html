@@ -38,7 +38,8 @@
 </div>
 
 <div class="modal fade" id="modalProntuario" tabindex="-1">
-    <div class="modal-dialog modal-xl"> <div class="modal-content">
+    <div class="modal-dialog modal-xl">
+        <div class="modal-content">
             <div class="modal-header bg-primary text-white">
                 <h5 class="modal-title"><i class="bi bi-clipboard2-pulse"></i> Ficha: <span id="tituloProntuario" class="fw-bold"></span></h5>
                 <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
@@ -48,85 +49,174 @@
                 <input type="hidden" id="idPacienteProntuario">
 
                 <ul class="nav nav-tabs mb-3" id="prontuarioTabs" role="tablist">
-                    <li class="nav-item" role="presentation">
-                        <button class="nav-link active fw-bold" id="evolucao-tab" data-bs-toggle="tab" data-bs-target="#tab-evolucao" type="button">
+                    <li class="nav-item">
+                        <button class="nav-link active fw-bold" data-bs-toggle="tab" data-bs-target="#tab-evolucao">
                             <i class="bi bi-list-check"></i> Evolução Diária
                         </button>
                     </li>
-                    <li class="nav-item" role="presentation">
-                        <button class="nav-link fw-bold" id="avaliacao-tab" data-bs-toggle="tab" data-bs-target="#tab-avaliacao" type="button">
-                            <i class="bi bi-person-lines-fill"></i> Avaliação Geral
+                    <li class="nav-item">
+                        <button class="nav-link fw-bold" data-bs-toggle="tab" data-bs-target="#tab-avaliacao">
+                            <i class="bi bi-person-lines-fill"></i> Avaliação Completa
                         </button>
                     </li>
                 </ul>
 
                 <div class="tab-content">
-                    
                     <div class="tab-pane fade show active" id="tab-evolucao">
                         <div class="row">
                             <div class="col-md-5 border-end">
                                 <h6 class="text-primary fw-bold mb-3">Nova Evolução</h6>
                                 <div class="mb-3">
                                     <div class="input-group">
-                                        <textarea id="textoEvolucao" class="form-control" rows="8" placeholder="Relate o procedimento e progressos de hoje..."></textarea>
+                                        <textarea id="textoEvolucao" class="form-control" rows="8" placeholder="Relate o procedimento..."></textarea>
                                         <button class="btn btn-outline-secondary" type="button" id="btnVoiceEvo"><i class="bi bi-mic-fill"></i></button>
                                     </div>
                                 </div>
-                                <div class="d-grid">
-                                    <button onclick="salvarEvolucao()" class="btn btn-success"><i class="bi bi-save"></i> Salvar Evolução</button>
-                                </div>
+                                <div class="d-grid"><button onclick="salvarEvolucao()" class="btn btn-success"><i class="bi bi-save"></i> Salvar</button></div>
                             </div>
                             <div class="col-md-7">
-                                <h6 class="text-muted fw-bold mb-3">Histórico de Visitas</h6>
+                                <h6 class="text-muted fw-bold mb-3">Histórico</h6>
                                 <div id="listaHistorico" style="max-height: 400px; overflow-y: auto;"></div>
                             </div>
                         </div>
                     </div>
 
                     <div class="tab-pane fade" id="tab-avaliacao">
-                        <div class="card border-0 shadow-sm">
-                            <div class="card-body">
-                                <h5 class="card-title text-primary mb-4">Ficha de Avaliação Inicial</h5>
-                                <form id="formAvaliacao">
-                                    <div class="row mb-3">
-                                        <div class="col-md-6">
-                                            <label class="form-label fw-bold">Queixa Principal</label>
-                                            <div class="input-group">
-                                                <input type="text" id="avQueixa" class="form-control" placeholder="O que trouxe o paciente?">
-                                                <button class="btn btn-outline-secondary" type="button" id="btnVoiceQueixa"><i class="bi bi-mic-fill"></i></button>
+                        <div class="accordion" id="accordionAvaliacao">
+                            
+                            <div class="accordion-item">
+                                <h2 class="accordion-header">
+                                    <button class="accordion-button fw-bold text-primary" type="button" data-bs-toggle="collapse" data-bs-target="#collapseOne">
+                                        I. Anamnese (Histórico Clínico)
+                                    </button>
+                                </h2>
+                                <div id="collapseOne" class="accordion-collapse collapse show" data-bs-parent="#accordionAvaliacao">
+                                    <div class="accordion-body">
+                                        <div class="row mb-3">
+                                            <div class="col-md-6">
+                                                <label class="form-label">Ocupação</label>
+                                                <input type="text" id="avOcupacao" class="form-control">
+                                            </div>
+                                            <div class="col-md-6">
+                                                <label class="form-label">Lateralidade</label>
+                                                <select id="avLateralidade" class="form-select">
+                                                    <option value="Destro">Destro</option>
+                                                    <option value="Canhoto">Canhoto</option>
+                                                    <option value="Ambidestro">Ambidestro</option>
+                                                </select>
                                             </div>
                                         </div>
-                                        <div class="col-md-6">
-                                            <label class="form-label fw-bold">Nível de Dor (EVA 0-10)</label>
-                                            <input type="range" id="avDor" class="form-range" min="0" max="10" step="1" oninput="document.getElementById('valorDor').innerText = this.value">
-                                            <div class="text-center fw-bold text-danger fs-5" id="valorDor">5</div>
+                                        <div class="mb-3">
+                                            <label class="form-label">Diagnóstico Médico</label>
+                                            <input type="text" id="avDiagMedico" class="form-control">
+                                        </div>
+                                        <div class="mb-3">
+                                            <label class="form-label fw-bold">Queixa Principal (QP)</label>
+                                            <div class="input-group">
+                                                <input type="text" id="avQP" class="form-control">
+                                                <button class="btn btn-outline-secondary" onclick="startVoice('avQP', this)"><i class="bi bi-mic-fill"></i></button>
+                                            </div>
+                                        </div>
+                                        <div class="mb-3">
+                                            <label class="form-label fw-bold">História da Moléstia Atual (HMA)</label>
+                                            <div class="input-group">
+                                                <textarea id="avHMA" class="form-control" rows="3" placeholder="Início, Causa, Evolução, Melhora/Piora..."></textarea>
+                                                <button class="btn btn-outline-secondary" onclick="startVoice('avHMA', this)"><i class="bi bi-mic-fill"></i></button>
+                                            </div>
+                                        </div>
+                                        <div class="row">
+                                            <div class="col-md-6 mb-3">
+                                                <label class="form-label fw-bold">HPP (Cirurgias/Comorbidades)</label>
+                                                <textarea id="avHPP" class="form-control" rows="2"></textarea>
+                                            </div>
+                                            <div class="col-md-6 mb-3">
+                                                <label class="form-label fw-bold">Hábitos de Vida</label>
+                                                <textarea id="avHabitos" class="form-control" rows="2" placeholder="Atividade física, sono, fumo..."></textarea>
+                                            </div>
                                         </div>
                                     </div>
+                                </div>
+                            </div>
 
-                                    <div class="mb-3">
-                                        <label class="form-label fw-bold">HDA (História da Doença Atual)</label>
-                                        <div class="input-group">
-                                            <textarea id="avHda" class="form-control" rows="3" placeholder="Como começou? Fatores de melhora/piora..."></textarea>
-                                            <button class="btn btn-outline-secondary" type="button" id="btnVoiceHda"><i class="bi bi-mic-fill"></i></button>
+                            <div class="accordion-item">
+                                <h2 class="accordion-header">
+                                    <button class="accordion-button collapsed fw-bold text-primary" type="button" data-bs-toggle="collapse" data-bs-target="#collapseTwo">
+                                        II. Exame Físico (Objetivo)
+                                    </button>
+                                </h2>
+                                <div id="collapseTwo" class="accordion-collapse collapse" data-bs-parent="#accordionAvaliacao">
+                                    <div class="accordion-body">
+                                        <div class="mb-3">
+                                            <label class="form-label fw-bold">Sinais Vitais</label>
+                                            <input type="text" id="avSinais" class="form-control" placeholder="PA, FC, SpO2...">
+                                        </div>
+                                        <div class="mb-3">
+                                            <label class="form-label fw-bold">Avaliação da Dor (EVA e Tipo)</label>
+                                            <input type="text" id="avDor" class="form-control" placeholder="Ex: EVA 7, dor pontada irradiada...">
+                                        </div>
+                                        <div class="row">
+                                            <div class="col-md-6 mb-3">
+                                                <label class="form-label fw-bold">Inspeção (Estática/Dinâmica)</label>
+                                                <textarea id="avInspecao" class="form-control" rows="2"></textarea>
+                                                <button class="btn btn-sm btn-link" onclick="startVoice('avInspecao', this)">Ditar</button>
+                                            </div>
+                                            <div class="col-md-6 mb-3">
+                                                <label class="form-label fw-bold">Palpação (Tônus/Temp)</label>
+                                                <textarea id="avPalpacao" class="form-control" rows="2"></textarea>
+                                            </div>
+                                        </div>
+                                        <div class="row">
+                                            <div class="col-md-6 mb-3">
+                                                <label class="form-label fw-bold">Goniometria (ADM)</label>
+                                                <textarea id="avADM" class="form-control" rows="2"></textarea>
+                                            </div>
+                                            <div class="col-md-6 mb-3">
+                                                <label class="form-label fw-bold">Força Muscular (MRC)</label>
+                                                <textarea id="avForca" class="form-control" rows="2"></textarea>
+                                            </div>
+                                        </div>
+                                        <div class="mb-3">
+                                            <label class="form-label fw-bold">Testes Especiais / Neuro</label>
+                                            <textarea id="avTestes" class="form-control" rows="2" placeholder="Ex: Hawkins-Kennedy (+), Reflexos..."></textarea>
+                                            <button class="btn btn-sm btn-link" onclick="startVoice('avTestes', this)">Ditar</button>
                                         </div>
                                     </div>
+                                </div>
+                            </div>
 
-                                    <div class="mb-3">
-                                        <label class="form-label fw-bold">Objetivos do Tratamento</label>
-                                        <textarea id="avObjetivos" class="form-control" rows="2" placeholder="Ex: Ganho de ADM, Analgesia..."></textarea>
+                            <div class="accordion-item">
+                                <h2 class="accordion-header">
+                                    <button class="accordion-button collapsed fw-bold text-primary" type="button" data-bs-toggle="collapse" data-bs-target="#collapseThree">
+                                        III. Diagnóstico (CIF) e IV. Conduta
+                                    </button>
+                                </h2>
+                                <div id="collapseThree" class="accordion-collapse collapse" data-bs-parent="#accordionAvaliacao">
+                                    <div class="accordion-body">
+                                        <div class="mb-3">
+                                            <label class="form-label fw-bold">Diagnóstico Fisioterapêutico (CIF)</label>
+                                            <textarea id="avCIF" class="form-control" rows="3" placeholder="Função, Atividade e Participação..."></textarea>
+                                            <button class="btn btn-sm btn-link" onclick="startVoice('avCIF', this)">Ditar</button>
+                                        </div>
+                                        <div class="mb-3">
+                                            <label class="form-label fw-bold">Objetivos (Curto, Médio, Longo Prazo)</label>
+                                            <textarea id="avObjetivos" class="form-control" rows="3"></textarea>
+                                        </div>
+                                        <div class="mb-3">
+                                            <label class="form-label fw-bold">Conduta Terapêutica</label>
+                                            <textarea id="avConduta" class="form-control" rows="3" placeholder="Cinesio, Eletro, Terapia Manual..."></textarea>
+                                        </div>
                                     </div>
-
-                                    <div class="d-flex justify-content-between align-items-center">
-                                        <small class="text-muted" id="dataUltimaAvaliacao">Nenhuma avaliação registrada.</small>
-                                        <button type="button" onclick="salvarAvaliacao()" class="btn btn-primary">
-                                            <i class="bi bi-file-earmark-medical"></i> Salvar Avaliação
-                                        </button>
-                                    </div>
-                                </form>
+                                </div>
                             </div>
                         </div>
-                    </div>
 
+                        <div class="d-flex justify-content-between align-items-center mt-3">
+                            <small class="text-muted" id="dataUltimaAvaliacao">Carregando...</small>
+                            <button type="button" onclick="salvarAvaliacao()" class="btn btn-primary btn-lg">
+                                <i class="bi bi-file-earmark-medical"></i> Salvar Avaliação Completa
+                            </button>
+                        </div>
+                    </div>
                 </div>
             </div>
         </div>
@@ -148,21 +238,19 @@
         document.getElementById('idPacienteProntuario').value = id;
         document.getElementById('tituloProntuario').innerText = nome;
         
-        // Limpa campos
+        // Limpar Campos
         document.getElementById('textoEvolucao').value = '';
-        document.getElementById('formAvaliacao').reset();
-        document.getElementById('valorDor').innerText = '5';
-        document.getElementById('dataUltimaAvaliacao').innerText = 'Carregando...';
-
+        const campos = ['avOcupacao','avDiagMedico','avQP','avHMA','avHPP','avHabitos','avSinais','avDor','avInspecao','avPalpacao','avADM','avForca','avTestes','avCIF','avObjetivos','avConduta'];
+        campos.forEach(c => document.getElementById(c).value = '');
+        
         var modal = new bootstrap.Modal(document.getElementById('modalProntuario'));
         modal.show();
 
-        // Carrega as duas abas
         carregarHistorico(id);
         carregarAvaliacao(id);
     }
 
-    // --- LÓGICA DA EVOLUÇÃO (ABA 1) ---
+    // --- EVOLUÇÃO ---
     function carregarHistorico(id) {
         const divLista = document.getElementById('listaHistorico');
         divLista.innerHTML = '<div class="text-center py-4"><div class="spinner-border text-primary"></div></div>';
@@ -170,13 +258,7 @@
             divLista.innerHTML = '';
             if(data.length === 0) { divLista.innerHTML = '<div class="alert alert-light text-center">Histórico vazio.</div>'; return; }
             data.forEach(item => {
-                divLista.innerHTML += `
-                    <div class="card mb-2 border-0 shadow-sm">
-                        <div class="card-body p-3">
-                            <small class="text-primary fw-bold"><i class="bi bi-calendar-event"></i> ${item.data}</small>
-                            <p class="card-text text-secondary mt-1" style="white-space: pre-wrap;">${item.texto}</p>
-                        </div>
-                    </div>`;
+                divLista.innerHTML += `<div class="card mb-2 border-0 shadow-sm"><div class="card-body p-3"><small class="text-primary fw-bold"><i class="bi bi-calendar-event"></i> ${item.data}</small><p class="card-text text-secondary mt-1" style="white-space: pre-wrap;">${item.texto}</p></div></div>`;
             });
         });
     }
@@ -186,8 +268,7 @@
         const texto = document.getElementById('textoEvolucao').value;
         if(!texto) return alert("Escreva algo!");
         fetch('/api/nova_evolucao', {
-            method: 'POST', headers: {'Content-Type': 'application/json'},
-            body: JSON.stringify({ paciente_id: id, texto: texto })
+            method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({ paciente_id: id, texto: texto })
         }).then(() => {
             document.getElementById('textoEvolucao').value = '';
             carregarHistorico(id);
@@ -195,33 +276,59 @@
         });
     }
 
-    // --- LÓGICA DA AVALIAÇÃO (ABA 2) ---
+    // --- AVALIAÇÃO COMPLETA ---
     function salvarAvaliacao() {
         const id = document.getElementById('idPacienteProntuario').value;
         const dados = {
             paciente_id: id,
-            queixa: document.getElementById('avQueixa').value,
-            hda: document.getElementById('avHda').value,
-            dor: document.getElementById('avDor').value,
-            objetivos: document.getElementById('avObjetivos').value
+            ocupacao: document.getElementById('avOcupacao').value,
+            lateralidade: document.getElementById('avLateralidade').value,
+            diagnostico_medico: document.getElementById('avDiagMedico').value,
+            queixa_principal: document.getElementById('avQP').value,
+            hma: document.getElementById('avHMA').value,
+            hpp: document.getElementById('avHPP').value,
+            habitos: document.getElementById('avHabitos').value,
+            sinais_vitais: document.getElementById('avSinais').value,
+            avaliacao_dor: document.getElementById('avDor').value,
+            inspecao: document.getElementById('avInspecao').value,
+            palpacao: document.getElementById('avPalpacao').value,
+            adm: document.getElementById('avADM').value,
+            forca_muscular: document.getElementById('avForca').value,
+            neuro: '', // Simplificado para caber no form
+            testes_especiais: document.getElementById('avTestes').value,
+            diagnostico_cif: document.getElementById('avCIF').value,
+            objetivos: document.getElementById('avObjetivos').value,
+            conduta: document.getElementById('avConduta').value
         };
 
         fetch('/api/salvar_avaliacao', {
             method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify(dados)
         }).then(() => {
-            alert("Avaliação salva com sucesso!");
-            carregarAvaliacao(id); // Recarrega para mostrar a data
+            alert("Avaliação Completa Salva!");
+            carregarAvaliacao(id);
         });
     }
 
     function carregarAvaliacao(id) {
         fetch(`/api/get_avaliacao/${id}`).then(r => r.json()).then(data => {
             if(data.encontrado) {
-                document.getElementById('avQueixa').value = data.queixa;
-                document.getElementById('avHda').value = data.hda;
-                document.getElementById('avDor').value = data.dor;
-                document.getElementById('valorDor').innerText = data.dor;
-                document.getElementById('avObjetivos').value = data.objetivos;
+                document.getElementById('avOcupacao').value = data.ocupacao || '';
+                document.getElementById('avLateralidade').value = data.lateralidade || 'Destro';
+                document.getElementById('avDiagMedico').value = data.diagnostico_medico || '';
+                document.getElementById('avQP').value = data.queixa_principal || '';
+                document.getElementById('avHMA').value = data.hma || '';
+                document.getElementById('avHPP').value = data.hpp || '';
+                document.getElementById('avHabitos').value = data.habitos || '';
+                document.getElementById('avSinais').value = data.sinais_vitais || '';
+                document.getElementById('avDor').value = data.avaliacao_dor || '';
+                document.getElementById('avInspecao').value = data.inspecao || '';
+                document.getElementById('avPalpacao').value = data.palpacao || '';
+                document.getElementById('avADM').value = data.adm || '';
+                document.getElementById('avForca').value = data.forca_muscular || '';
+                document.getElementById('avTestes').value = data.testes_especiais || '';
+                document.getElementById('avCIF').value = data.diagnostico_cif || '';
+                document.getElementById('avObjetivos').value = data.objetivos || '';
+                document.getElementById('avConduta').value = data.conduta || '';
                 document.getElementById('dataUltimaAvaliacao').innerText = "Última atualização: " + data.data;
             } else {
                 document.getElementById('dataUltimaAvaliacao').innerText = "Nenhuma avaliação registrada.";
@@ -229,25 +336,27 @@
         });
     }
 
-    // --- VOZ ---
-    setupVoice('btnVoiceEvo', 'textoEvolucao');
-    setupVoice('btnVoiceQueixa', 'avQueixa');
-    setupVoice('btnVoiceHda', 'avHda');
-
-    function setupVoice(btnId, inputId) {
-        const btn = document.getElementById(btnId);
+    // --- VOZ GENÉRICA ---
+    function startVoice(inputId, btn) {
         const input = document.getElementById(inputId);
         if ('webkitSpeechRecognition' in window) {
             const recognition = new webkitSpeechRecognition();
             recognition.lang = 'pt-BR'; recognition.continuous = false;
-            btn.addEventListener('click', () => { recognition.start(); btn.classList.add('btn-danger'); });
+            btn.classList.remove('btn-outline-secondary', 'btn-link');
+            btn.classList.add('btn-danger');
+            recognition.start();
             recognition.onresult = (e) => { 
                 let txt = e.results[0][0].transcript;
                 if(input.tagName === 'TEXTAREA') input.value += txt + ". ";
                 else input.value = txt;
-                btn.classList.remove('btn-danger'); 
+                btn.classList.remove('btn-danger');
+                btn.classList.add(btn.tagName === 'BUTTON' && btn.classList.contains('btn-sm') ? 'btn-link' : 'btn-outline-secondary');
             };
-        } else { btn.style.display = 'none'; }
+        } else { alert("Navegador sem suporte a voz."); }
     }
+    
+    // Inicializa voz da aba Evolução
+    const btnVoiceEvo = document.getElementById('btnVoiceEvo');
+    btnVoiceEvo.addEventListener('click', () => startVoice('textoEvolucao', btnVoiceEvo));
 </script>
 {% endblock %}
