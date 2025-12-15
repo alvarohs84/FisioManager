@@ -23,7 +23,7 @@ def get_db_connection():
         return None
 
 # ==========================================
-# ÁREA DE MIGRAÇÕES (ATUALIZAÇÃO DO BANCO)
+# ÁREA DE MIGRAÇÕES (CRIAÇÃO DE TABELAS)
 # ==========================================
 
 # 1. Atualiza Status na Agenda
@@ -67,7 +67,7 @@ def update_db_prontuario():
         conn.close()
     return msg
 
-# 3. Cria Tabela de Avaliação Completa (Anamnese, Exame Físico, etc)
+# 3. Cria Tabela de Avaliação Completa
 @app.route('/update-db-avaliacao-completa')
 def update_db_avaliacao_completa():
     if not session.get('logged_in'): return redirect(url_for('login'))
@@ -116,6 +116,33 @@ def update_db_avaliacao_completa():
         conn.close()
     return msg
 
+# 4. Cria Tabela de Fotos Posturais
+@app.route('/update-db-fotos')
+def update_db_fotos():
+    if not session.get('logged_in'): return redirect(url_for('login'))
+    conn = get_db_connection()
+    cursor = conn.cursor()
+    try:
+        cursor.execute('''
+            CREATE TABLE IF NOT EXISTS avaliacao_postural (
+                id SERIAL PRIMARY KEY, 
+                paciente_id INTEGER REFERENCES pacientes(id) ON DELETE CASCADE,
+                data_foto TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                foto_frontal TEXT,
+                foto_posterior TEXT,
+                foto_lat_dir TEXT,
+                foto_lat_esq TEXT,
+                analise_ia TEXT
+            );
+        ''')
+        conn.commit()
+        msg = "Sucesso! Tabela de Fotos Posturais criada."
+    except Exception as e:
+        conn.rollback()
+        msg = f"Erro: {e}"
+    finally:
+        conn.close()
+    return msg
 
 # ==========================================
 # ROTAS DE NAVEGAÇÃO (PÁGINAS)
@@ -143,7 +170,6 @@ def dashboard():
     conn = get_db_connection()
     cursor = conn.cursor()
     
-    # Contagens
     cursor.execute("SELECT COUNT(*) FROM pacientes;")
     total_pacientes = cursor.fetchone()[0]
     
@@ -157,6 +183,7 @@ def dashboard():
     conn.close()
     return render_template('dashboard.html', total_pacientes=total_pacientes, total_agendamentos=total_agendamentos)
 
+# --- CORREÇÃO DA DUPLICAÇÃO AQUI ---
 @app.route('/pacientes', methods=['GET', 'POST'])
 def pacientes():
     if not session.get('logged_in'): return redirect(url_for('login'))
@@ -168,17 +195,18 @@ def pacientes():
         nascimento = request.form.get('nascimento')
         telefone = request.form.get('telefone')
         
-        # Trata data vazia
         if not nascimento: nascimento = None
             
         cursor.execute("INSERT INTO pacientes (nome, nascimento, telefone) VALUES (%s, %s, %s)", 
                        (nome, nascimento, telefone))
         conn.commit()
+        conn.close()
+        # REDIRECIONA para limpar o formulário (Evita duplicação no F5)
+        return redirect(url_for('pacientes'))
     
     cursor.execute("SELECT id, nome, nascimento, telefone FROM pacientes ORDER BY id DESC")
     dados_brutos = cursor.fetchall()
     
-    # Calcula idade no Python
     lista_pacientes = []
     hoje = date.today()
     
@@ -214,6 +242,41 @@ def prontuarios():
     pacientes = cursor.fetchall()
     conn.close()
     return render_template('prontuarios.html', pacientes=pacientes)
+
+# --- BACKUP DADOS ---
+@app.route('/fazer_backup_dados')
+def fazer_backup_dados():
+    if not session.get('logged_in'): return redirect(url_for('login'))
+    conn = get_db_connection()
+    cursor = conn.cursor()
+    backup = {}
+    
+    def converter_datas(row):
+        new_row = []
+        for item in row:
+            if isinstance(item, (datetime, date)): new_row.append(str(item))
+            else: new_row.append(item)
+        return new_row
+
+    try:
+        cursor.execute("SELECT * FROM pacientes")
+        backup['pacientes'] = [converter_datas(row) for row in cursor.fetchall()]
+        
+        try:
+            cursor.execute("SELECT * FROM agendamentos")
+            backup['agendamentos'] = [converter_datas(row) for row in cursor.fetchall()]
+        except: backup['agendamentos'] = "Tabela vazia ou inexistente"
+
+        try:
+            cursor.execute("SELECT * FROM evolucoes")
+            backup['evolucoes'] = [converter_datas(row) for row in cursor.fetchall()]
+        except: backup['evolucoes'] = "Tabela vazia ou inexistente"
+        
+        return jsonify(backup)
+    except Exception as e:
+        return jsonify({'erro': str(e)})
+    finally:
+        conn.close()
 
 
 # ==========================================
@@ -273,7 +336,6 @@ def criar_evento():
         else:
             current_day = data_inicio
             start_of_week = current_day - timedelta(days=current_day.weekday())
-            # Ajuste se hoje for domingo (6) e week start for segunda (0)
             if current_day.weekday() == 6: start_of_week = current_day - timedelta(days=6)
 
             for i in range(semanas):
@@ -282,7 +344,6 @@ def criar_evento():
                     dia_semana = int(dia_semana)
                     event_date = week_start + timedelta(days=dia_semana)
                     event_start = event_date.replace(hour=data_inicio.hour, minute=data_inicio.minute)
-                    
                     if event_start >= datetime.now().replace(hour=0, minute=0):
                         event_end = event_start + timedelta(hours=1)
                         cur.execute("INSERT INTO agendamentos (paciente_id, start_time, end_time, obs, status) VALUES (%s, %s, %s, %s, 'Agendado')",
@@ -337,8 +398,9 @@ def deletar_paciente():
     conn = get_db_connection()
     cur = conn.cursor()
     try:
-        # Cascade manual para garantir limpeza
         cur.execute("DELETE FROM agendamentos WHERE paciente_id = %s", (paciente_id,))
+        cur.execute("DELETE FROM avaliacoes_completa WHERE paciente_id = %s", (paciente_id,))
+        cur.execute("DELETE FROM avaliacao_postural WHERE paciente_id = %s", (paciente_id,))
         cur.execute("DELETE FROM pacientes WHERE id = %s", (paciente_id,))
         conn.commit()
         return jsonify({'status': 'success'})
@@ -348,7 +410,7 @@ def deletar_paciente():
     finally:
         conn.close()
 
-# --- PRONTUÁRIO (EVOLUÇÕES) ---
+# --- PRONTUÁRIO ---
 @app.route('/api/evolucoes/<int:paciente_id>', methods=['GET'])
 def get_evolucoes(paciente_id):
     conn = get_db_connection()
@@ -379,7 +441,7 @@ def nova_evolucao():
     finally:
         conn.close()
 
-# --- AVALIAÇÃO COMPLETA (NOVO) ---
+# --- AVALIAÇÃO COMPLETA ---
 @app.route('/api/salvar_avaliacao', methods=['POST'])
 def salvar_avaliacao():
     data = request.json
@@ -431,114 +493,27 @@ def get_avaliacao(paciente_id):
         })
     else:
         return jsonify({'encontrado': False})
-    
-    # --- ROTA DE BACKUP DE DADOS (NOVO) ---
-@app.route('/fazer_backup_dados')
-def fazer_backup_dados():
-    if not session.get('logged_in'): return redirect(url_for('login'))
-    
-    conn = get_db_connection()
-    cursor = conn.cursor()
-    
-    backup = {}
-    
-    # Função auxiliar para transformar datas em texto (JSON não aceita data pura)
-    def converter_datas(row):
-        new_row = []
-        for item in row:
-            if isinstance(item, (datetime, date)):
-                new_row.append(str(item))
-            else:
-                new_row.append(item)
-        return new_row
 
-    try:
-        # 1. Tabela Pacientes
-        cursor.execute("SELECT * FROM pacientes")
-        backup['pacientes'] = [converter_datas(row) for row in cursor.fetchall()]
-        
-        # 2. Tabela Agendamentos
-        try:
-            cursor.execute("SELECT * FROM agendamentos")
-            backup['agendamentos'] = [converter_datas(row) for row in cursor.fetchall()]
-        except: backup['agendamentos'] = "Tabela não encontrada"
-
-        # 3. Tabela Evoluções
-        try:
-            cursor.execute("SELECT * FROM evolucoes")
-            backup['evolucoes'] = [converter_datas(row) for row in cursor.fetchall()]
-        except: backup['evolucoes'] = "Tabela não encontrada"
-
-        # 4. Tabela Avaliações
-        try:
-            cursor.execute("SELECT * FROM avaliacoes_completa")
-            backup['avaliacoes'] = [converter_datas(row) for row in cursor.fetchall()]
-        except: backup['avaliacoes'] = "Tabela não encontrada"
-        
-        return jsonify(backup)
-        
-    except Exception as e:
-        return jsonify({'erro': str(e)})
-    finally:
-        conn.close()
-
-# --- MIGRAÇÃO DE FOTOS POSTURAIS (NOVO) ---
-@app.route('/update-db-fotos')
-def update_db_fotos():
-    if not session.get('logged_in'): return redirect(url_for('login'))
-    conn = get_db_connection()
-    cursor = conn.cursor()
-    try:
-        # Tabela para armazenar as fotos em formato TEXT (Base64)
-        # Atenção: Em produção real, usa-se AWS S3. Para este MVP, usaremos o banco.
-        cursor.execute('''
-            CREATE TABLE IF NOT EXISTS avaliacao_postural (
-                id SERIAL PRIMARY KEY, 
-                paciente_id INTEGER REFERENCES pacientes(id) ON DELETE CASCADE,
-                data_foto TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-                foto_frontal TEXT,
-                foto_posterior TEXT,
-                foto_lat_dir TEXT,
-                foto_lat_esq TEXT,
-                analise_ia TEXT
-            );
-        ''')
-        conn.commit()
-        msg = "Sucesso! Tabela de Fotos Posturais criada."
-    except Exception as e:
-        conn.rollback()
-        msg = f"Erro: {e}"
-    finally:
-        conn.close()
-    return msg
-
-# --- API DE FOTOS ---
-
+# --- FOTOS POSTURAIS ---
 @app.route('/api/salvar_fotos', methods=['POST'])
 def salvar_fotos():
     data = request.json
     conn = get_db_connection()
     cur = conn.cursor()
     try:
-        # Verifica se já existe avaliação hoje, se sim atualiza, se não cria
-        # (Simplificação: Vamos criar sempre uma nova para manter histórico)
         cur.execute("""
             INSERT INTO avaliacao_postural 
             (paciente_id, foto_frontal, foto_posterior, foto_lat_dir, foto_lat_esq, analise_ia) 
             VALUES (%s, %s, %s, %s, %s, %s)
         """, (
-            data['paciente_id'], 
-            data.get('frontal'), 
-            data.get('posterior'), 
-            data.get('lat_dir'), 
-            data.get('lat_esq'),
-            data.get('analise_ia', 'Aguardando processamento...')
+            data['paciente_id'], data.get('frontal'), data.get('posterior'), 
+            data.get('lat_dir'), data.get('lat_esq'), data.get('analise_ia', 'Aguardando processamento...')
         ))
         conn.commit()
         return jsonify({'status': 'success'})
     except Exception as e:
         conn.rollback()
-        print(e) # Log do erro no terminal
+        print(e)
         return jsonify({'status': 'error', 'msg': str(e)}), 500
     finally:
         conn.close()
@@ -547,7 +522,6 @@ def salvar_fotos():
 def get_fotos(paciente_id):
     conn = get_db_connection()
     cur = conn.cursor()
-    # Pega a mais recente
     cur.execute("""
         SELECT foto_frontal, foto_posterior, foto_lat_dir, foto_lat_esq, analise_ia, data_foto
         FROM avaliacao_postural WHERE paciente_id = %s ORDER BY id DESC LIMIT 1
@@ -565,6 +539,7 @@ def get_fotos(paciente_id):
         })
     else:
         return jsonify({'encontrado': False})
+
 
 if __name__ == '__main__':
     app.run(debug=True)
