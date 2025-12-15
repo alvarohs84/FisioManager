@@ -12,7 +12,8 @@
                 <h5 class="mb-0"><i class="bi bi-lightning-charge-fill"></i> Cadastro Rápido</h5>
             </div>
             <div class="card-body">
-                <p class="text-muted small mb-3">Preencha apenas o nome para agilizar.</p>
+                <p class="text-muted small mb-3">Preencha apenas o nome para agilizar. Complete o resto depois.</p>
+                
                 <form method="POST">
                     <div class="mb-3">
                         <label class="form-label fw-bold">Nome Completo</label>
@@ -23,16 +24,21 @@
                             </button>
                         </div>
                     </div>
+                    
                     <div class="mb-3">
                         <label class="form-label">Data de Nascimento <span class="text-muted small">(Opcional)</span></label>
                         <input type="date" name="nascimento" class="form-control">
                     </div>
+                    
                     <div class="mb-3">
                         <label class="form-label">Telefone <span class="text-muted small">(Opcional)</span></label>
                         <input type="text" name="telefone" class="form-control" placeholder="(xx) 9...">
                     </div>
+
                     <div class="d-grid">
-                        <button type="submit" class="btn btn-primary"><i class="bi bi-person-plus-fill"></i> Cadastrar Agora</button>
+                        <button type="submit" class="btn btn-primary">
+                            <i class="bi bi-person-plus-fill"></i> Cadastrar Agora
+                        </button>
                     </div>
                 </form>
             </div>
@@ -61,8 +67,7 @@
                         <tbody>
                             {% for p in pacientes %}
                             <tr>
-                                <td class="fw-bold text-primary">{{ p[1] }}</td>
-                                <td>
+                                <td class="fw-bold text-primary">{{ p[1] }}</td> <td>
                                     {% if p[2] != "---" %}
                                         <span class="badge bg-success-subtle text-success-emphasis border border-success-subtle">{{ p[2] }}</span>
                                     {% else %}
@@ -72,11 +77,11 @@
                                 <td>{{ p[3] if p[3] else '' }}</td>
                                 <td class="text-end">
                                     <button class="btn btn-sm btn-info text-white me-1" title="Prontuário / Evolução" 
-                                            onclick="abrirProntuario({{ p[0] }}, '{{ p[1] }}')">
+                                            onclick="window.location.href='{{ url_for('prontuarios') }}'">
                                         <i class="bi bi-clipboard2-pulse-fill"></i>
                                     </button>
                                     
-                                    <button class="btn btn-sm btn-outline-danger" title="Excluir" onclick="excluirPaciente({{ p[0] }}, '{{ p[1] }}')">
+                                    <button class="btn btn-sm btn-outline-danger" title="Excluir Paciente" onclick="excluirPaciente({{ p[0] }}, '{{ p[1] }}')">
                                         <i class="bi bi-trash"></i>
                                     </button>
                                 </td>
@@ -87,6 +92,7 @@
                 </div>
                 {% else %}
                     <div class="alert alert-light text-center py-5 border border-dashed">
+                        <i class="bi bi-people fs-1 text-muted opacity-50"></i>
                         <p class="mt-2 text-muted">Nenhum paciente na base.</p>
                     </div>
                 {% endif %}
@@ -95,146 +101,74 @@
     </div>
 </div>
 
-<div class="modal fade" id="modalProntuario" tabindex="-1">
-    <div class="modal-dialog modal-lg"> <div class="modal-content">
-            <div class="modal-header bg-info text-white">
-                <h5 class="modal-title"><i class="bi bi-clipboard2-pulse"></i> Prontuário: <span id="tituloProntuario" class="fw-bold"></span></h5>
-                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
-            </div>
-            <div class="modal-body bg-light">
-                <div class="row">
-                    <div class="col-md-5 border-end">
-                        <h6 class="text-primary fw-bold mb-3">Nova Evolução</h6>
-                        <input type="hidden" id="idPacienteProntuario">
-                        
-                        <div class="mb-3">
-                            <label class="form-label small text-muted">Descrição do Atendimento</label>
-                            <div class="input-group">
-                                <textarea id="textoEvolucao" class="form-control" rows="8" placeholder="Relate o procedimento, queixas e progressos..."></textarea>
-                                <button class="btn btn-outline-secondary" type="button" id="btnVoiceEvo">
-                                    <i class="bi bi-mic-fill"></i>
-                                </button>
-                            </div>
-                        </div>
-                        <div class="d-grid">
-                            <button onclick="salvarEvolucao()" class="btn btn-success">
-                                <i class="bi bi-save"></i> Salvar Evolução
-                            </button>
-                        </div>
-                    </div>
-
-                    <div class="col-md-7">
-                        <h6 class="text-muted fw-bold mb-3">Histórico Clínico</h6>
-                        <div id="listaHistorico" style="max-height: 400px; overflow-y: auto; padding-right: 5px;">
-                            <div class="text-center text-muted mt-5">
-                                <div class="spinner-border text-primary" role="status"></div>
-                                <p>Carregando...</p>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </div>
-</div>
-
 <script>
-    // --- LÓGICA DO PRONTUÁRIO ---
-    
-    // 1. Abrir Modal e Carregar Dados
-    function abrirProntuario(id, nome) {
-        document.getElementById('idPacienteProntuario').value = id;
-        document.getElementById('tituloProntuario').innerText = nome;
-        document.getElementById('textoEvolucao').value = ''; // Limpa campo
-        
-        var modal = new bootstrap.Modal(document.getElementById('modalProntuario'));
-        modal.show();
-        
-        carregarHistorico(id);
-    }
-
-    // 2. Buscar Histórico no Backend
-    function carregarHistorico(id) {
-        const divLista = document.getElementById('listaHistorico');
-        divLista.innerHTML = '<p class="text-center text-muted">Carregando...</p>';
-        
-        fetch(`/api/evolucoes/${id}`)
-            .then(response => response.json())
-            .then(data => {
-                divLista.innerHTML = ''; // Limpa loading
-                
-                if(data.length === 0) {
-                    divLista.innerHTML = '<div class="alert alert-light text-center">Nenhum registro encontrado.</div>';
-                    return;
-                }
-
-                data.forEach(item => {
-                    // Cria o card para cada evolução
-                    const card = `
-                        <div class="card mb-2 border-0 shadow-sm">
-                            <div class="card-body p-3">
-                                <div class="d-flex justify-content-between mb-1">
-                                    <small class="text-primary fw-bold"><i class="bi bi-calendar-event"></i> ${item.data}</small>
-                                </div>
-                                <p class="card-text text-secondary" style="white-space: pre-wrap;">${item.texto}</p>
-                            </div>
-                        </div>
-                    `;
-                    divLista.innerHTML += card;
-                });
-            });
-    }
-
-    // 3. Salvar Nova Evolução
-    function salvarEvolucao() {
-        const id = document.getElementById('idPacienteProntuario').value;
-        const texto = document.getElementById('textoEvolucao').value;
-        
-        if(!texto) return alert("Escreva algo para salvar!");
-        
-        fetch('/api/nova_evolucao', {
-            method: 'POST',
-            headers: {'Content-Type': 'application/json'},
-            body: JSON.stringify({ paciente_id: id, texto: texto })
-        }).then(() => {
-            document.getElementById('textoEvolucao').value = ''; // Limpa
-            carregarHistorico(id); // Recarrega a lista ao lado
-        });
-    }
-
-    // --- FUNÇÕES ANTIGAS (Excluir e Voz Cadastro) ---
+    // --- FUNÇÃO DE EXCLUIR REFORÇADA ---
     function excluirPaciente(id, nome) {
-        if (confirm(`ATENÇÃO: Excluir ${nome}?`)) {
+        if (confirm(`ATENÇÃO: Tem certeza que deseja excluir ${nome}?\n\nIsso apagará:\n- Todo o histórico de consultas\n- Prontuários e Evoluções\n- Avaliações e Fotos`)) {
+            
+            // Feedback visual imediato (Opcional: muda cursor para aguarde)
+            document.body.style.cursor = 'wait';
+
             fetch('/api/deletar_paciente', {
                 method: 'POST',
-                headers: {'Content-Type': 'application/json'},
+                headers: {
+                    'Content-Type': 'application/json'
+                },
                 body: JSON.stringify({ id: id })
-            }).then(() => window.location.reload());
+            })
+            .then(response => response.json())
+            .then(data => {
+                document.body.style.cursor = 'default';
+                
+                if (data.status === 'success') {
+                    // Força o recarregamento da página vindo do servidor, ignorando cache
+                    window.location.href = window.location.href;
+                } else {
+                    alert('ERRO DO SISTEMA: ' + (data.message || 'Erro desconhecido ao excluir.'));
+                }
+            })
+            .catch(error => {
+                document.body.style.cursor = 'default';
+                console.error('Error:', error);
+                alert('Erro de conexão com o servidor. Tente novamente.');
+            });
         }
     }
 
-    // Voz para Cadastro (Existente)
-    setupVoice('btnVoiceName', 'nomePaciente');
-    // Voz para Prontuário (Novo)
-    setupVoice('btnVoiceEvo', 'textoEvolucao');
+    // --- RECONHECIMENTO DE VOZ ---
+    const btnVoiceName = document.getElementById('btnVoiceName');
+    const inputNome = document.getElementById('nomePaciente');
 
-    function setupVoice(btnId, inputId) {
-        const btn = document.getElementById(btnId);
-        const input = document.getElementById(inputId);
-        if ('webkitSpeechRecognition' in window) {
-            const recognition = new webkitSpeechRecognition();
-            recognition.lang = 'pt-BR';
-            recognition.continuous = false;
-            btn.addEventListener('click', () => { recognition.start(); btn.classList.add('btn-danger'); });
-            recognition.onresult = (e) => { 
-                // Se for o prontuário, adiciona ao texto existente. Se for nome, substitui.
-                if(inputId === 'textoEvolucao') input.value += e.results[0][0].transcript + ". ";
-                else input.value = e.results[0][0].transcript;
-                
-                btn.classList.remove('btn-danger'); 
-            };
-            recognition.onend = () => btn.classList.remove('btn-danger');
-        } else { btn.style.display = 'none'; }
+    if ('webkitSpeechRecognition' in window) {
+        const recognition = new webkitSpeechRecognition();
+        recognition.lang = 'pt-BR';
+        recognition.continuous = false;
+
+        btnVoiceName.addEventListener('click', () => {
+            recognition.start();
+            btnVoiceName.classList.remove('btn-outline-primary');
+            btnVoiceName.classList.add('btn-danger'); 
+            btnVoiceName.innerHTML = '<i class="bi bi-record-circle-fill"></i>';
+        });
+
+        recognition.onresult = (event) => {
+            const transcript = event.results[0][0].transcript;
+            const nomeFormatado = transcript.toLowerCase().replace(/(^\w{1})|(\s+\w{1})/g, letter => letter.toUpperCase());
+            inputNome.value = nomeFormatado;
+            btnVoiceName.classList.remove('btn-danger');
+            btnVoiceName.classList.add('btn-outline-primary');
+            btnVoiceName.innerHTML = '<i class="bi bi-mic-fill"></i>';
+        };
+        
+        recognition.onend = () => {
+            if(btnVoiceName.classList.contains('btn-danger')) {
+                 btnVoiceName.classList.remove('btn-danger');
+                 btnVoiceName.classList.add('btn-outline-primary');
+                 btnVoiceName.innerHTML = '<i class="bi bi-mic-fill"></i>';
+            }
+        };
+    } else {
+        btnVoiceName.style.display = 'none';
     }
 </script>
 {% endblock %}
