@@ -77,103 +77,128 @@
 
                     <div class="tab-pane fade" id="tab-avaliacao">
                         <div class="accordion" id="accordionAvaliacao">
+                            
                             <div class="accordion-item">
-                                <h2 class="accordion-header"><button class="accordion-button fw-bold text-primary" type="button" data-bs-toggle="collapse" data-bs-target="#collapseOne">I. Anamnese</button></h2>
+                                <h2 class="accordion-header">
+                                    <button class="accordion-button fw-bold text-primary" type="button" data-bs-toggle="collapse" data-bs-target="#collapseOne">
+                                        I. Anamnese (Histórico Clínico)
+                                    </button>
+                                </h2>
                                 <div id="collapseOne" class="accordion-collapse collapse show" data-bs-parent="#accordionAvaliacao">
                                     <div class="accordion-body">
+                                        
+                                        <h6 class="fw-bold text-secondary border-bottom pb-2 mb-3">1. Identificação</h6>
                                         <div class="row mb-3">
-                                            <div class="col-md-6"><label class="form-label">Ocupação</label><input type="text" id="avOcupacao" class="form-control"></div>
-                                            <div class="col-md-6"><label class="form-label">Lateralidade</label><select id="avLateralidade" class="form-select"><option>Destro</option><option>Canhoto</option></select></div>
+                                            <div class="col-md-4">
+                                                <label class="form-label small text-muted">Ocupação (Demandas Ergonômicas)</label>
+                                                <input type="text" id="avOcupacao" class="form-control" placeholder="Ex: Motorista, Escritório...">
+                                            </div>
+                                            <div class="col-md-4">
+                                                <label class="form-label small text-muted">Lateralidade</label>
+                                                <select id="avLateralidade" class="form-select">
+                                                    <option>Destro</option>
+                                                    <option>Canhoto</option>
+                                                    <option>Ambidestro</option>
+                                                </select>
+                                            </div>
+                                            <div class="col-md-4">
+                                                <label class="form-label small text-muted">Diagnóstico Médico</label>
+                                                <input type="text" id="avDiagMedico" class="form-control">
+                                            </div>
                                         </div>
-                                        <div class="mb-3"><label class="form-label">Queixa Principal</label><div class="input-group"><input type="text" id="avQP" class="form-control"><button class="btn btn-outline-secondary" onclick="startVoice('avQP', this)"><i class="bi bi-mic-fill"></i></button></div></div>
-                                        </div>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
 
-                    <div class="tab-pane fade" id="tab-postural">
-                        <div class="alert alert-info py-2 small"><i class="bi bi-info-circle"></i> As fotos são redimensionadas automaticamente para economizar espaço.</div>
-                        
-                        <div class="row text-center">
-                            <div class="col-md-3 mb-3">
-                                <div class="card h-100">
-                                    <div class="card-header fw-bold">Frontal</div>
-                                    <div class="card-body p-1 d-flex align-items-center justify-content-center bg-light" style="height: 200px; overflow: hidden;">
-                                        <img id="imgFrontal" src="" class="img-fluid d-none" style="max-height: 100%;">
-                                        <i id="iconFrontal" class="bi bi-person-standing fs-1 text-muted"></i>
-                                    </div>
-                                    <div class="card-footer p-1">
-                                        <input type="file" id="fileFrontal" class="d-none" accept="image/*" onchange="processarImagem(this, 'imgFrontal', 'iconFrontal')">
-                                        <button class="btn btn-sm btn-outline-primary w-100" onclick="document.getElementById('fileFrontal').click()">
-                                            <i class="bi bi-camera"></i> Capturar
-                                        </button>
+                                        <h6 class="fw-bold text-secondary border-bottom pb-2 mb-3 mt-4">2. História Clínica</h6>
+                                        
+                                        <div class="mb-3">
+                                            <label class="form-label fw-bold text-dark">Queixa Principal (QP)</label>
+                                            <div class="input-group">
+                                                <input type="text" id="avQP" class="form-control" placeholder="Motivo exato nas palavras do paciente">
+                                                <button class="btn btn-outline-secondary" onclick="startVoice('avQP', this)"><i class="bi bi-mic-fill"></i></button>
+                                            </div>
+                                        </div>
+
+                                        <div class="mb-3">
+                                            <label class="form-label fw-bold text-dark">HMA (História da Moléstia Atual)</label>
+                                            <div class="form-text mb-1">
+                                                <span class="badge bg-light text-dark border">Início (Agudo/Crônico)</span>
+                                                <span class="badge bg-light text-dark border">Causa (Trauma/Insidiosa)</span>
+                                                <span class="badge bg-light text-dark border">Evolução</span>
+                                                <span class="badge bg-light text-dark border">Fatores Melhora/Piora</span>
+                                            </div>
+                                            <div class="input-group">
+                                                <textarea id="avHMA" class="form-control" rows="4" placeholder="Descreva aqui o histórico da dor atual..."></textarea>
+                                                <button class="btn btn-outline-secondary" onclick="startVoice('avHMA', this)"><i class="bi bi-mic-fill"></i></button>
+                                            </div>
+                                        </div>
+
+                                        <div class="mb-3">
+                                            <label class="form-label fw-bold text-dark">HPP / Comorbidades / Medicamentos</label>
+                                            <div class="form-text mb-1">
+                                                Liste aqui: Cirurgias, Hipertensão, Diabetes, Medicamentos em uso.
+                                            </div>
+                                            <div class="input-group">
+                                                <textarea id="avHPP" class="form-control" rows="3" placeholder="Ex: Cirurgia joelho 2010. Hipertenso. Usa Losartana."></textarea>
+                                                <button class="btn btn-outline-secondary" onclick="startVoice('avHPP', this)"><i class="bi bi-mic-fill"></i></button>
+                                            </div>
+                                        </div>
+
+                                        <h6 class="fw-bold text-secondary border-bottom pb-2 mb-3 mt-4">3. Hábitos de Vida</h6>
+                                        <div class="mb-3">
+                                            <label class="form-label fw-bold text-dark">Atividade, Vícios e Sono</label>
+                                            <div class="input-group">
+                                                <textarea id="avHabitos" class="form-control" rows="2" placeholder="Sedentário? Fuma? Qualidade do sono?"></textarea>
+                                                <button class="btn btn-outline-secondary" onclick="startVoice('avHabitos', this)"><i class="bi bi-mic-fill"></i></button>
+                                            </div>
+                                        </div>
+
                                     </div>
                                 </div>
                             </div>
                             
-                            <div class="col-md-3 mb-3">
-                                <div class="card h-100">
-                                    <div class="card-header fw-bold">Posterior</div>
-                                    <div class="card-body p-1 d-flex align-items-center justify-content-center bg-light" style="height: 200px; overflow: hidden;">
-                                        <img id="imgPosterior" src="" class="img-fluid d-none" style="max-height: 100%;">
-                                        <i id="iconPosterior" class="bi bi-person-standing fs-1 text-muted"></i>
-                                    </div>
-                                    <div class="card-footer p-1">
-                                        <input type="file" id="filePosterior" class="d-none" accept="image/*" onchange="processarImagem(this, 'imgPosterior', 'iconPosterior')">
-                                        <button class="btn btn-sm btn-outline-primary w-100" onclick="document.getElementById('filePosterior').click()">
-                                            <i class="bi bi-camera"></i> Capturar
-                                        </button>
+                            <div class="accordion-item">
+                                <h2 class="accordion-header"><button class="accordion-button collapsed fw-bold text-primary" type="button" data-bs-toggle="collapse" data-bs-target="#collapseTwo">II. Exame Físico (Objetivo)</button></h2>
+                                <div id="collapseTwo" class="accordion-collapse collapse" data-bs-parent="#accordionAvaliacao">
+                                    <div class="accordion-body">
+                                        <div class="mb-3"><label class="form-label fw-bold">Sinais Vitais</label><input type="text" id="avSinais" class="form-control" placeholder="PA, FC, SpO2"></div>
+                                        <div class="mb-3"><label class="form-label fw-bold">Avaliação da Dor</label><input type="text" id="avDor" class="form-control" placeholder="EVA (0-10), Local, Tipo"></div>
+                                        <div class="row"><div class="col-md-6"><label class="form-label fw-bold">Inspeção</label><textarea id="avInspecao" class="form-control" rows="2"></textarea></div><div class="col-md-6"><label class="form-label fw-bold">Palpação</label><textarea id="avPalpacao" class="form-control" rows="2"></textarea></div></div>
+                                        <div class="row mt-2"><div class="col-md-6"><label class="form-label fw-bold">ADM</label><textarea id="avADM" class="form-control" rows="2"></textarea></div><div class="col-md-6"><label class="form-label fw-bold">Força Muscular</label><textarea id="avForca" class="form-control" rows="2"></textarea></div></div>
+                                        <div class="mt-2"><label class="form-label fw-bold">Testes Especiais / Neuro</label><textarea id="avTestes" class="form-control" rows="2"></textarea></div>
                                     </div>
                                 </div>
                             </div>
 
-                            <div class="col-md-3 mb-3">
-                                <div class="card h-100">
-                                    <div class="card-header fw-bold">Lat. Direita</div>
-                                    <div class="card-body p-1 d-flex align-items-center justify-content-center bg-light" style="height: 200px; overflow: hidden;">
-                                        <img id="imgLatDir" src="" class="img-fluid d-none" style="max-height: 100%;">
-                                        <i id="iconLatDir" class="bi bi-arrow-right fs-1 text-muted"></i>
-                                    </div>
-                                    <div class="card-footer p-1">
-                                        <input type="file" id="fileLatDir" class="d-none" accept="image/*" onchange="processarImagem(this, 'imgLatDir', 'iconLatDir')">
-                                        <button class="btn btn-sm btn-outline-primary w-100" onclick="document.getElementById('fileLatDir').click()">
-                                            <i class="bi bi-camera"></i> Capturar
-                                        </button>
+                            <div class="accordion-item">
+                                <h2 class="accordion-header"><button class="accordion-button collapsed fw-bold text-primary" type="button" data-bs-toggle="collapse" data-bs-target="#collapseThree">III. Diagnóstico e Conduta</button></h2>
+                                <div id="collapseThree" class="accordion-collapse collapse" data-bs-parent="#accordionAvaliacao">
+                                    <div class="accordion-body">
+                                        <div class="mb-3"><label class="form-label fw-bold">Diagnóstico (CIF)</label><textarea id="avCIF" class="form-control" rows="2"></textarea></div>
+                                        <div class="mb-3"><label class="form-label fw-bold">Objetivos</label><textarea id="avObjetivos" class="form-control" rows="2"></textarea></div>
+                                        <div class="mb-3"><label class="form-label fw-bold">Conduta</label><textarea id="avConduta" class="form-control" rows="2"></textarea></div>
                                     </div>
                                 </div>
                             </div>
 
-                            <div class="col-md-3 mb-3">
-                                <div class="card h-100">
-                                    <div class="card-header fw-bold">Lat. Esquerda</div>
-                                    <div class="card-body p-1 d-flex align-items-center justify-content-center bg-light" style="height: 200px; overflow: hidden;">
-                                        <img id="imgLatEsq" src="" class="img-fluid d-none" style="max-height: 100%;">
-                                        <i id="iconLatEsq" class="bi bi-arrow-left fs-1 text-muted"></i>
-                                    </div>
-                                    <div class="card-footer p-1">
-                                        <input type="file" id="fileLatEsq" class="d-none" accept="image/*" onchange="processarImagem(this, 'imgLatEsq', 'iconLatEsq')">
-                                        <button class="btn btn-sm btn-outline-primary w-100" onclick="document.getElementById('fileLatEsq').click()">
-                                            <i class="bi bi-camera"></i> Capturar
-                                        </button>
-                                    </div>
-                                </div>
-                            </div>
                         </div>
-
-                        <div class="row mt-3">
-                            <div class="col-md-8">
-                                <label class="form-label fw-bold">Análise da IA (Simulação)</label>
-                                <textarea id="analiseIA" class="form-control bg-white" rows="3" readonly placeholder="A análise aparecerá aqui após salvar..."></textarea>
-                            </div>
-                            <div class="col-md-4 d-flex flex-column justify-content-end">
-                                <button onclick="salvarFotos()" class="btn btn-success w-100 btn-lg">
-                                    <i class="bi bi-cloud-upload"></i> Salvar Fotos e Analisar
-                                </button>
-                            </div>
+                        <div class="d-flex justify-content-between align-items-center mt-3">
+                            <small class="text-muted" id="dataUltimaAvaliacao">Carregando...</small>
+                            <button type="button" onclick="salvarAvaliacao()" class="btn btn-primary btn-lg"><i class="bi bi-file-earmark-medical"></i> Salvar Avaliação Completa</button>
                         </div>
                     </div>
 
+                    <div class="tab-pane fade" id="tab-postural">
+                        <div class="alert alert-info py-2 small"><i class="bi bi-info-circle"></i> As fotos são redimensionadas automaticamente.</div>
+                        <div class="row text-center">
+                            <div class="col-md-3 mb-3"><div class="card h-100"><div class="card-header fw-bold">Frontal</div><div class="card-body p-1 d-flex align-items-center justify-content-center bg-light" style="height: 200px;"><img id="imgFrontal" src="" class="img-fluid d-none" style="max-height: 100%;"><i id="iconFrontal" class="bi bi-person-standing fs-1 text-muted"></i></div><div class="card-footer p-1"><input type="file" id="fileFrontal" class="d-none" accept="image/*" onchange="processarImagem(this, 'imgFrontal', 'iconFrontal')"><button class="btn btn-sm btn-outline-primary w-100" onclick="document.getElementById('fileFrontal').click()"><i class="bi bi-camera"></i> Capturar</button></div></div></div>
+                            <div class="col-md-3 mb-3"><div class="card h-100"><div class="card-header fw-bold">Posterior</div><div class="card-body p-1 d-flex align-items-center justify-content-center bg-light" style="height: 200px;"><img id="imgPosterior" src="" class="img-fluid d-none" style="max-height: 100%;"><i id="iconPosterior" class="bi bi-person-standing fs-1 text-muted"></i></div><div class="card-footer p-1"><input type="file" id="filePosterior" class="d-none" accept="image/*" onchange="processarImagem(this, 'imgPosterior', 'iconPosterior')"><button class="btn btn-sm btn-outline-primary w-100" onclick="document.getElementById('filePosterior').click()"><i class="bi bi-camera"></i> Capturar</button></div></div></div>
+                            <div class="col-md-3 mb-3"><div class="card h-100"><div class="card-header fw-bold">Lat. Direita</div><div class="card-body p-1 d-flex align-items-center justify-content-center bg-light" style="height: 200px;"><img id="imgLatDir" src="" class="img-fluid d-none" style="max-height: 100%;"><i id="iconLatDir" class="bi bi-arrow-right fs-1 text-muted"></i></div><div class="card-footer p-1"><input type="file" id="fileLatDir" class="d-none" accept="image/*" onchange="processarImagem(this, 'imgLatDir', 'iconLatDir')"><button class="btn btn-sm btn-outline-primary w-100" onclick="document.getElementById('fileLatDir').click()"><i class="bi bi-camera"></i> Capturar</button></div></div></div>
+                            <div class="col-md-3 mb-3"><div class="card h-100"><div class="card-header fw-bold">Lat. Esquerda</div><div class="card-body p-1 d-flex align-items-center justify-content-center bg-light" style="height: 200px;"><img id="imgLatEsq" src="" class="img-fluid d-none" style="max-height: 100%;"><i id="iconLatEsq" class="bi bi-arrow-left fs-1 text-muted"></i></div><div class="card-footer p-1"><input type="file" id="fileLatEsq" class="d-none" accept="image/*" onchange="processarImagem(this, 'imgLatEsq', 'iconLatEsq')"><button class="btn btn-sm btn-outline-primary w-100" onclick="document.getElementById('fileLatEsq').click()"><i class="bi bi-camera"></i> Capturar</button></div></div></div>
+                        </div>
+                        <div class="row mt-3">
+                            <div class="col-md-8"><label class="form-label fw-bold">Análise da IA</label><textarea id="analiseIA" class="form-control bg-white" rows="3" readonly placeholder="A análise aparecerá aqui após salvar..."></textarea></div>
+                            <div class="col-md-4 d-flex flex-column justify-content-end"><button onclick="salvarFotos()" class="btn btn-success w-100 btn-lg"><i class="bi bi-cloud-upload"></i> Salvar Fotos</button></div>
+                        </div>
+                    </div>
                 </div>
             </div>
         </div>
@@ -195,106 +220,20 @@
         document.getElementById('idPacienteProntuario').value = id;
         document.getElementById('tituloProntuario').innerText = nome;
         
-        // Limpar Campos Gerais
+        // Limpar Campos
         document.getElementById('textoEvolucao').value = '';
+        limparFotos();
         
-        // Limpar Fotos (Visual)
-        limparPreview('imgFrontal', 'iconFrontal', 'fileFrontal');
-        limparPreview('imgPosterior', 'iconPosterior', 'filePosterior');
-        limparPreview('imgLatDir', 'iconLatDir', 'fileLatDir');
-        limparPreview('imgLatEsq', 'iconLatEsq', 'fileLatEsq');
-        document.getElementById('analiseIA').value = '';
+        // Limpar Avaliação
+        const campos = ['avOcupacao','avDiagMedico','avQP','avHMA','avHPP','avHabitos','avSinais','avDor','avInspecao','avPalpacao','avADM','avForca','avTestes','avCIF','avObjetivos','avConduta'];
+        campos.forEach(c => { if(document.getElementById(c)) document.getElementById(c).value = ''; });
 
         var modal = new bootstrap.Modal(document.getElementById('modalProntuario'));
         modal.show();
 
         carregarHistorico(id);
-        // carregarAvaliacao(id); // (Função da aba 2, pode manter se tiver o código)
-        carregarFotos(id); // NOVO
-    }
-
-    function limparPreview(imgId, iconId, fileId) {
-        document.getElementById(imgId).src = '';
-        document.getElementById(imgId).classList.add('d-none');
-        document.getElementById(iconId).classList.remove('d-none');
-        document.getElementById(fileId).value = '';
-    }
-
-    // --- LÓGICA DE FOTOS (Redimensionar e Base64) ---
-    function processarImagem(input, imgId, iconId) {
-        if (input.files && input.files[0]) {
-            var reader = new FileReader();
-            reader.onload = function(e) {
-                // Cria uma imagem temporária para redimensionar
-                var imgTemp = new Image();
-                imgTemp.src = e.target.result;
-                imgTemp.onload = function() {
-                    // Redimensiona usando Canvas (Max 600px)
-                    var canvas = document.createElement('canvas');
-                    var ctx = canvas.getContext('2d');
-                    var maxWidth = 600;
-                    var ratio = Math.min(maxWidth / imgTemp.width, 1); // Se menor que 600, mantem
-                    
-                    canvas.width = imgTemp.width * ratio;
-                    canvas.height = imgTemp.height * ratio;
-                    ctx.drawImage(imgTemp, 0, 0, canvas.width, canvas.height);
-                    
-                    // Pega o DataURL comprimido (JPEG 0.7)
-                    var dataUrl = canvas.toDataURL('image/jpeg', 0.7);
-                    
-                    // Mostra no preview
-                    var imgPreview = document.getElementById(imgId);
-                    imgPreview.src = dataUrl;
-                    imgPreview.classList.remove('d-none');
-                    document.getElementById(iconId).classList.add('d-none');
-                }
-            }
-            reader.readAsDataURL(input.files[0]);
-        }
-    }
-
-    function salvarFotos() {
-        const id = document.getElementById('idPacienteProntuario').value;
-        const dados = {
-            paciente_id: id,
-            frontal: document.getElementById('imgFrontal').src,
-            posterior: document.getElementById('imgPosterior').src,
-            lat_dir: document.getElementById('imgLatDir').src,
-            lat_esq: document.getElementById('imgLatEsq').src,
-            analise_ia: "Análise IA: Desvios posturais detectados com base nas imagens enviadas. Sugere-se avaliação de hipercifose torácica." // Simulação
-        };
-
-        // Verifica se pelo menos uma foto foi carregada (src não está vazio e não é a url da página atual)
-        if(dados.frontal.length < 100 && dados.posterior.length < 100) {
-            return alert("Adicione pelo menos uma foto para salvar.");
-        }
-
-        fetch('/api/salvar_fotos', {
-            method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify(dados)
-        }).then(() => {
-            alert("Fotos salvas com sucesso!");
-            carregarFotos(id);
-        }).catch(err => alert("Erro ao salvar (Imagem muito grande?). Tente novamente."));
-    }
-
-    function carregarFotos(id) {
-        fetch(`/api/get_fotos/${id}`).then(r => r.json()).then(data => {
-            if(data.encontrado) {
-                if(data.frontal) exibirFoto('imgFrontal', 'iconFrontal', data.frontal);
-                if(data.posterior) exibirFoto('imgPosterior', 'iconPosterior', data.posterior);
-                if(data.lat_dir) exibirFoto('imgLatDir', 'iconLatDir', data.lat_dir);
-                if(data.lat_esq) exibirFoto('imgLatEsq', 'iconLatEsq', data.lat_esq);
-                document.getElementById('analiseIA').value = data.analise || '';
-            }
-        });
-    }
-
-    function exibirFoto(imgId, iconId, src) {
-        if(src && src.length > 100) {
-            document.getElementById(imgId).src = src;
-            document.getElementById(imgId).classList.remove('d-none');
-            document.getElementById(iconId).classList.add('d-none');
-        }
+        carregarAvaliacao(id);
+        carregarFotos(id);
     }
 
     // --- EVOLUÇÃO ---
@@ -304,9 +243,7 @@
         fetch(`/api/evolucoes/${id}`).then(r => r.json()).then(data => {
             divLista.innerHTML = '';
             if(data.length === 0) { divLista.innerHTML = '<div class="alert alert-light text-center">Histórico vazio.</div>'; return; }
-            data.forEach(item => {
-                divLista.innerHTML += `<div class="card mb-2 border-0 shadow-sm"><div class="card-body p-3"><small class="text-primary fw-bold"><i class="bi bi-calendar-event"></i> ${item.data}</small><p class="card-text text-secondary mt-1" style="white-space: pre-wrap;">${item.texto}</p></div></div>`;
-            });
+            data.forEach(item => { divLista.innerHTML += `<div class="card mb-2 border-0 shadow-sm"><div class="card-body p-3"><small class="text-primary fw-bold"><i class="bi bi-calendar-event"></i> ${item.data}</small><p class="card-text text-secondary mt-1" style="white-space: pre-wrap;">${item.texto}</p></div></div>`; });
         });
     }
 
@@ -314,32 +251,138 @@
         const id = document.getElementById('idPacienteProntuario').value;
         const texto = document.getElementById('textoEvolucao').value;
         if(!texto) return alert("Escreva algo!");
-        fetch('/api/nova_evolucao', {
-            method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({ paciente_id: id, texto: texto })
-        }).then(() => {
+        fetch('/api/nova_evolucao', { method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({ paciente_id: id, texto: texto }) }).then(() => {
             document.getElementById('textoEvolucao').value = '';
             carregarHistorico(id);
             alert("Evolução salva!");
         });
     }
 
-    // --- VOZ ---
-    const btnVoiceEvo = document.getElementById('btnVoiceEvo');
-    if(btnVoiceEvo) {
-        btnVoiceEvo.addEventListener('click', () => startVoice('textoEvolucao', btnVoiceEvo));
+    // --- AVALIAÇÃO COMPLETA ---
+    function salvarAvaliacao() {
+        const id = document.getElementById('idPacienteProntuario').value;
+        const dados = {
+            paciente_id: id,
+            ocupacao: document.getElementById('avOcupacao').value,
+            lateralidade: document.getElementById('avLateralidade').value,
+            diagnostico_medico: document.getElementById('avDiagMedico').value,
+            queixa_principal: document.getElementById('avQP').value,
+            hma: document.getElementById('avHMA').value,
+            hpp: document.getElementById('avHPP').value,
+            habitos: document.getElementById('avHabitos').value,
+            sinais_vitais: document.getElementById('avSinais').value,
+            avaliacao_dor: document.getElementById('avDor').value,
+            inspecao: document.getElementById('avInspecao').value,
+            palpacao: document.getElementById('avPalpacao').value,
+            adm: document.getElementById('avADM').value,
+            forca_muscular: document.getElementById('avForca').value,
+            neuro: '', // Campo extra se precisar
+            testes_especiais: document.getElementById('avTestes').value,
+            diagnostico_cif: document.getElementById('avCIF').value,
+            objetivos: document.getElementById('avObjetivos').value,
+            conduta: document.getElementById('avConduta').value
+        };
+
+        fetch('/api/salvar_avaliacao', { method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify(dados) }).then(() => {
+            alert("Avaliação Completa Salva!");
+            carregarAvaliacao(id);
+        });
+    }
+
+    function carregarAvaliacao(id) {
+        fetch(`/api/get_avaliacao/${id}`).then(r => r.json()).then(data => {
+            if(data.encontrado) {
+                document.getElementById('avOcupacao').value = data.ocupacao || '';
+                document.getElementById('avLateralidade').value = data.lateralidade || 'Destro';
+                document.getElementById('avDiagMedico').value = data.diagnostico_medico || '';
+                document.getElementById('avQP').value = data.queixa_principal || '';
+                document.getElementById('avHMA').value = data.hma || '';
+                document.getElementById('avHPP').value = data.hpp || '';
+                document.getElementById('avHabitos').value = data.habitos || '';
+                document.getElementById('avSinais').value = data.sinais_vitais || '';
+                document.getElementById('avDor').value = data.avaliacao_dor || '';
+                document.getElementById('avInspecao').value = data.inspecao || '';
+                document.getElementById('avPalpacao').value = data.palpacao || '';
+                document.getElementById('avADM').value = data.adm || '';
+                document.getElementById('avForca').value = data.forca_muscular || '';
+                document.getElementById('avTestes').value = data.testes_especiais || '';
+                document.getElementById('avCIF').value = data.diagnostico_cif || '';
+                document.getElementById('avObjetivos').value = data.objetivos || '';
+                document.getElementById('avConduta').value = data.conduta || '';
+                document.getElementById('dataUltimaAvaliacao').innerText = "Última atualização: " + data.data;
+            } else {
+                document.getElementById('dataUltimaAvaliacao').innerText = "Nenhuma avaliação registrada.";
+            }
+        });
+    }
+
+    // --- FOTOS E VOZ ---
+    function processarImagem(input, imgId, iconId) {
+        if (input.files && input.files[0]) {
+            var reader = new FileReader();
+            reader.onload = function(e) {
+                var imgTemp = new Image(); imgTemp.src = e.target.result;
+                imgTemp.onload = function() {
+                    var canvas = document.createElement('canvas'); var ctx = canvas.getContext('2d');
+                    var ratio = Math.min(600 / imgTemp.width, 1);
+                    canvas.width = imgTemp.width * ratio; canvas.height = imgTemp.height * ratio;
+                    ctx.drawImage(imgTemp, 0, 0, canvas.width, canvas.height);
+                    var dataUrl = canvas.toDataURL('image/jpeg', 0.7);
+                    document.getElementById(imgId).src = dataUrl;
+                    document.getElementById(imgId).classList.remove('d-none');
+                    document.getElementById(iconId).classList.add('d-none');
+                }
+            }
+            reader.readAsDataURL(input.files[0]);
+        }
+    }
+    
+    function limparFotos() {
+        ['Frontal','Posterior','LatDir','LatEsq'].forEach(tipo => {
+            document.getElementById('img'+tipo).src=''; document.getElementById('img'+tipo).classList.add('d-none');
+            document.getElementById('icon'+tipo).classList.remove('d-none'); document.getElementById('file'+tipo).value='';
+        });
+        document.getElementById('analiseIA').value='';
+    }
+
+    function salvarFotos() {
+        const id = document.getElementById('idPacienteProntuario').value;
+        const dados = {
+            paciente_id: id, frontal: document.getElementById('imgFrontal').src, posterior: document.getElementById('imgPosterior').src,
+            lat_dir: document.getElementById('imgLatDir').src, lat_esq: document.getElementById('imgLatEsq').src,
+            analise_ia: "Análise IA: Desvios detectados. Sugere-se avaliação detalhada."
+        };
+        if(dados.frontal.length < 100 && dados.posterior.length < 100) return alert("Adicione uma foto.");
+        fetch('/api/salvar_fotos', { method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify(dados) }).then(() => { alert("Fotos salvas!"); carregarFotos(id); });
+    }
+
+    function carregarFotos(id) {
+        fetch(`/api/get_fotos/${id}`).then(r => r.json()).then(data => {
+            if(data.encontrado) {
+                ['Frontal','Posterior','LatDir','LatEsq'].forEach(tipo => {
+                    let key = tipo === 'LatDir' ? 'lat_dir' : (tipo === 'LatEsq' ? 'lat_esq' : tipo.toLowerCase());
+                    if(data[key] && data[key].length > 100) {
+                        document.getElementById('img'+tipo).src = data[key]; document.getElementById('img'+tipo).classList.remove('d-none'); document.getElementById('icon'+tipo).classList.add('d-none');
+                    }
+                });
+                document.getElementById('analiseIA').value = data.analise || '';
+            }
+        });
     }
 
     function startVoice(inputId, btn) {
         const input = document.getElementById(inputId);
         if ('webkitSpeechRecognition' in window) {
-            const recognition = new webkitSpeechRecognition();
-            recognition.lang = 'pt-BR'; recognition.continuous = false;
+            const recognition = new webkitSpeechRecognition(); recognition.lang = 'pt-BR'; recognition.continuous = false;
             btn.classList.add('btn-danger'); recognition.start();
             recognition.onresult = (e) => { 
-                input.value += e.results[0][0].transcript + ". "; 
+                let txt = e.results[0][0].transcript;
+                input.value += (input.tagName === 'TEXTAREA' ? txt + ". " : txt);
                 btn.classList.remove('btn-danger'); 
             };
         } else { alert("Sem suporte a voz."); }
     }
+    const btnVoiceEvo = document.getElementById('btnVoiceEvo');
+    if(btnVoiceEvo) btnVoiceEvo.addEventListener('click', () => startVoice('textoEvolucao', btnVoiceEvo));
 </script>
 {% endblock %}
