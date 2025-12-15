@@ -482,6 +482,89 @@ def fazer_backup_dados():
     finally:
         conn.close()
 
+# --- MIGRAÇÃO DE FOTOS POSTURAIS (NOVO) ---
+@app.route('/update-db-fotos')
+def update_db_fotos():
+    if not session.get('logged_in'): return redirect(url_for('login'))
+    conn = get_db_connection()
+    cursor = conn.cursor()
+    try:
+        # Tabela para armazenar as fotos em formato TEXT (Base64)
+        # Atenção: Em produção real, usa-se AWS S3. Para este MVP, usaremos o banco.
+        cursor.execute('''
+            CREATE TABLE IF NOT EXISTS avaliacao_postural (
+                id SERIAL PRIMARY KEY, 
+                paciente_id INTEGER REFERENCES pacientes(id) ON DELETE CASCADE,
+                data_foto TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                foto_frontal TEXT,
+                foto_posterior TEXT,
+                foto_lat_dir TEXT,
+                foto_lat_esq TEXT,
+                analise_ia TEXT
+            );
+        ''')
+        conn.commit()
+        msg = "Sucesso! Tabela de Fotos Posturais criada."
+    except Exception as e:
+        conn.rollback()
+        msg = f"Erro: {e}"
+    finally:
+        conn.close()
+    return msg
+
+# --- API DE FOTOS ---
+
+@app.route('/api/salvar_fotos', methods=['POST'])
+def salvar_fotos():
+    data = request.json
+    conn = get_db_connection()
+    cur = conn.cursor()
+    try:
+        # Verifica se já existe avaliação hoje, se sim atualiza, se não cria
+        # (Simplificação: Vamos criar sempre uma nova para manter histórico)
+        cur.execute("""
+            INSERT INTO avaliacao_postural 
+            (paciente_id, foto_frontal, foto_posterior, foto_lat_dir, foto_lat_esq, analise_ia) 
+            VALUES (%s, %s, %s, %s, %s, %s)
+        """, (
+            data['paciente_id'], 
+            data.get('frontal'), 
+            data.get('posterior'), 
+            data.get('lat_dir'), 
+            data.get('lat_esq'),
+            data.get('analise_ia', 'Aguardando processamento...')
+        ))
+        conn.commit()
+        return jsonify({'status': 'success'})
+    except Exception as e:
+        conn.rollback()
+        print(e) # Log do erro no terminal
+        return jsonify({'status': 'error', 'msg': str(e)}), 500
+    finally:
+        conn.close()
+
+@app.route('/api/get_fotos/<int:paciente_id>', methods=['GET'])
+def get_fotos(paciente_id):
+    conn = get_db_connection()
+    cur = conn.cursor()
+    # Pega a mais recente
+    cur.execute("""
+        SELECT foto_frontal, foto_posterior, foto_lat_dir, foto_lat_esq, analise_ia, data_foto
+        FROM avaliacao_postural WHERE paciente_id = %s ORDER BY id DESC LIMIT 1
+    """, (paciente_id,))
+    row = cur.fetchone()
+    conn.close()
+    
+    if row:
+        return jsonify({
+            'encontrado': True,
+            'frontal': row[0], 'posterior': row[1], 
+            'lat_dir': row[2], 'lat_esq': row[3],
+            'analise': row[4],
+            'data': row[5].strftime("%d/%m/%Y")
+        })
+    else:
+        return jsonify({'encontrado': False})
 
 if __name__ == '__main__':
     app.run(debug=True)
