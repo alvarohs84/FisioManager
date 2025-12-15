@@ -431,6 +431,56 @@ def get_avaliacao(paciente_id):
         })
     else:
         return jsonify({'encontrado': False})
+    
+    # --- ROTA DE BACKUP DE DADOS (NOVO) ---
+@app.route('/fazer_backup_dados')
+def fazer_backup_dados():
+    if not session.get('logged_in'): return redirect(url_for('login'))
+    
+    conn = get_db_connection()
+    cursor = conn.cursor()
+    
+    backup = {}
+    
+    # Função auxiliar para transformar datas em texto (JSON não aceita data pura)
+    def converter_datas(row):
+        new_row = []
+        for item in row:
+            if isinstance(item, (datetime, date)):
+                new_row.append(str(item))
+            else:
+                new_row.append(item)
+        return new_row
+
+    try:
+        # 1. Tabela Pacientes
+        cursor.execute("SELECT * FROM pacientes")
+        backup['pacientes'] = [converter_datas(row) for row in cursor.fetchall()]
+        
+        # 2. Tabela Agendamentos
+        try:
+            cursor.execute("SELECT * FROM agendamentos")
+            backup['agendamentos'] = [converter_datas(row) for row in cursor.fetchall()]
+        except: backup['agendamentos'] = "Tabela não encontrada"
+
+        # 3. Tabela Evoluções
+        try:
+            cursor.execute("SELECT * FROM evolucoes")
+            backup['evolucoes'] = [converter_datas(row) for row in cursor.fetchall()]
+        except: backup['evolucoes'] = "Tabela não encontrada"
+
+        # 4. Tabela Avaliações
+        try:
+            cursor.execute("SELECT * FROM avaliacoes_completa")
+            backup['avaliacoes'] = [converter_datas(row) for row in cursor.fetchall()]
+        except: backup['avaliacoes'] = "Tabela não encontrada"
+        
+        return jsonify(backup)
+        
+    except Exception as e:
+        return jsonify({'erro': str(e)})
+    finally:
+        conn.close()
 
 
 if __name__ == '__main__':
