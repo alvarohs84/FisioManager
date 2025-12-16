@@ -49,9 +49,21 @@
                 <input type="hidden" id="idPacienteProntuario">
 
                 <ul class="nav nav-tabs mb-3" id="prontuarioTabs" role="tablist">
-                    <li class="nav-item"><button class="nav-link active fw-bold" data-bs-toggle="tab" data-bs-target="#tab-evolucao"><i class="bi bi-list-check"></i> Evolução</button></li>
-                    <li class="nav-item"><button class="nav-link fw-bold" data-bs-toggle="tab" data-bs-target="#tab-avaliacao"><i class="bi bi-person-lines-fill"></i> Avaliação</button></li>
-                    <li class="nav-item"><button class="nav-link fw-bold" data-bs-toggle="tab" data-bs-target="#tab-postural"><i class="bi bi-camera-fill"></i> Postural (IA)</button></li>
+                    <li class="nav-item">
+                        <button class="nav-link active fw-bold" data-bs-toggle="tab" data-bs-target="#tab-evolucao">
+                            <i class="bi bi-list-check"></i> Evolução
+                        </button>
+                    </li>
+                    <li class="nav-item">
+                        <button class="nav-link fw-bold" data-bs-toggle="tab" data-bs-target="#tab-avaliacao">
+                            <i class="bi bi-person-lines-fill"></i> Avaliação
+                        </button>
+                    </li>
+                    <li class="nav-item">
+                        <button class="nav-link fw-bold" data-bs-toggle="tab" data-bs-target="#tab-postural">
+                            <i class="bi bi-camera-fill"></i> Postural (IA)
+                        </button>
+                    </li>
                 </ul>
 
                 <div class="tab-content">
@@ -314,7 +326,7 @@
                                         </div>
 
                                         <div class="card border-primary mb-3">
-                                            <div class="card-header bg-primary text-white py-1 fw-bold small">Goniometria Interativa</div>
+                                            <div class="card-header bg-primary text-white py-1 fw-bold small"><i class="bi bi-arrows-angle-expand"></i> Goniometria Interativa</div>
                                             <div class="card-body p-2 bg-light">
                                                 <div class="row g-1 mb-2">
                                                     <div class="col-md-3">
@@ -367,9 +379,49 @@
                                             </div>
                                         </div>
 
-                                        <div class="row g-2">
-                                            <div class="col-6"><label class="small fw-bold">Força Muscular</label><textarea id="avForca" class="form-control" rows="2"></textarea></div>
-                                            <div class="col-6"><label class="small fw-bold">Testes Especiais</label><textarea id="avTestes" class="form-control" rows="2"></textarea></div>
+                                        <div class="card border-success mb-3">
+                                            <div class="card-header bg-success text-white py-1 fw-bold small"><i class="bi bi-activity"></i> Força Muscular Interativa (Escala MRC)</div>
+                                            <div class="card-body p-2 bg-light">
+                                                <div class="row g-1 mb-2">
+                                                    <div class="col-md-4">
+                                                        <select id="forcaRegiao" class="form-select form-select-sm" onchange="atualizarMusculosForca()">
+                                                            <option value="" disabled selected>1. Região</option>
+                                                            <option value="superior">Membros Superiores</option>
+                                                            <option value="inferior">Membros Inferiores</option>
+                                                            <option value="tronco">Tronco/Coluna</option>
+                                                        </select>
+                                                    </div>
+                                                    <div class="col-md-4">
+                                                        <select id="forcaMusculo" class="form-select form-select-sm" disabled>
+                                                            <option value="" selected>2. Músculo/Movimento</option>
+                                                        </select>
+                                                    </div>
+                                                    <div class="col-md-4">
+                                                        <select id="forcaGrau" class="form-select form-select-sm" disabled>
+                                                            <option value="" selected>3. Grau MRC (0-5)</option>
+                                                            <option value="0 - Nenhuma contração">0 - Nenhuma contração (Plegia)</option>
+                                                            <option value="1 - Contração visível/sem movimento">1 - Contração visível/sem movimento</option>
+                                                            <option value="2 - Movimento a favor gravidade">2 - Movimento a favor da gravidade</option>
+                                                            <option value="3 - Vence gravidade">3 - Vence a gravidade (ADM completa)</option>
+                                                            <option value="4 - Vence resistência moderada">4 - Vence resistência moderada</option>
+                                                            <option value="5 - Força Normal">5 - Força Normal</option>
+                                                        </select>
+                                                    </div>
+                                                </div>
+                                                <div class="row g-1">
+                                                    <div class="col-md-12">
+                                                        <button type="button" class="btn btn-outline-success btn-sm w-100" onclick="adicionarForca()">
+                                                            <i class="bi bi-plus-circle"></i> Adicionar Avaliação de Força
+                                                        </button>
+                                                    </div>
+                                                </div>
+                                                <ul id="listaForca" class="list-group mt-2 small"></ul>
+                                                <textarea id="avForca" class="d-none"></textarea>
+                                            </div>
+                                        </div>
+
+                                        <div class="row g-2 mb-3">
+                                            <div class="col-12"><label class="small fw-bold">Testes Especiais</label><textarea id="avTestes" class="form-control" rows="2"></textarea></div>
                                         </div>
                                     </div>
                                 </div>
@@ -439,14 +491,62 @@
 </div>
 
 <script>
-    // --- DADOS DE REFERÊNCIA GONIOMETRIA ---
+    // --- REFERÊNCIAS ---
     const REF_GONIO = {
         'coluna': { 'Cervical': { 'Flexão': 65, 'Extensão': 50, 'Flexão Lateral': 40, 'Rotação': 55 }, 'Lombar': { 'Flexão': 95, 'Extensão': 35, 'Flexão Lateral': 40, 'Rotação': 35 } },
         'superior': { 'Ombro': { 'Flexão': 180, 'Extensão': 45, 'Adução': 40, 'Abdução': 180, 'Rotação Int/Ext': 90 }, 'Cotovelo': { 'Flexão': 145, 'Extensão': 0 }, 'Punho': { 'Flexão': 90, 'Extensão': 70, 'Desvio Ulnar': 45, 'Desvio Radial': 20 } },
         'inferior': { 'Quadril': { 'Flexão': 125, 'Extensão': 10, 'Adução': 15, 'Abdução': 45, 'Rot. Int/Ext': 45 }, 'Joelho': { 'Flexão': 140, 'Extensão': 0 }, 'Tornozelo': { 'Flexão Dorsal': 20, 'Flexão Plantar': 45, 'Inversão': 40, 'Eversão': 20 } }
     };
 
-    // --- FUNÇÕES GONIOMETRIA ---
+    const REF_FORCA = {
+        'superior': ['Ombro - Flexão', 'Ombro - Abdução', 'Ombro - Rot. Externa', 'Cotovelo - Flexão', 'Cotovelo - Extensão', 'Punho - Extensão', 'Mão - Preensão'],
+        'inferior': ['Quadril - Flexão', 'Quadril - Extensão', 'Quadril - Abdução', 'Joelho - Extensão', 'Joelho - Flexão', 'Tornozelo - Dorsiflexão', 'Tornozelo - Plantiflexão'],
+        'tronco': ['Cervical - Flexão', 'Cervical - Extensão', 'Tronco - Flexão', 'Tronco - Extensão']
+    };
+
+    // --- LÓGICA FORÇA MUSCULAR (NOVO) ---
+    function atualizarMusculosForca() {
+        const regiao = document.getElementById('forcaRegiao').value;
+        const selMusc = document.getElementById('forcaMusculo');
+        selMusc.innerHTML = '<option value="" selected>2. Músculo/Movimento</option>';
+        selMusc.disabled = false;
+        
+        if (regiao && REF_FORCA[regiao]) {
+            REF_FORCA[regiao].forEach(musc => {
+                let opt = document.createElement('option');
+                opt.value = musc;
+                opt.innerText = musc;
+                selMusc.appendChild(opt);
+            });
+        }
+        document.getElementById('forcaGrau').disabled = false;
+    }
+
+    function adicionarForca() {
+        const musc = document.getElementById('forcaMusculo').value;
+        const grau = document.getElementById('forcaGrau').value;
+        
+        if (!musc || !grau) return alert("Selecione músculo e grau.");
+
+        const textoItem = `${musc}: ${grau}`;
+        const li = document.createElement('li');
+        li.className = "list-group-item d-flex justify-content-between align-items-center list-group-item-action";
+        li.innerHTML = `<span><i class="bi bi-lightning-fill text-warning"></i> ${textoItem}</span> <button class="btn btn-sm btn-outline-danger py-0" onclick="this.parentElement.remove(); atualizarCampoForca()">X</button>`;
+        
+        document.getElementById('listaForca').appendChild(li);
+        atualizarCampoForca();
+    }
+
+    function atualizarCampoForca() {
+        const lista = document.getElementById('listaForca').getElementsByTagName('li');
+        let textoFinal = "";
+        for (let item of lista) {
+            textoFinal += item.innerText.replace("X", "").trim() + "\n";
+        }
+        document.getElementById('avForca').value = textoFinal;
+    }
+
+    // --- LÓGICA GONIOMETRIA ---
     function atualizarArticulacoes() {
         const regiao = document.getElementById('gonioRegiao').value;
         const selArt = document.getElementById('gonioArticulacao');
@@ -525,7 +625,7 @@
         document.getElementById('avADM').value = textoFinal;
     }
 
-    // --- FUNÇÕES GERAIS ---
+    // --- AUXILIARES GERAIS ---
     function filtrarLista() {
         var f = document.getElementById("filtroPaciente").value.toUpperCase();
         var c = document.getElementsByClassName("item-paciente");
@@ -550,14 +650,13 @@
     }
 
     function toggleTabagismo() {
-        var status = document.getElementById('selTabagismo').value;
-        var divCalc = document.getElementById('divCargaTabagica');
-        // FIX: Agora verifica se é Tabagista OU Ex-tabagista
-        if (status === 'Tabagista' || status === 'Ex-tabagista') {
-            divCalc.classList.remove('d-none');
-            divCalc.classList.add('mt-1');
+        var s = document.getElementById('selTabagismo').value;
+        // CORREÇÃO: Exibe se for Tabagista OU Ex-tabagista
+        if (s.includes('Tabagista') || s.includes('Ex-tabagista')) {
+            document.getElementById('divCargaTabagica').classList.remove('d-none');
+            document.getElementById('divCargaTabagica').classList.add('mt-1');
         } else {
-            divCalc.classList.add('d-none');
+            document.getElementById('divCargaTabagica').classList.add('d-none');
         }
         gerarTextoHabitos();
     }
@@ -568,8 +667,8 @@
         var t = document.getElementById('selTabagismo').value;
         var txt = `Atividade: ${a}. Etilismo: ${e}. Tabagismo: ${t}`;
         
-        // FIX: Calcula para ambos
-        if (t === 'Tabagista' || t === 'Ex-tabagista') {
+        // CORREÇÃO: Calcula se for Tabagista OU Ex-tabagista
+        if (t.includes('Tabagista') || t.includes('Ex-tabagista')) {
             var c = parseFloat(document.getElementById('numCigarros').value) || 0;
             var y = parseFloat(document.getElementById('numAnosFumo').value) || 0;
             var r = (c / 20) * y;
@@ -578,18 +677,79 @@
         }
         document.getElementById('avHabitos').value = txt;
     }
-    
-    // --- FUNÇÕES DE SALVAR E CARREGAR ---
+
+    // --- CARREGAR E SALVAR ---
+    function carregarAvaliacao(id) {
+        fetch(`/api/get_avaliacao/${id}`).then(r => r.json()).then(data => {
+            if(data.encontrado) {
+                // Campos Simples
+                ['avOcupacao','avDiagMedico','avQP','avHMA','avHPP','avHabitos','avInspecao','avPalpacao','avTestes','avCIF','avObjetivos','avConduta'].forEach(k => document.getElementById(k).value = data[k.replace('av','').toLowerCase()] || data[k] || '');
+                
+                // Goniometria
+                const admSalva = data.adm || '';
+                document.getElementById('avADM').value = admSalva;
+                const ulG = document.getElementById('listaGoniometria');
+                ulG.innerHTML = '';
+                if(admSalva) {
+                    admSalva.split('\n').forEach(l => {
+                        if(l.trim()) {
+                            let li = document.createElement('li');
+                            li.className = "list-group-item d-flex justify-content-between align-items-center";
+                            li.innerHTML = `${l} <button class="btn btn-sm btn-outline-danger py-0" onclick="this.parentElement.remove(); atualizarCampoOculto()">X</button>`;
+                            ulG.appendChild(li);
+                        }
+                    });
+                }
+
+                // Força Muscular (NOVO)
+                const forcaSalva = data.forca_muscular || '';
+                document.getElementById('avForca').value = forcaSalva;
+                const ulF = document.getElementById('listaForca');
+                ulF.innerHTML = '';
+                if(forcaSalva) {
+                    forcaSalva.split('\n').forEach(l => {
+                        if(l.trim()) {
+                            let li = document.createElement('li');
+                            li.className = "list-group-item d-flex justify-content-between align-items-center list-group-item-action";
+                            li.innerHTML = `<span><i class="bi bi-lightning-fill text-warning"></i> ${l}</span> <button class="btn btn-sm btn-outline-danger py-0" onclick="this.parentElement.remove(); atualizarCampoForca()">X</button>`;
+                            ulF.appendChild(li);
+                        }
+                    });
+                }
+
+                // JSONs
+                try {
+                    let s = JSON.parse(data.sinais_vitais);
+                    document.getElementById('sinPA').value = s.pa;
+                    document.getElementById('sinFC').value = s.fc;
+                    document.getElementById('sinSpO2').value = s.spo2;
+                    document.getElementById('sinTemp').value = s.temp;
+                } catch(e) { document.getElementById('sinPA').value = data.sinais_vitais || ''; }
+
+                try {
+                    let d = JSON.parse(data.avaliacao_dor);
+                    document.getElementById('dorEVA').value = d.eva;
+                    document.getElementById('dorLocal').value = d.local;
+                    document.getElementById('dorTipo').value = d.tipo;
+                    document.getElementById('dorPiora').value = d.piora;
+                    document.getElementById('dorAlivio').value = d.alivia;
+                } catch(e) { document.getElementById('dorLocal').value = data.avaliacao_dor || ''; }
+                
+                document.getElementById('dataUltimaAvaliacao').innerText = "Atualizado em: " + data.data;
+            }
+        });
+    }
+
     function salvarAvaliacao() {
         const id = document.getElementById('idPacienteProntuario').value;
         
-        // Empacotar JSON
         const jsonSinais = JSON.stringify({
             pa: document.getElementById('sinPA').value,
             fc: document.getElementById('sinFC').value,
             spo2: document.getElementById('sinSpO2').value,
             temp: document.getElementById('sinTemp').value
         });
+
         const jsonDor = JSON.stringify({
             eva: document.getElementById('dorEVA').value,
             local: document.getElementById('dorLocal').value,
@@ -611,8 +771,8 @@
             habitos: document.getElementById('avHabitos').value,
             inspecao: document.getElementById('avInspecao').value,
             palpacao: document.getElementById('avPalpacao').value,
-            adm: document.getElementById('avADM').value,
-            forca_muscular: document.getElementById('avForca').value,
+            adm: document.getElementById('avADM').value, // Salva Goniometria
+            forca_muscular: document.getElementById('avForca').value, // Salva Força MRC
             neuro: '',
             testes_especiais: document.getElementById('avTestes').value,
             diagnostico_cif: document.getElementById('avCIF').value,
@@ -630,31 +790,12 @@
         });
     }
 
+    // Inicialização
     function abrirProntuario(id, nome) {
         document.getElementById('idPacienteProntuario').value = id;
         document.getElementById('tituloProntuario').innerText = nome;
-        
-        // Resetar Campos
-        document.getElementById('textoEvolucao').value = '';
-        limparFotos();
-        const campos = ['avOcupacao','avDiagMedico','avQP','avHMA','avHPP','avHabitos','avInspecao','avPalpacao','avForca','avTestes','avCIF','avObjetivos','avConduta'];
-        campos.forEach(k => document.getElementById(k).value = '');
-        
-        // Resetar Sinais e Dor
-        ['sinPA','sinFC','sinSpO2','sinTemp','dorEVA','dorLocal','dorPiora','dorAlivio'].forEach(k => document.getElementById(k).value = '');
-        document.getElementById('dorTipo').selectedIndex = 0;
-        
-        // Resetar Goniometria
-        document.getElementById('listaGoniometria').innerHTML = '';
-        document.getElementById('avADM').value = '';
-        
-        // Resetar Calculadora Tabagismo
-        document.getElementById('selTabagismo').selectedIndex = 0;
-        toggleTabagismo();
-
         var m = new bootstrap.Modal(document.getElementById('modalProntuario'));
         m.show();
-        
         carregarHistorico(id);
         carregarAvaliacao(id);
         carregarFotos(id);
@@ -693,9 +834,7 @@
             lat_esq: document.getElementById('imgLatEsq').src,
             analise_ia: document.getElementById('analiseIA').value
         };
-        
-        if (d.frontal.length < 100) return alert('Adicione pelo menos a foto frontal.');
-        
+        if (d.frontal.length < 100) return alert('Foto?');
         fetch('/api/salvar_fotos', {
             method: 'POST',
             headers: {'Content-Type': 'application/json'},
@@ -746,90 +885,16 @@
         });
     }
 
-    function carregarAvaliacao(id) {
-        fetch(`/api/get_avaliacao/${id}`).then(r => r.json()).then(data => {
-            if (data.encontrado) {
-                // Carregar campos simples
-                ['avOcupacao', 'avDiagMedico', 'avQP', 'avHMA', 'avHPP', 'avHabitos', 'avInspecao', 'avPalpacao', 'avForca', 'avTestes', 'avCIF', 'avObjetivos', 'avConduta'].forEach(k => {
-                    document.getElementById(k).value = data[k.replace('av', '').toLowerCase()] || data[k] || '';
-                });
-
-                // Carregar Goniometria (ADM)
-                const admSalva = data.adm || '';
-                document.getElementById('avADM').value = admSalva;
-                const ul = document.getElementById('listaGoniometria');
-                ul.innerHTML = '';
-                if (admSalva) {
-                    admSalva.split('\n').forEach(linha => {
-                        if (linha.trim()) {
-                            let li = document.createElement('li');
-                            li.className = "list-group-item d-flex justify-content-between align-items-center";
-                            li.innerHTML = `${linha} <button class="btn btn-sm btn-outline-danger py-0" onclick="this.parentElement.remove(); atualizarCampoOculto()">X</button>`;
-                            ul.appendChild(li);
-                        }
-                    });
-                }
-
-                // Carregar JSON Sinais Vitais
-                try {
-                    let s = JSON.parse(data.sinais_vitais);
-                    document.getElementById('sinPA').value = s.pa;
-                    document.getElementById('sinFC').value = s.fc;
-                    document.getElementById('sinSpO2').value = s.spo2;
-                    document.getElementById('sinTemp').value = s.temp;
-                } catch (e) {
-                    document.getElementById('sinPA').value = data.sinais_vitais || '';
-                }
-
-                // Carregar JSON Dor
-                try {
-                    let d = JSON.parse(data.avaliacao_dor);
-                    document.getElementById('dorEVA').value = d.eva;
-                    document.getElementById('dorLocal').value = d.local;
-                    document.getElementById('dorTipo').value = d.tipo;
-                    document.getElementById('dorPiora').value = d.piora;
-                    document.getElementById('dorAlivio').value = d.alivia;
-                } catch (e) {
-                    document.getElementById('dorLocal').value = data.avaliacao_dor || '';
-                }
-
-                document.getElementById('dataUltimaAvaliacao').innerText = "Atualizado em: " + data.data;
-            }
-        });
-    }
-    
-    // FUNÇÃO DE VOZ
-    function startVoice(inputId, btn) {
-        const input = document.getElementById(inputId);
-        if ('webkitSpeechRecognition' in window) {
-            const recognition = new webkitSpeechRecognition();
-            recognition.lang = 'pt-BR';
-            recognition.continuous = false;
-            btn.classList.add('btn-danger');
-            recognition.start();
-            recognition.onresult = (e) => {
-                let txt = e.results[0][0].transcript;
-                input.value += (input.tagName === 'TEXTAREA' ? txt + ". " : txt);
-                btn.classList.remove('btn-danger');
-            };
-        } else {
-            alert("Seu navegador não suporta reconhecimento de voz.");
-        }
-    }
-
     const btnVoiceEvo = document.getElementById('btnVoiceEvo');
     if (btnVoiceEvo) {
-        btnVoiceEvo.addEventListener('click', () => startVoice('textoEvolucao', btnVoiceEvo));
-    }
-    
-    function limparFotos() {
-        ['Frontal','Posterior','LatDir','LatEsq'].forEach(tipo => {
-            document.getElementById('img'+tipo).src='';
-            document.getElementById('img'+tipo).classList.add('d-none');
-            document.getElementById('icon'+tipo).classList.remove('d-none');
-            document.getElementById('file'+tipo).value='';
+        btnVoiceEvo.addEventListener('click', () => {
+            const r = new webkitSpeechRecognition();
+            r.lang = 'pt-BR';
+            r.start();
+            r.onresult = (e) => {
+                document.getElementById('textoEvolucao').value += e.results[0][0].transcript + '. ';
+            };
         });
-        document.getElementById('analiseIA').value='';
     }
 </script>
 {% endblock %}
