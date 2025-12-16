@@ -90,8 +90,8 @@
                                         <h6 class="fw-bold text-secondary border-bottom pb-2 mb-3">1. Identificação</h6>
                                         <div class="row mb-3">
                                             <div class="col-md-4">
-                                                <label class="form-label small text-muted">Ocupação (Demandas Ergonômicas)</label>
-                                                <input type="text" id="avOcupacao" class="form-control" placeholder="Ex: Motorista, Escritório...">
+                                                <label class="form-label small text-muted">Ocupação</label>
+                                                <input type="text" id="avOcupacao" class="form-control" placeholder="Demandas ergonômicas...">
                                             </div>
                                             <div class="col-md-4">
                                                 <label class="form-label small text-muted">Lateralidade</label>
@@ -108,46 +108,115 @@
                                         </div>
 
                                         <h6 class="fw-bold text-secondary border-bottom pb-2 mb-3 mt-4">2. História Clínica</h6>
-                                        
                                         <div class="mb-3">
                                             <label class="form-label fw-bold text-dark">Queixa Principal (QP)</label>
                                             <div class="input-group">
-                                                <input type="text" id="avQP" class="form-control" placeholder="Motivo exato nas palavras do paciente">
+                                                <input type="text" id="avQP" class="form-control" placeholder="Motivo exato...">
                                                 <button class="btn btn-outline-secondary" onclick="startVoice('avQP', this)"><i class="bi bi-mic-fill"></i></button>
                                             </div>
                                         </div>
-
                                         <div class="mb-3">
-                                            <label class="form-label fw-bold text-dark">HDA (História da Doença Atual)</label>
-                                            <div class="form-text mb-1">
-                                                <span class="badge bg-light text-dark border">Início (Agudo/Crônico)</span>
-                                                <span class="badge bg-light text-dark border">Causa (Trauma/Insidiosa)</span>
-                                                <span class="badge bg-light text-dark border">Evolução</span>
-                                                <span class="badge bg-light text-dark border">Fatores Melhora/Piora</span>
-                                            </div>
+                                            <label class="form-label fw-bold text-dark">HMA</label>
                                             <div class="input-group">
-                                                <textarea id="avHMA" class="form-control" rows="4" placeholder="Descreva aqui o histórico da dor atual..."></textarea>
+                                                <textarea id="avHMA" class="form-control" rows="2" placeholder="Histórico da dor..."></textarea>
                                                 <button class="btn btn-outline-secondary" onclick="startVoice('avHMA', this)"><i class="bi bi-mic-fill"></i></button>
                                             </div>
                                         </div>
 
-                                        <div class="mb-3">
-                                            <label class="form-label fw-bold text-dark">HPP / Comorbidades / Medicamentos</label>
-                                            <div class="form-text mb-1">
-                                                Liste aqui: Cirurgias, Hipertensão, Diabetes, Medicamentos em uso.
+                                        <div class="mb-3 p-3 bg-light rounded border">
+                                            <label class="form-label fw-bold text-dark">Comorbidades (HPP)</label>
+                                            <div class="row g-2 mb-2">
+                                                <div class="col-md-4">
+                                                    <select class="form-select form-select-sm" onchange="addComorbidade(this)">
+                                                        <option value="" selected disabled>🧠 Neurológicas...</option>
+                                                        <option value="AVC">AVC</option>
+                                                        <option value="Parkinson">Parkinson</option>
+                                                        <option value="Alzheimer">Alzheimer</option>
+                                                        <option value="Hernia de Disco">Hernia de Disco</option>
+                                                        </select>
+                                                </div>
+                                                <div class="col-md-4">
+                                                    <select class="form-select form-select-sm" onchange="addComorbidade(this)">
+                                                        <option value="" selected disabled>⚖️ Metabólicas...</option>
+                                                        <option value="Diabetes">Diabetes</option>
+                                                        <option value="Hipertensão">Hipertensão</option>
+                                                        <option value="Obesidade">Obesidade</option>
+                                                    </select>
+                                                </div>
+                                                <div class="col-md-4">
+                                                    <select class="form-select form-select-sm" onchange="addComorbidade(this)">
+                                                        <option value="" selected disabled>🦴 Ortopédicas...</option>
+                                                        <option value="Artrose">Artrose</option>
+                                                        <option value="Fratura Antiga">Fratura Antiga</option>
+                                                        <option value="Lombalgia Crônica">Lombalgia Crônica</option>
+                                                    </select>
+                                                </div>
                                             </div>
                                             <div class="input-group">
-                                                <textarea id="avHPP" class="form-control" rows="3" placeholder="Ex: Cirurgia joelho 2010. Hipertenso. Usa Losartana."></textarea>
+                                                <textarea id="avHPP" class="form-control" rows="2" placeholder="Selecione acima..."></textarea>
                                                 <button class="btn btn-outline-secondary" onclick="startVoice('avHPP', this)"><i class="bi bi-mic-fill"></i></button>
                                             </div>
                                         </div>
 
-                                        <h6 class="fw-bold text-secondary border-bottom pb-2 mb-3 mt-4">3. Hábitos de Vida</h6>
-                                        <div class="mb-3">
-                                            <label class="form-label fw-bold text-dark">Atividade, Vícios e Sono</label>
-                                            <div class="input-group">
-                                                <textarea id="avHabitos" class="form-control" rows="2" placeholder="Sedentário? Fuma? Qualidade do sono?"></textarea>
-                                                <button class="btn btn-outline-secondary" onclick="startVoice('avHabitos', this)"><i class="bi bi-mic-fill"></i></button>
+                                        <h6 class="fw-bold text-secondary border-bottom pb-2 mb-3 mt-4">3. Hábitos de Vida (Gerador Automático)</h6>
+                                        
+                                        <div class="p-3 border rounded bg-light mb-3">
+                                            <div class="row g-3">
+                                                <div class="col-md-4">
+                                                    <label class="form-label small fw-bold text-primary">🏃 Atividade Física</label>
+                                                    <select id="selAtividade" class="form-select" onchange="gerarTextoHabitos()">
+                                                        <option value="Sedentário">Sedentário</option>
+                                                        <option value="Leve (1-2x/sem)">Leve (1-2x/sem)</option>
+                                                        <option value="Moderada (3-4x/sem)">Moderada (3-4x/sem)</option>
+                                                        <option value="Intensa (5x+/sem)">Intensa (Atleta)</option>
+                                                    </select>
+                                                </div>
+                                                
+                                                <div class="col-md-4">
+                                                    <label class="form-label small fw-bold text-primary">🍺 Etilismo</label>
+                                                    <select id="selEtilismo" class="form-select" onchange="gerarTextoHabitos()">
+                                                        <option value="Nega etilismo">Nega</option>
+                                                        <option value="Etilista social">Social</option>
+                                                        <option value="Etilista moderado">Moderado</option>
+                                                        <option value="Etilista pesado">Abusivo/Pesado</option>
+                                                    </select>
+                                                </div>
+
+                                                <div class="col-md-4">
+                                                    <label class="form-label small fw-bold text-primary">🚬 Tabagismo</label>
+                                                    <select id="selTabagismo" class="form-select" onchange="toggleTabagismo()">
+                                                        <option value="Nega tabagismo">Nega</option>
+                                                        <option value="Ex-tabagista">Ex-tabagista</option>
+                                                        <option value="Tabagista">Tabagista Ativo</option>
+                                                    </select>
+                                                </div>
+                                            </div>
+
+                                            <div id="divCargaTabagica" class="mt-3 p-2 bg-warning-subtle rounded d-none border border-warning">
+                                                <label class="small fw-bold text-dark d-block mb-2">Calculadora de Carga Tabágica (Maços-Ano)</label>
+                                                <div class="row g-2 align-items-center">
+                                                    <div class="col-md-4">
+                                                        <div class="input-group input-group-sm">
+                                                            <span class="input-group-text">Cigarros/dia</span>
+                                                            <input type="number" id="numCigarros" class="form-control" value="20" oninput="gerarTextoHabitos()">
+                                                        </div>
+                                                    </div>
+                                                    <div class="col-md-4">
+                                                        <div class="input-group input-group-sm">
+                                                            <span class="input-group-text">Anos fumando</span>
+                                                            <input type="number" id="numAnosFumo" class="form-control" value="10" oninput="gerarTextoHabitos()">
+                                                        </div>
+                                                    </div>
+                                                    <div class="col-md-4 text-end">
+                                                        <span class="badge bg-danger fs-6" id="resCargaTabagica">0 Maços-ano</span>
+                                                    </div>
+                                                </div>
+                                                <small class="text-muted" style="font-size: 0.75rem;">Fórmula: (Cigarros/dia ÷ 20) × Anos</small>
+                                            </div>
+
+                                            <div class="mt-3">
+                                                <label class="form-label small text-muted">Texto Gerado (Salvo no Banco):</label>
+                                                <textarea id="avHabitos" class="form-control bg-white" rows="2" readonly></textarea>
                                             </div>
                                         </div>
 
@@ -216,6 +285,51 @@
         }
     }
 
+    // --- GERADOR DE HÁBITOS DE VIDA (LÓGICA NOVA) ---
+    function toggleTabagismo() {
+        var status = document.getElementById('selTabagismo').value;
+        var divCalc = document.getElementById('divCargaTabagica');
+        
+        if (status === 'Tabagista' || status === 'Ex-tabagista') {
+            divCalc.classList.remove('d-none');
+        } else {
+            divCalc.classList.add('d-none');
+        }
+        gerarTextoHabitos();
+    }
+
+    function gerarTextoHabitos() {
+        var ativ = document.getElementById('selAtividade').value;
+        var etil = document.getElementById('selEtilismo').value;
+        var tab = document.getElementById('selTabagismo').value;
+        var textoFinal = `Atividade Física: ${ativ}. ${etil}. ${tab}`;
+
+        if (tab !== 'Nega tabagismo') {
+            var cigs = parseFloat(document.getElementById('numCigarros').value) || 0;
+            var anos = parseFloat(document.getElementById('numAnosFumo').value) || 0;
+            // Cálculo Maços-Ano: (Cigarros/dia / 20) * Anos
+            var carga = (cigs / 20) * anos;
+            var cargaFormatada = carga.toFixed(1).replace('.0', ''); // Remove decimal se for inteiro
+            
+            document.getElementById('resCargaTabagica').innerText = `${cargaFormatada} Maços-ano`;
+            textoFinal += ` (${cigs} cigarros/dia por ${anos} anos = Carga Tabágica: ${cargaFormatada} maços-ano).`;
+        } else {
+            textoFinal += ".";
+        }
+
+        document.getElementById('avHabitos').value = textoFinal;
+    }
+
+    // --- ADICIONAR COMORBIDADES ---
+    function addComorbidade(select) {
+        var valor = select.value;
+        var campoTexto = document.getElementById('avHPP');
+        if (valor) {
+            if (campoTexto.value === "") { campoTexto.value = valor; } else { campoTexto.value += ", " + valor; }
+            select.selectedIndex = 0;
+        }
+    }
+
     function abrirProntuario(id, nome) {
         document.getElementById('idPacienteProntuario').value = id;
         document.getElementById('tituloProntuario').innerText = nome;
@@ -223,10 +337,15 @@
         // Limpar Campos
         document.getElementById('textoEvolucao').value = '';
         limparFotos();
-        
-        // Limpar Avaliação
-        const campos = ['avOcupacao','avDiagMedico','avQP','avHMA','avHPP','avHabitos','avSinais','avDor','avInspecao','avPalpacao','avADM','avForca','avTestes','avCIF','avObjetivos','avConduta'];
+        const campos = ['avOcupacao','avDiagMedico','avQP','avHMA','avHPP','avSinais','avDor','avInspecao','avPalpacao','avADM','avForca','avTestes','avCIF','avObjetivos','avConduta'];
         campos.forEach(c => { if(document.getElementById(c)) document.getElementById(c).value = ''; });
+        
+        // Resetar Habitos
+        document.getElementById('selAtividade').selectedIndex = 0;
+        document.getElementById('selEtilismo').selectedIndex = 0;
+        document.getElementById('selTabagismo').selectedIndex = 0;
+        toggleTabagismo(); // Esconde a calc
+        document.getElementById('avHabitos').value = '';
 
         var modal = new bootstrap.Modal(document.getElementById('modalProntuario'));
         modal.show();
@@ -236,59 +355,8 @@
         carregarFotos(id);
     }
 
-    // --- EVOLUÇÃO ---
-    function carregarHistorico(id) {
-        const divLista = document.getElementById('listaHistorico');
-        divLista.innerHTML = '<div class="text-center py-4"><div class="spinner-border text-primary"></div></div>';
-        fetch(`/api/evolucoes/${id}`).then(r => r.json()).then(data => {
-            divLista.innerHTML = '';
-            if(data.length === 0) { divLista.innerHTML = '<div class="alert alert-light text-center">Histórico vazio.</div>'; return; }
-            data.forEach(item => { divLista.innerHTML += `<div class="card mb-2 border-0 shadow-sm"><div class="card-body p-3"><small class="text-primary fw-bold"><i class="bi bi-calendar-event"></i> ${item.data}</small><p class="card-text text-secondary mt-1" style="white-space: pre-wrap;">${item.texto}</p></div></div>`; });
-        });
-    }
-
-    function salvarEvolucao() {
-        const id = document.getElementById('idPacienteProntuario').value;
-        const texto = document.getElementById('textoEvolucao').value;
-        if(!texto) return alert("Escreva algo!");
-        fetch('/api/nova_evolucao', { method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({ paciente_id: id, texto: texto }) }).then(() => {
-            document.getElementById('textoEvolucao').value = '';
-            carregarHistorico(id);
-            alert("Evolução salva!");
-        });
-    }
-
-    // --- AVALIAÇÃO COMPLETA ---
-    function salvarAvaliacao() {
-        const id = document.getElementById('idPacienteProntuario').value;
-        const dados = {
-            paciente_id: id,
-            ocupacao: document.getElementById('avOcupacao').value,
-            lateralidade: document.getElementById('avLateralidade').value,
-            diagnostico_medico: document.getElementById('avDiagMedico').value,
-            queixa_principal: document.getElementById('avQP').value,
-            hma: document.getElementById('avHMA').value,
-            hpp: document.getElementById('avHPP').value,
-            habitos: document.getElementById('avHabitos').value,
-            sinais_vitais: document.getElementById('avSinais').value,
-            avaliacao_dor: document.getElementById('avDor').value,
-            inspecao: document.getElementById('avInspecao').value,
-            palpacao: document.getElementById('avPalpacao').value,
-            adm: document.getElementById('avADM').value,
-            forca_muscular: document.getElementById('avForca').value,
-            neuro: '', // Campo extra se precisar
-            testes_especiais: document.getElementById('avTestes').value,
-            diagnostico_cif: document.getElementById('avCIF').value,
-            objetivos: document.getElementById('avObjetivos').value,
-            conduta: document.getElementById('avConduta').value
-        };
-
-        fetch('/api/salvar_avaliacao', { method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify(dados) }).then(() => {
-            alert("Avaliação Completa Salva!");
-            carregarAvaliacao(id);
-        });
-    }
-
+    // --- CARREGAR DADOS ---
+    // (Mantido igual ao anterior, mas agora carrega o texto gerado no campo avHabitos)
     function carregarAvaliacao(id) {
         fetch(`/api/get_avaliacao/${id}`).then(r => r.json()).then(data => {
             if(data.encontrado) {
@@ -298,7 +366,10 @@
                 document.getElementById('avQP').value = data.queixa_principal || '';
                 document.getElementById('avHMA').value = data.hma || '';
                 document.getElementById('avHPP').value = data.hpp || '';
+                // O campo Habitos agora recebe o texto salvo (que foi gerado pelos selects)
                 document.getElementById('avHabitos').value = data.habitos || '';
+                
+                // Os outros campos...
                 document.getElementById('avSinais').value = data.sinais_vitais || '';
                 document.getElementById('avDor').value = data.avaliacao_dor || '';
                 document.getElementById('avInspecao').value = data.inspecao || '';
@@ -316,7 +387,55 @@
         });
     }
 
-    // --- FOTOS E VOZ ---
+    // --- FUNÇÕES DE SALVAR (Mantidas) ---
+    function salvarAvaliacao() {
+        const id = document.getElementById('idPacienteProntuario').value;
+        const dados = {
+            paciente_id: id,
+            ocupacao: document.getElementById('avOcupacao').value,
+            lateralidade: document.getElementById('avLateralidade').value,
+            diagnostico_medico: document.getElementById('avDiagMedico').value,
+            queixa_principal: document.getElementById('avQP').value,
+            hma: document.getElementById('avHMA').value,
+            hpp: document.getElementById('avHPP').value,
+            habitos: document.getElementById('avHabitos').value, // Salva o texto gerado
+            sinais_vitais: document.getElementById('avSinais').value,
+            avaliacao_dor: document.getElementById('avDor').value,
+            inspecao: document.getElementById('avInspecao').value,
+            palpacao: document.getElementById('avPalpacao').value,
+            adm: document.getElementById('avADM').value,
+            forca_muscular: document.getElementById('avForca').value,
+            neuro: '',
+            testes_especiais: document.getElementById('avTestes').value,
+            diagnostico_cif: document.getElementById('avCIF').value,
+            objetivos: document.getElementById('avObjetivos').value,
+            conduta: document.getElementById('avConduta').value
+        };
+
+        fetch('/api/salvar_avaliacao', { method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify(dados) }).then(() => {
+            alert("Avaliação Completa Salva!");
+            carregarAvaliacao(id);
+        });
+    }
+
+    // --- RESTANTE DO CÓDIGO (EVOLUÇÃO, FOTOS, VOZ) MANTIDO IGUAL ---
+    function carregarHistorico(id) {
+        const divLista = document.getElementById('listaHistorico');
+        divLista.innerHTML = '<div class="text-center py-4"><div class="spinner-border text-primary"></div></div>';
+        fetch(`/api/evolucoes/${id}`).then(r => r.json()).then(data => {
+            divLista.innerHTML = '';
+            if(data.length === 0) { divLista.innerHTML = '<div class="alert alert-light text-center">Histórico vazio.</div>'; return; }
+            data.forEach(item => { divLista.innerHTML += `<div class="card mb-2 border-0 shadow-sm"><div class="card-body p-3"><small class="text-primary fw-bold"><i class="bi bi-calendar-event"></i> ${item.data}</small><p class="card-text text-secondary mt-1" style="white-space: pre-wrap;">${item.texto}</p></div></div>`; });
+        });
+    }
+    function salvarEvolucao() {
+        const id = document.getElementById('idPacienteProntuario').value;
+        const texto = document.getElementById('textoEvolucao').value;
+        if(!texto) return alert("Escreva algo!");
+        fetch('/api/nova_evolucao', { method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({ paciente_id: id, texto: texto }) }).then(() => {
+            document.getElementById('textoEvolucao').value = ''; carregarHistorico(id); alert("Evolução salva!");
+        });
+    }
     function processarImagem(input, imgId, iconId) {
         if (input.files && input.files[0]) {
             var reader = new FileReader();
@@ -328,15 +447,12 @@
                     canvas.width = imgTemp.width * ratio; canvas.height = imgTemp.height * ratio;
                     ctx.drawImage(imgTemp, 0, 0, canvas.width, canvas.height);
                     var dataUrl = canvas.toDataURL('image/jpeg', 0.7);
-                    document.getElementById(imgId).src = dataUrl;
-                    document.getElementById(imgId).classList.remove('d-none');
-                    document.getElementById(iconId).classList.add('d-none');
+                    document.getElementById(imgId).src = dataUrl; document.getElementById(imgId).classList.remove('d-none'); document.getElementById(iconId).classList.add('d-none');
                 }
             }
             reader.readAsDataURL(input.files[0]);
         }
     }
-    
     function limparFotos() {
         ['Frontal','Posterior','LatDir','LatEsq'].forEach(tipo => {
             document.getElementById('img'+tipo).src=''; document.getElementById('img'+tipo).classList.add('d-none');
@@ -344,7 +460,6 @@
         });
         document.getElementById('analiseIA').value='';
     }
-
     function salvarFotos() {
         const id = document.getElementById('idPacienteProntuario').value;
         const dados = {
@@ -355,7 +470,6 @@
         if(dados.frontal.length < 100 && dados.posterior.length < 100) return alert("Adicione uma foto.");
         fetch('/api/salvar_fotos', { method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify(dados) }).then(() => { alert("Fotos salvas!"); carregarFotos(id); });
     }
-
     function carregarFotos(id) {
         fetch(`/api/get_fotos/${id}`).then(r => r.json()).then(data => {
             if(data.encontrado) {
@@ -369,7 +483,6 @@
             }
         });
     }
-
     function startVoice(inputId, btn) {
         const input = document.getElementById(inputId);
         if ('webkitSpeechRecognition' in window) {
