@@ -1,12 +1,12 @@
 {% extends "layout.html" %}
 
 {% block content %}
-<div class="d-flex justify-content-between align-items-center mb-4">
-    <h2 class="brand-title"><i class="bi bi-journal-medical text-primary me-2"></i> Prontuário Eletrônico</h2>
+<div class="d-flex flex-column flex-md-row justify-content-between align-items-center mb-4">
+    <h2 class="brand-title mb-3 mb-md-0"><i class="bi bi-journal-medical text-primary me-2"></i> Prontuário</h2>
 </div>
 
 <div class="card border-0 shadow-sm mb-4">
-    <div class="card-body">
+    <div class="card-body p-2">
         <div class="input-group">
             <span class="input-group-text bg-white border-end-0"><i class="bi bi-search text-muted"></i></span>
             <input type="text" id="filtroPaciente" class="form-control border-start-0" placeholder="Buscar paciente..." onkeyup="filtrarLista()">
@@ -14,20 +14,20 @@
     </div>
 </div>
 
-<div class="row" id="listaPacientesCards">
+<div class="row g-3" id="listaPacientesCards">
     {% for p in pacientes %}
-    <div class="col-md-4 mb-3 item-paciente">
+    <div class="col-12 col-md-4 item-paciente">
         <div class="card h-100 border-0 shadow-sm hover-card">
-            <div class="card-body d-flex flex-column align-items-center text-center p-4">
-                <div class="rounded-circle bg-primary bg-opacity-10 p-3 mb-3 text-primary">
+            <div class="card-body d-flex flex-row flex-md-column align-items-center text-center p-3">
+                <div class="rounded-circle bg-primary bg-opacity-10 p-3 me-3 me-md-0 mb-md-3 text-primary">
                     <i class="bi bi-person-fill fs-3"></i>
                 </div>
-                <h5 class="card-title fw-bold text-dark mb-1 nome-paciente">{{ p[1] }}</h5>
-                <p class="text-muted small mb-3">
-                    <i class="bi bi-cake2"></i> {% if p[2] %} {{ p[2].strftime('%d/%m/%Y') }} {% else %} Data n/d {% endif %}
-                </p>
-                <button class="btn btn-primary w-100 mt-auto rounded-pill" onclick="abrirProntuario({{ p[0] }}, '{{ p[1] }}')">
-                    <i class="bi bi-folder2-open"></i> Abrir Ficha
+                <div class="text-start text-md-center flex-grow-1">
+                    <h5 class="card-title fw-bold text-dark mb-1 nome-paciente">{{ p[1] }}</h5>
+                    <p class="text-muted small mb-0"><i class="bi bi-cake2"></i> {% if p[2] %} {{ p[2].strftime('%d/%m/%Y') }} {% else %} --/--/-- {% endif %}</p>
+                </div>
+                <button class="btn btn-primary rounded-pill ms-2 ms-md-0 mt-md-3" onclick="abrirProntuario({{ p[0] }}, '{{ p[1] }}')">
+                    <i class="bi bi-folder2-open"></i> <span class="d-none d-md-inline">Abrir</span>
                 </button>
             </div>
         </div>
@@ -38,50 +38,38 @@
 </div>
 
 <div class="modal fade" id="modalProntuario" tabindex="-1">
-    <div class="modal-dialog modal-xl">
+    <div class="modal-dialog modal-xl modal-dialog-scrollable">
         <div class="modal-content">
-            <div class="modal-header bg-primary text-white">
-                <h5 class="modal-title"><i class="bi bi-clipboard2-pulse"></i> Ficha: <span id="tituloProntuario" class="fw-bold"></span></h5>
+            <div class="modal-header bg-primary text-white py-2">
+                <h5 class="modal-title fs-6"><i class="bi bi-clipboard2-pulse"></i> <span id="tituloProntuario" class="fw-bold"></span></h5>
                 <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
             </div>
             
-            <div class="modal-body bg-light">
+            <div class="modal-body bg-light p-2">
                 <input type="hidden" id="idPacienteProntuario">
 
-                <ul class="nav nav-tabs mb-3" id="prontuarioTabs" role="tablist">
-                    <li class="nav-item">
-                        <button class="nav-link active fw-bold" data-bs-toggle="tab" data-bs-target="#tab-evolucao">
-                            <i class="bi bi-list-check"></i> Evolução
-                        </button>
-                    </li>
-                    <li class="nav-item">
-                        <button class="nav-link fw-bold" data-bs-toggle="tab" data-bs-target="#tab-avaliacao">
-                            <i class="bi bi-person-lines-fill"></i> Avaliação
-                        </button>
-                    </li>
-                    <li class="nav-item">
-                        <button class="nav-link fw-bold" data-bs-toggle="tab" data-bs-target="#tab-postural">
-                            <i class="bi bi-camera-fill"></i> Postural (IA)
-                        </button>
-                    </li>
+                <ul class="nav nav-pills nav-fill mb-3 gap-1" id="prontuarioTabs" role="tablist">
+                    <li class="nav-item"><button class="nav-link active btn-sm" data-bs-toggle="tab" data-bs-target="#tab-evolucao"><i class="bi bi-list-check"></i> Evolução</button></li>
+                    <li class="nav-item"><button class="nav-link btn-sm" data-bs-toggle="tab" data-bs-target="#tab-avaliacao"><i class="bi bi-person-lines-fill"></i> Avaliação</button></li>
+                    <li class="nav-item"><button class="nav-link btn-sm" data-bs-toggle="tab" data-bs-target="#tab-postural"><i class="bi bi-camera-fill"></i> Fotos</button></li>
                 </ul>
 
                 <div class="tab-content">
                     
                     <div class="tab-pane fade show active" id="tab-evolucao">
-                        <div class="row">
-                            <div class="col-md-5 border-end">
-                                <h6 class="text-primary fw-bold mb-3">Nova Evolução</h6>
-                                <div class="mb-3">
-                                    <div class="input-group">
-                                        <textarea id="textoEvolucao" class="form-control" rows="8" placeholder="Relate o procedimento..."></textarea>
-                                        <button class="btn btn-outline-secondary" type="button" id="btnVoiceEvo"><i class="bi bi-mic-fill"></i></button>
+                        <div class="row g-2">
+                            <div class="col-12 col-md-5 order-md-1 mb-2">
+                                <div class="bg-white p-2 rounded shadow-sm">
+                                    <h6 class="text-primary fw-bold mb-2">Nova Evolução</h6>
+                                    <div class="input-group mb-2">
+                                        <textarea id="textoEvolucao" class="form-control" rows="5" placeholder="Relate o procedimento..."></textarea>
+                                        <button class="btn btn-outline-secondary" type="button" id="btnVoiceEvo"><i class="bi bi-mic-fill fs-4"></i></button>
                                     </div>
+                                    <button onclick="salvarEvolucao()" class="btn btn-success w-100 py-2"><i class="bi bi-save"></i> Salvar Evolução</button>
                                 </div>
-                                <div class="d-grid"><button onclick="salvarEvolucao()" class="btn btn-success"><i class="bi bi-save"></i> Salvar</button></div>
                             </div>
-                            <div class="col-md-7">
-                                <h6 class="text-muted fw-bold mb-3">Histórico</h6>
+                            <div class="col-12 col-md-7 order-md-2">
+                                <h6 class="text-muted fw-bold mb-2">Histórico</h6>
                                 <div id="listaHistorico" style="max-height: 400px; overflow-y: auto;"></div>
                             </div>
                         </div>
@@ -91,102 +79,124 @@
                         <div class="accordion" id="accordionAvaliacao">
                             
                             <div class="accordion-item">
-                                <h2 class="accordion-header">
-                                    <button class="accordion-button fw-bold text-primary" type="button" data-bs-toggle="collapse" data-bs-target="#collapseOne">
-                                        I. Anamnese (Histórico Clínico)
-                                    </button>
-                                </h2>
+                                <h2 class="accordion-header"><button class="accordion-button fw-bold text-primary py-2" type="button" data-bs-toggle="collapse" data-bs-target="#collapseOne">I. Anamnese</button></h2>
                                 <div id="collapseOne" class="accordion-collapse collapse show" data-bs-parent="#accordionAvaliacao">
-                                    <div class="accordion-body">
+                                    <div class="accordion-body p-2">
                                         
-                                        <div class="alert alert-danger mb-4 shadow-sm">
-                                            <h6 class="alert-heading fw-bold mb-2"><i class="bi bi-exclamation-triangle-fill"></i> Red Flags (Sinais de Alerta)</h6>
-                                            <p class="small mb-2">Selecione para adicionar à HDA:</p>
+                                        <div class="alert alert-danger mb-3 p-2 shadow-sm">
+                                            <h6 class="alert-heading fw-bold small mb-2"><i class="bi bi-exclamation-triangle-fill"></i> Red Flags</h6>
                                             <div class="row g-2">
-                                                <div class="col-md-4"><button class="btn btn-sm btn-outline-danger w-100 text-start" onclick="addRedFlag('Perda de peso inexplicada')">📉 Perda de peso inexplicada</button></div>
-                                                <div class="col-md-4"><button class="btn btn-sm btn-outline-danger w-100 text-start" onclick="addRedFlag('Dor noturna constante')">🌙 Dor noturna/repouso</button></div>
-                                                <div class="col-md-4"><button class="btn btn-sm btn-outline-danger w-100 text-start" onclick="addRedFlag('Histórico de Câncer')">🎗️ Histórico de Câncer</button></div>
-                                                <div class="col-md-4"><button class="btn btn-sm btn-outline-danger w-100 text-start" onclick="addRedFlag('Febre/Infecção recente')">🌡️ Febre/Infecção recente</button></div>
-                                                <div class="col-md-4"><button class="btn btn-sm btn-outline-danger w-100 text-start" onclick="addRedFlag('Déficit neurológico progressivo')">🧠 Déficit neuro progressivo</button></div>
-                                                <div class="col-md-4"><button class="btn btn-sm btn-outline-danger w-100 text-start" onclick="addRedFlag('Disfunção Bexiga/Intestino')">🚽 Disfunção Bexiga/Intestino</button></div>
+                                                <div class="col-6 col-md-4"><button class="btn btn-sm btn-outline-danger w-100 text-start text-truncate" onclick="addRedFlag('Perda de peso')">📉 Perda peso</button></div>
+                                                <div class="col-6 col-md-4"><button class="btn btn-sm btn-outline-danger w-100 text-start text-truncate" onclick="addRedFlag('Dor noturna')">🌙 Dor noturna</button></div>
+                                                <div class="col-6 col-md-4"><button class="btn btn-sm btn-outline-danger w-100 text-start text-truncate" onclick="addRedFlag('Histórico Câncer')">🎗️ Câncer</button></div>
+                                                <div class="col-6 col-md-4"><button class="btn btn-sm btn-outline-danger w-100 text-start text-truncate" onclick="addRedFlag('Febre/Infecção')">🌡️ Febre</button></div>
+                                                <div class="col-6 col-md-4"><button class="btn btn-sm btn-outline-danger w-100 text-start text-truncate" onclick="addRedFlag('Déficit Neuro')">🧠 Neuro</button></div>
+                                                <div class="col-6 col-md-4"><button class="btn btn-sm btn-outline-danger w-100 text-start text-truncate" onclick="addRedFlag('Bexiga/Intestino')">🚽 Bexiga</button></div>
                                             </div>
                                         </div>
 
-                                        <h6 class="fw-bold text-secondary border-bottom pb-2 mb-3">1. Identificação</h6>
-                                        <div class="row mb-3">
-                                            <div class="col-md-4"><label class="form-label small text-muted">Ocupação</label><input type="text" id="avOcupacao" class="form-control"></div>
-                                            <div class="col-md-4"><label class="form-label small text-muted">Lateralidade</label><select id="avLateralidade" class="form-select"><option>Destro</option><option>Canhoto</option><option>Ambidestro</option></select></div>
-                                            <div class="col-md-4"><label class="form-label small text-muted">Diagnóstico Médico</label><input type="text" id="avDiagMedico" class="form-control"></div>
+                                        <div class="row g-2 mb-2">
+                                            <div class="col-12 col-md-4"><input type="text" id="avOcupacao" class="form-control form-control-sm" placeholder="Ocupação"></div>
+                                            <div class="col-6 col-md-4"><select id="avLateralidade" class="form-select form-select-sm"><option>Destro</option><option>Canhoto</option><option>Ambidestro</option></select></div>
+                                            <div class="col-6 col-md-4"><input type="text" id="avDiagMedico" class="form-control form-control-sm" placeholder="Diag. Médico"></div>
                                         </div>
 
-                                        <h6 class="fw-bold text-secondary border-bottom pb-2 mb-3 mt-4">2. História Clínica</h6>
-                                        <div class="mb-3"><label class="form-label fw-bold text-dark">Queixa Principal (QP)</label><div class="input-group"><input type="text" id="avQP" class="form-control"><button class="btn btn-outline-secondary" onclick="startVoice('avQP', this)"><i class="bi bi-mic-fill"></i></button></div></div>
-                                        <div class="mb-3"><label class="form-label fw-bold text-dark">História da Doença Atual (HDA)</label><div class="input-group"><textarea id="avHMA" class="form-control" rows="3"></textarea><button class="btn btn-outline-secondary" onclick="startVoice('avHMA', this)"><i class="bi bi-mic-fill"></i></button></div></div>
+                                        <div class="mb-2">
+                                            <label class="small fw-bold">Queixa Principal (QP)</label>
+                                            <div class="input-group input-group-sm"><input type="text" id="avQP" class="form-control"><button class="btn btn-outline-secondary" onclick="startVoice('avQP', this)"><i class="bi bi-mic-fill"></i></button></div>
+                                        </div>
+                                        <div class="mb-2">
+                                            <label class="small fw-bold">HDA (História Doença Atual)</label>
+                                            <div class="input-group input-group-sm"><textarea id="avHMA" class="form-control" rows="3"></textarea><button class="btn btn-outline-secondary" onclick="startVoice('avHMA', this)"><i class="bi bi-mic-fill"></i></button></div>
+                                        </div>
 
-                                        <div class="mb-3 p-3 bg-light rounded border">
-                                            <label class="form-label fw-bold text-dark">Comorbidades (HPP)</label>
+                                        <div class="p-2 bg-light rounded border mb-3">
+                                            <label class="small fw-bold">Comorbidades (HPP)</label>
                                             <div class="row g-2 mb-2">
-                                                <div class="col-md-4"><select class="form-select form-select-sm" onchange="addComorbidade(this)"><option value="" disabled selected>🧠 Neurológicas...</option><option value="AVC">AVC</option><option value="Parkinson">Parkinson</option><option value="Alzheimer">Alzheimer</option><option value="Esclerose Múltipla">Esclerose Múltipla</option></select></div>
-                                                <div class="col-md-4"><select class="form-select form-select-sm" onchange="addComorbidade(this)"><option value="" disabled selected>⚖️ Metabólicas...</option><option value="Diabetes">Diabetes</option><option value="Hipertensão">Hipertensão</option><option value="Obesidade">Obesidade</option><option value="Hipotireoidismo">Hipotireoidismo</option></select></div>
-                                                <div class="col-md-4"><select class="form-select form-select-sm" onchange="addComorbidade(this)"><option value="" disabled selected>🦴 Ortopédicas...</option><option value="Artrose">Artrose</option><option value="Fratura">Fratura</option><option value="Hérnia de Disco">Hérnia de Disco</option><option value="Lombalgia">Lombalgia</option></select></div>
+                                                <div class="col-12 col-md-4"><select class="form-select form-select-sm" onchange="addComorbidade(this)"><option value="" disabled selected>🧠 Neurológicas...</option><option value="AVC">AVC</option><option value="Parkinson">Parkinson</option><option value="Alzheimer">Alzheimer</option><option value="Esclerose Múltipla">Esclerose Múltipla</option></select></div>
+                                                <div class="col-6 col-md-4"><select class="form-select form-select-sm" onchange="addComorbidade(this)"><option value="" disabled selected>⚖️ Metabólicas...</option><option value="Diabetes">Diabetes</option><option value="Hipertensão">Hipertensão</option><option value="Obesidade">Obesidade</option></select></div>
+                                                <div class="col-6 col-md-4"><select class="form-select form-select-sm" onchange="addComorbidade(this)"><option value="" disabled selected>🦴 Ortopédicas...</option><option value="Artrose">Artrose</option><option value="Fratura">Fratura</option><option value="Hérnia de Disco">Hérnia de Disco</option></select></div>
+                                                <div class="col-6 col-md-6"><select class="form-select form-select-sm" onchange="addComorbidade(this)"><option value="" disabled selected>❤️ Cardiovasculares...</option><option value="Insuficiência Cardíaca">Insuficiência Cardíaca</option><option value="Arritmias">Arritmias</option><option value="DAC">DAC</option></select></div>
+                                                <div class="col-6 col-md-6"><select class="form-select form-select-sm" onchange="addComorbidade(this)"><option value="" disabled selected>🫁 Respiratórias...</option><option value="Asma">Asma</option><option value="DPOC">DPOC</option><option value="Pneumonia">Pneumonia</option></select></div>
                                             </div>
-                                            <div class="row g-2 mb-2">
-                                                <div class="col-md-6"><select class="form-select form-select-sm" onchange="addComorbidade(this)"><option value="" disabled selected>❤️ Cardiovasculares...</option><option value="Insuficiência Cardíaca">Insuficiência Cardíaca</option><option value="Arritmias">Arritmias</option><option value="DAC">DAC / Isquêmica</option></select></div>
-                                                <div class="col-md-6"><select class="form-select form-select-sm" onchange="addComorbidade(this)"><option value="" disabled selected>🫁 Respiratórias...</option><option value="Asma">Asma</option><option value="DPOC">DPOC</option><option value="Pneumonia">Pneumonia</option></select></div>
-                                            </div>
-                                            <div class="input-group"><textarea id="avHPP" class="form-control" rows="2"></textarea><button class="btn btn-outline-secondary" onclick="startVoice('avHPP', this)"><i class="bi bi-mic-fill"></i></button></div>
+                                            <div class="input-group input-group-sm"><textarea id="avHPP" class="form-control" rows="2"></textarea><button class="btn btn-outline-secondary" onclick="startVoice('avHPP', this)"><i class="bi bi-mic-fill"></i></button></div>
                                         </div>
 
-                                        <h6 class="fw-bold text-secondary border-bottom pb-2 mb-3 mt-4">3. Hábitos de Vida</h6>
-                                        <div class="p-3 border rounded bg-light mb-3">
-                                            <div class="row g-3">
-                                                <div class="col-md-4"><label class="small fw-bold text-primary">🏃 Atividade Física</label><select id="selAtividade" class="form-select" onchange="gerarTextoHabitos()"><option>Sedentário</option><option>Leve</option><option>Moderada</option><option>Intensa</option></select></div>
-                                                <div class="col-md-4"><label class="small fw-bold text-primary">🍺 Etilismo</label><select id="selEtilismo" class="form-select" onchange="gerarTextoHabitos()"><option>Nega</option><option>Social</option><option>Moderado</option></select></div>
-                                                <div class="col-md-4"><label class="small fw-bold text-primary">🚬 Tabagismo</label><select id="selTabagismo" class="form-select" onchange="toggleTabagismo()"><option>Nega tabagismo</option><option>Ex-tabagista</option><option>Tabagista</option></select></div>
+                                        <div class="p-2 border rounded bg-light">
+                                            <label class="small fw-bold text-primary">Hábitos de Vida</label>
+                                            <div class="row g-2">
+                                                <div class="col-12 col-md-4"><select id="selAtividade" class="form-select form-select-sm" onchange="gerarTextoHabitos()"><option>Sedentário</option><option>Leve</option><option>Moderada</option><option>Intensa</option></select></div>
+                                                <div class="col-6 col-md-4"><select id="selEtilismo" class="form-select form-select-sm" onchange="gerarTextoHabitos()"><option>Nega Etilismo</option><option>Social</option><option>Moderado</option></select></div>
+                                                <div class="col-6 col-md-4"><select id="selTabagismo" class="form-select form-select-sm" onchange="toggleTabagismo()"><option>Nega Tabagismo</option><option>Ex-tabagista</option><option>Tabagista</option></select></div>
                                             </div>
-                                            <div id="divCargaTabagica" class="mt-3 p-2 bg-warning-subtle rounded d-none border border-warning"><label class="small fw-bold text-dark d-block mb-2">Calculadora de Carga Tabágica</label><div class="row g-2 align-items-center"><div class="col-md-4"><div class="input-group input-group-sm"><span class="input-group-text">Cigs/dia</span><input type="number" id="numCigarros" class="form-control" value="20" oninput="gerarTextoHabitos()"></div></div><div class="col-md-4"><div class="input-group input-group-sm"><span class="input-group-text">Anos</span><input type="number" id="numAnosFumo" class="form-control" value="10" oninput="gerarTextoHabitos()"></div></div><div class="col-md-4 text-end"><span class="badge bg-danger fs-6" id="resCargaTabagica">0 Maços-ano</span></div></div></div>
-                                            <div class="mt-3"><label class="small text-muted">Texto Gerado:</label><textarea id="avHabitos" class="form-control bg-white" rows="2" readonly></textarea></div>
+                                            <div id="divCargaTabagica" class="mt-2 p-2 bg-warning-subtle rounded d-none border border-warning">
+                                                <div class="row g-2 align-items-center">
+                                                    <div class="col-4"><input type="number" inputmode="numeric" id="numCigarros" class="form-control form-control-sm" placeholder="Cigs/dia" value="20" oninput="gerarTextoHabitos()"></div>
+                                                    <div class="col-4"><input type="number" inputmode="numeric" id="numAnosFumo" class="form-control form-control-sm" placeholder="Anos" value="10" oninput="gerarTextoHabitos()"></div>
+                                                    <div class="col-4 text-end"><span class="badge bg-danger" id="resCargaTabagica">--</span></div>
+                                                </div>
+                                            </div>
+                                            <textarea id="avHabitos" class="form-control form-control-sm mt-2 bg-white" rows="2" readonly></textarea>
                                         </div>
                                     </div>
                                 </div>
                             </div>
                             
                             <div class="accordion-item">
-                                <h2 class="accordion-header">
-                                    <button class="accordion-button collapsed fw-bold text-primary" type="button" data-bs-toggle="collapse" data-bs-target="#collapseTwo">
-                                        II. Exame Físico (Objetivo)
-                                    </button>
-                                </h2>
+                                <h2 class="accordion-header"><button class="accordion-button collapsed fw-bold text-primary py-2" type="button" data-bs-toggle="collapse" data-bs-target="#collapseTwo">II. Exame Físico</button></h2>
                                 <div id="collapseTwo" class="accordion-collapse collapse" data-bs-parent="#accordionAvaliacao">
-                                    <div class="accordion-body">
+                                    <div class="accordion-body p-2">
                                         
-                                        <div class="mb-3"><label class="small fw-bold">Sinais Vitais</label><div class="input-group input-group-sm"><span class="input-group-text">PA</span><input type="text" class="form-control" id="sinPA"><span class="input-group-text">FC</span><input type="text" class="form-control" id="sinFC"><span class="input-group-text">SpO2</span><input type="text" class="form-control" id="sinSpO2"><span class="input-group-text">Temp</span><input type="text" class="form-control" id="sinTemp"></div></div>
+                                        <div class="mb-3"><label class="small fw-bold">Sinais Vitais</label>
+                                            <div class="input-group input-group-sm">
+                                                <input type="tel" class="form-control" id="sinPA" placeholder="PA"><span class="input-group-text px-1">/</span>
+                                                <input type="tel" class="form-control" id="sinFC" placeholder="FC"><span class="input-group-text px-1">/</span>
+                                                <input type="tel" class="form-control" id="sinSpO2" placeholder="SpO2"><span class="input-group-text px-1">/</span>
+                                                <input type="tel" class="form-control" id="sinTemp" placeholder="Temp">
+                                            </div>
+                                        </div>
 
-                                        <div class="mb-3 p-2 bg-light border rounded"><label class="small fw-bold">Avaliação da Dor</label><div class="row g-2 mb-2"><div class="col-2"><input type="number" id="dorEVA" class="form-control form-control-sm" placeholder="EVA"></div><div class="col-5"><input type="text" id="dorLocal" class="form-control form-control-sm" placeholder="Local"></div><div class="col-5"><select id="dorTipo" class="form-select form-select-sm"><option value="">Tipo...</option><option>Pontada</option><option>Queimação</option><option>Pulsátil</option><option>Choque</option><option>Cansaço</option></select></div></div><div class="row g-2"><div class="col-6"><input type="text" id="dorPiora" class="form-control form-control-sm" placeholder="Piora..."></div><div class="col-6"><input type="text" id="dorAlivio" class="form-control form-control-sm" placeholder="Alivia..."></div></div></div>
+                                        <div class="mb-3 p-2 bg-light border rounded">
+                                            <label class="small fw-bold">Dor</label>
+                                            <div class="row g-2 mb-2">
+                                                <div class="col-3"><input type="number" inputmode="numeric" id="dorEVA" class="form-control form-control-sm" placeholder="EVA"></div>
+                                                <div class="col-9"><input type="text" id="dorLocal" class="form-control form-control-sm" placeholder="Local"></div>
+                                            </div>
+                                            <div class="row g-2">
+                                                <div class="col-12"><select id="dorTipo" class="form-select form-select-sm"><option value="">Tipo...</option><option>Pontada</option><option>Queimação</option><option>Pulsátil</option><option>Cansaço</option><option>Choque</option></select></div>
+                                                <div class="col-6"><input type="text" id="dorPiora" class="form-control form-control-sm" placeholder="Piora..."></div>
+                                                <div class="col-6"><input type="text" id="dorAlivio" class="form-control form-control-sm" placeholder="Alivia..."></div>
+                                            </div>
+                                        </div>
 
-                                        <div class="row g-2 mb-3"><div class="col-6"><label class="small fw-bold">Inspeção</label><textarea id="avInspecao" class="form-control" rows="2"></textarea></div><div class="col-6"><label class="small fw-bold">Palpação</label><textarea id="avPalpacao" class="form-control" rows="2"></textarea></div></div>
+                                        <div class="row g-2 mb-3">
+                                            <div class="col-12"><textarea id="avInspecao" class="form-control form-control-sm" rows="1" placeholder="Inspeção"></textarea></div>
+                                            <div class="col-12"><textarea id="avPalpacao" class="form-control form-control-sm" rows="1" placeholder="Palpação"></textarea></div>
+                                        </div>
 
                                         <div class="card border-primary mb-3">
-                                            <div class="card-header bg-primary text-white py-1 fw-bold small"><i class="bi bi-arrows-angle-expand"></i> Goniometria Interativa</div>
+                                            <div class="card-header bg-primary text-white py-1 fw-bold small"><i class="bi bi-arrows-angle-expand"></i> Goniometria</div>
                                             <div class="card-body p-2 bg-light">
                                                 <div class="row g-1 mb-2">
-                                                    <div class="col-md-3"><select id="gonioRegiao" class="form-select form-select-sm" onchange="atualizarArticulacoes()"><option value="" disabled selected>1. Região</option><option value="coluna">Coluna Vertebral</option><option value="superior">Membros Superiores</option><option value="inferior">Membros Inferiores</option></select></div>
-                                                    <div class="col-md-3"><select id="gonioArticulacao" class="form-select form-select-sm" onchange="atualizarMovimentos()" disabled><option value="" selected>2. Articulação</option></select></div>
-                                                    <div class="col-md-3"><select id="gonioMovimento" class="form-select form-select-sm" onchange="atualizarGraus()" disabled><option value="" selected>3. Movimento</option></select></div>
-                                                    <div class="col-md-3">
+                                                    <div class="col-12"><select id="gonioRegiao" class="form-select form-select-sm" onchange="atualizarArticulacoes()"><option value="" disabled selected>1. Região</option><option value="coluna">Coluna Vertebral</option><option value="superior">Membros Superiores</option><option value="inferior">Membros Inferiores</option></select></div>
+                                                    <div class="col-6"><select id="gonioArticulacao" class="form-select form-select-sm" onchange="atualizarMovimentos()" disabled><option value="" selected>2. Articulação</option></select></div>
+                                                    <div class="col-6"><select id="gonioMovimento" class="form-select form-select-sm" onchange="atualizarGraus()" disabled><option value="" selected>3. Movimento</option></select></div>
+                                                    
+                                                    <div class="col-6">
                                                         <div class="btn-group w-100" role="group">
-                                                            <input type="radio" class="btn-check" name="gonioLat" id="gLatD" value="D" checked>
-                                                            <label class="btn btn-outline-primary btn-sm" for="gLatD">Dir</label>
-                                                            <input type="radio" class="btn-check" name="gonioLat" id="gLatE" value="E">
-                                                            <label class="btn btn-outline-primary btn-sm" for="gLatE">Esq</label>
+                                                            <input type="radio" class="btn-check" name="gonioLat" id="gLatD" value="D" checked><label class="btn btn-outline-primary btn-sm" for="gLatD">Dir</label>
+                                                            <input type="radio" class="btn-check" name="gonioLat" id="gLatE" value="E"><label class="btn btn-outline-primary btn-sm" for="gLatE">Esq</label>
                                                         </div>
                                                     </div>
+                                                    <div class="col-6">
+                                                        <div class="btn-group w-100"><input type="radio" class="btn-check" name="gonioTipo" id="btnAtiva" value="Ativa" checked><label class="btn btn-outline-primary btn-sm" for="btnAtiva">Ativa</label><input type="radio" class="btn-check" name="gonioTipo" id="btnPassiva" value="Passiva"><label class="btn btn-outline-primary btn-sm" for="btnPassiva">Passiva</label></div>
+                                                    </div>
                                                 </div>
+                                                
                                                 <div class="row g-1 align-items-center">
-                                                    <div class="col-md-3"><div class="btn-group w-100"><input type="radio" class="btn-check" name="gonioTipo" id="btnAtiva" value="Ativa" checked><label class="btn btn-outline-primary btn-sm" for="btnAtiva">Ativa</label><input type="radio" class="btn-check" name="gonioTipo" id="btnPassiva" value="Passiva"><label class="btn btn-outline-primary btn-sm" for="btnPassiva">Passiva</label></div></div>
-                                                    <div class="col-md-4"><select id="gonioGraus" class="form-select form-select-sm" disabled><option value="" selected>4. Selecione o Grau</option></select></div>
-                                                    <div class="col-md-2"><div class="form-check"><input class="form-check-input" type="checkbox" id="gonioDor"><label class="form-check-label small text-danger fw-bold" for="gonioDor">Dor?</label></div></div>
-                                                    <div class="col-md-3"><button type="button" class="btn btn-success btn-sm w-100" onclick="adicionarGoniometria()"><i class="bi bi-plus-circle"></i> Adicionar</button></div>
+                                                    <div class="col-12"><select id="gonioGraus" class="form-select form-select-sm" disabled><option value="" selected>4. Selecione o Grau</option></select></div>
+                                                    <div class="col-6"><div class="form-check pt-1"><input class="form-check-input" type="checkbox" id="gonioDor"><label class="form-check-label small fw-bold text-danger" for="gonioDor">Com Dor</label></div></div>
+                                                    <div class="col-6"><button type="button" class="btn btn-success btn-sm w-100" onclick="adicionarGoniometria()">Adicionar</button></div>
                                                 </div>
                                                 <ul id="listaGoniometria" class="list-group mt-2 small"></ul>
                                                 <textarea id="avADM" class="d-none"></textarea>
@@ -194,60 +204,91 @@
                                         </div>
 
                                         <div class="card border-success mb-3">
-                                            <div class="card-header bg-success text-white py-1 fw-bold small"><i class="bi bi-activity"></i> Força Muscular Interativa (Escala MRC)</div>
+                                            <div class="card-header bg-success text-white py-1 fw-bold small"><i class="bi bi-activity"></i> Força Muscular (MRC)</div>
                                             <div class="card-body p-2 bg-light">
                                                 <div class="row g-1 mb-2">
-                                                    <div class="col-md-3"><select id="forcaRegiao" class="form-select form-select-sm" onchange="atualizarMusculosForca()"><option value="" disabled selected>1. Região</option><option value="superior">Membros Superiores</option><option value="inferior">Membros Inferiores</option><option value="tronco">Tronco/Coluna</option></select></div>
-                                                    <div class="col-md-3"><select id="forcaMusculo" class="form-select form-select-sm" disabled><option value="" selected>2. Músculo</option></select></div>
-                                                    <div class="col-md-2">
+                                                    <div class="col-12"><select id="forcaRegiao" class="form-select form-select-sm" onchange="atualizarMusculosForca()"><option value="" disabled selected>1. Região</option><option value="superior">Membros Superiores</option><option value="inferior">Membros Inferiores</option><option value="tronco">Tronco/Coluna</option></select></div>
+                                                    <div class="col-12"><select id="forcaMusculo" class="form-select form-select-sm" disabled><option value="" selected>2. Músculo</option></select></div>
+                                                    
+                                                    <div class="col-4">
                                                         <div class="btn-group w-100" role="group">
-                                                            <input type="radio" class="btn-check" name="forcaLat" id="fLatD" value="D" checked>
-                                                            <label class="btn btn-outline-success btn-sm" for="fLatD">Dir</label>
-                                                            <input type="radio" class="btn-check" name="forcaLat" id="fLatE" value="E">
-                                                            <label class="btn btn-outline-success btn-sm" for="fLatE">Esq</label>
+                                                            <input type="radio" class="btn-check" name="forcaLat" id="fLatD" value="D" checked><label class="btn btn-outline-success btn-sm" for="fLatD">D</label>
+                                                            <input type="radio" class="btn-check" name="forcaLat" id="fLatE" value="E"><label class="btn btn-outline-success btn-sm" for="fLatE">E</label>
                                                         </div>
                                                     </div>
-                                                    <div class="col-md-4"><select id="forcaGrau" class="form-select form-select-sm" disabled><option value="" selected>3. Grau MRC (0-5)</option><option value="0 - Nenhuma contração">0 - Plegia</option><option value="1 - Contração visível">1 - Contração visível</option><option value="2 - A favor gravidade">2 - A favor gravidade</option><option value="3 - Vence gravidade">3 - Vence gravidade</option><option value="4 - Vence resistência">4 - Vence resistência</option><option value="5 - Normal">5 - Normal</option></select></div>
+                                                    <div class="col-8"><select id="forcaGrau" class="form-select form-select-sm" disabled><option value="" selected>3. Grau (0-5)</option><option value="0 - Plegia">0 - Plegia</option><option value="1 - Contração">1 - Contração</option><option value="2 - S/ Gravidade">2 - S/ Gravidade</option><option value="3 - Vence Gravidade">3 - Vence Gravidade</option><option value="4 - Resistência">4 - Resistência</option><option value="5 - Normal">5 - Normal</option></select></div>
                                                 </div>
-                                                <div class="d-grid"><button type="button" class="btn btn-outline-success btn-sm" onclick="adicionarForca()"><i class="bi bi-plus-circle"></i> Adicionar Avaliação de Força</button></div>
+                                                <button type="button" class="btn btn-outline-success btn-sm w-100" onclick="adicionarForca()">Adicionar Força</button>
                                                 <ul id="listaForca" class="list-group mt-2 small"></ul>
                                                 <textarea id="avForca" class="d-none"></textarea>
                                             </div>
                                         </div>
 
-                                        <div class="row g-2 mb-3"><div class="col-12"><label class="small fw-bold">Testes Especiais</label><textarea id="avTestes" class="form-control" rows="2"></textarea></div></div>
+                                        <div class="row g-2 mb-3"><div class="col-12"><label class="small fw-bold">Testes Especiais</label><textarea id="avTestes" class="form-control form-control-sm" rows="2"></textarea></div></div>
                                     </div>
                                 </div>
                             </div>
 
                             <div class="accordion-item">
-                                <h2 class="accordion-header"><button class="accordion-button collapsed fw-bold text-primary" type="button" data-bs-toggle="collapse" data-bs-target="#collapseThree">III. Diagnóstico e Conduta</button></h2>
+                                <h2 class="accordion-header"><button class="accordion-button collapsed fw-bold text-primary py-2" type="button" data-bs-toggle="collapse" data-bs-target="#collapseThree">III. Conduta</button></h2>
                                 <div id="collapseThree" class="accordion-collapse collapse" data-bs-parent="#accordionAvaliacao">
-                                    <div class="accordion-body">
-                                        <div class="mb-2"><label class="small fw-bold">Diagnóstico (CIF)</label><textarea id="avCIF" class="form-control" rows="2"></textarea></div>
-                                        <div class="mb-2"><label class="small fw-bold">Objetivos</label><textarea id="avObjetivos" class="form-control" rows="2"></textarea></div>
-                                        <div class="mb-2"><label class="small fw-bold">Conduta</label><textarea id="avConduta" class="form-control" rows="2"></textarea></div>
+                                    <div class="accordion-body p-2">
+                                        <div class="mb-2"><label class="small fw-bold">Diagnóstico (CIF)</label><textarea id="avCIF" class="form-control form-control-sm" rows="2"></textarea></div>
+                                        <div class="mb-2"><label class="small fw-bold">Objetivos</label><textarea id="avObjetivos" class="form-control form-control-sm" rows="2"></textarea></div>
+                                        <div class="mb-2"><label class="small fw-bold">Conduta</label><textarea id="avConduta" class="form-control form-control-sm" rows="2"></textarea></div>
                                     </div>
                                 </div>
                             </div>
 
                         </div>
-                        <div class="d-flex justify-content-between align-items-center mt-3">
-                            <small class="text-muted" id="dataUltimaAvaliacao">Carregando...</small>
+                        <div class="d-grid mt-3">
                             <button type="button" onclick="salvarAvaliacao()" class="btn btn-primary btn-lg"><i class="bi bi-file-earmark-medical"></i> Salvar Avaliação Completa</button>
+                            <small class="text-muted text-center mt-2" id="dataUltimaAvaliacao">Carregando...</small>
                         </div>
                     </div>
 
                     <div class="tab-pane fade" id="tab-postural">
-                        <div class="alert alert-info py-2 small">Fotos redimensionadas automaticamente.</div>
-                        <div class="row text-center mb-3">
-                            <div class="col-3"><div class="card"><div class="card-body p-1" style="height:150px"><img id="imgFrontal" class="d-none w-100 h-100" style="object-fit:contain"><i id="iconFrontal" class="bi bi-person fs-1"></i></div><button class="btn btn-sm btn-outline-primary w-100" onclick="document.getElementById('fileFrontal').click()">Frontal</button><input type="file" id="fileFrontal" hidden onchange="processarImagem(this,'imgFrontal','iconFrontal')"></div></div>
-                            <div class="col-3"><div class="card"><div class="card-body p-1" style="height:150px"><img id="imgPosterior" class="d-none w-100 h-100" style="object-fit:contain"><i id="iconPosterior" class="bi bi-person fs-1"></i></div><button class="btn btn-sm btn-outline-primary w-100" onclick="document.getElementById('filePosterior').click()">Posterior</button><input type="file" id="filePosterior" hidden onchange="processarImagem(this,'imgPosterior','iconPosterior')"></div></div>
-                            <div class="col-3"><div class="card"><div class="card-body p-1" style="height:150px"><img id="imgLatDir" class="d-none w-100 h-100" style="object-fit:contain"><i id="iconLatDir" class="bi bi-arrow-right fs-1"></i></div><button class="btn btn-sm btn-outline-primary w-100" onclick="document.getElementById('fileLatDir').click()">Lat. Dir</button><input type="file" id="fileLatDir" hidden onchange="processarImagem(this,'imgLatDir','iconLatDir')"></div></div>
-                            <div class="col-3"><div class="card"><div class="card-body p-1" style="height:150px"><img id="imgLatEsq" class="d-none w-100 h-100" style="object-fit:contain"><i id="iconLatEsq" class="bi bi-arrow-left fs-1"></i></div><button class="btn btn-sm btn-outline-primary w-100" onclick="document.getElementById('fileLatEsq').click()">Lat. Esq</button><input type="file" id="fileLatEsq" hidden onchange="processarImagem(this,'imgLatEsq','iconLatEsq')"></div></div>
+                        <div class="alert alert-info py-2 small">Clique no ícone para abrir a câmera.</div>
+                        <div class="row g-2 text-center mb-3">
+                            <div class="col-6">
+                                <div class="card bg-light h-100" onclick="document.getElementById('fileFrontal').click()">
+                                    <div class="card-body p-1 d-flex align-items-center justify-content-center" style="height:120px">
+                                        <img id="imgFrontal" class="d-none mw-100 mh-100"><i id="iconFrontal" class="bi bi-person fs-1 text-secondary"></i>
+                                    </div>
+                                    <div class="card-footer p-1 small fw-bold">Frontal</div>
+                                    <input type="file" id="fileFrontal" accept="image/*" capture="environment" hidden onchange="processarImagem(this,'imgFrontal','iconFrontal')">
+                                </div>
+                            </div>
+                            <div class="col-6">
+                                <div class="card bg-light h-100" onclick="document.getElementById('filePosterior').click()">
+                                    <div class="card-body p-1 d-flex align-items-center justify-content-center" style="height:120px">
+                                        <img id="imgPosterior" class="d-none mw-100 mh-100"><i id="iconPosterior" class="bi bi-person fs-1 text-secondary"></i>
+                                    </div>
+                                    <div class="card-footer p-1 small fw-bold">Posterior</div>
+                                    <input type="file" id="filePosterior" accept="image/*" capture="environment" hidden onchange="processarImagem(this,'imgPosterior','iconPosterior')">
+                                </div>
+                            </div>
+                            <div class="col-6">
+                                <div class="card bg-light h-100" onclick="document.getElementById('fileLatDir').click()">
+                                    <div class="card-body p-1 d-flex align-items-center justify-content-center" style="height:120px">
+                                        <img id="imgLatDir" class="d-none mw-100 mh-100"><i id="iconLatDir" class="bi bi-arrow-right fs-1 text-secondary"></i>
+                                    </div>
+                                    <div class="card-footer p-1 small fw-bold">Lat. Dir</div>
+                                    <input type="file" id="fileLatDir" accept="image/*" capture="environment" hidden onchange="processarImagem(this,'imgLatDir','iconLatDir')">
+                                </div>
+                            </div>
+                            <div class="col-6">
+                                <div class="card bg-light h-100" onclick="document.getElementById('fileLatEsq').click()">
+                                    <div class="card-body p-1 d-flex align-items-center justify-content-center" style="height:120px">
+                                        <img id="imgLatEsq" class="d-none mw-100 mh-100"><i id="iconLatEsq" class="bi bi-arrow-left fs-1 text-secondary"></i>
+                                    </div>
+                                    <div class="card-footer p-1 small fw-bold">Lat. Esq</div>
+                                    <input type="file" id="fileLatEsq" accept="image/*" capture="environment" hidden onchange="processarImagem(this,'imgLatEsq','iconLatEsq')">
+                                </div>
+                            </div>
                         </div>
-                        <textarea id="analiseIA" class="form-control mb-2" rows="2" placeholder="Análise IA..."></textarea>
-                        <button onclick="salvarFotos()" class="btn btn-success w-100">Salvar Fotos</button>
+                        <textarea id="analiseIA" class="form-control mb-3" rows="3" placeholder="Análise automática..."></textarea>
+                        <button onclick="salvarFotos()" class="btn btn-success w-100 btn-lg">Salvar Fotos</button>
                     </div>
                 </div>
             </div>
@@ -269,11 +310,11 @@
         'tronco': ['Cervical - Flexão', 'Cervical - Extensão', 'Tronco - Flexão', 'Tronco - Extensão']
     };
 
-    // --- LÓGICA FORÇA MUSCULAR (NOVO) ---
+    // --- LÓGICA FORÇA MUSCULAR ---
     function atualizarMusculosForca() {
         const regiao = document.getElementById('forcaRegiao').value;
         const selMusc = document.getElementById('forcaMusculo');
-        selMusc.innerHTML = '<option value="" selected>2. Músculo/Movimento</option>';
+        selMusc.innerHTML = '<option value="" selected>2. Músculo</option>';
         selMusc.disabled = false;
         
         if (regiao && REF_FORCA[regiao]) {
@@ -372,7 +413,7 @@
         const dor = document.getElementById('gonioDor').checked ? " [COM DOR]" : "";
         const lat = document.querySelector('input[name="gonioLat"]:checked').value;
 
-        if (!art || !mov || !grau) return alert("Selecione todos os campos da goniometria.");
+        if (!art || !mov || !grau) return alert("Selecione todos os campos.");
 
         const textoItem = `${art} (${lat}) - ${mov} (${tipo}): ${grau}° ${dor}`;
         const li = document.createElement('li');
@@ -420,7 +461,6 @@
         var s = document.getElementById('selTabagismo').value;
         if (s.includes('Tabagista') || s.includes('Ex-tabagista')) {
             document.getElementById('divCargaTabagica').classList.remove('d-none');
-            document.getElementById('divCargaTabagica').classList.add('mt-1');
         } else {
             document.getElementById('divCargaTabagica').classList.add('d-none');
         }
@@ -542,7 +582,6 @@
         });
     }
 
-    // Inicialização
     function abrirProntuario(id, nome) {
         document.getElementById('idPacienteProntuario').value = id;
         document.getElementById('tituloProntuario').innerText = nome;
@@ -647,16 +686,6 @@
                 document.getElementById('textoEvolucao').value += e.results[0][0].transcript + '. ';
             };
         });
-    }
-    
-    function limparFotos() {
-        ['Frontal','Posterior','LatDir','LatEsq'].forEach(tipo => {
-            document.getElementById('img'+tipo).src='';
-            document.getElementById('img'+tipo).classList.add('d-none');
-            document.getElementById('icon'+tipo).classList.remove('d-none');
-            document.getElementById('file'+tipo).value='';
-        });
-        document.getElementById('analiseIA').value='';
     }
 </script>
 {% endblock %}
