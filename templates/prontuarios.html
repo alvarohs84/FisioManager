@@ -552,7 +552,8 @@
     function toggleTabagismo() {
         var status = document.getElementById('selTabagismo').value;
         var divCalc = document.getElementById('divCargaTabagica');
-        if (status.includes('Tabagista')) {
+        // FIX: Agora verifica se é Tabagista OU Ex-tabagista
+        if (status === 'Tabagista' || status === 'Ex-tabagista') {
             divCalc.classList.remove('d-none');
             divCalc.classList.add('mt-1');
         } else {
@@ -567,7 +568,8 @@
         var t = document.getElementById('selTabagismo').value;
         var txt = `Atividade: ${a}. Etilismo: ${e}. Tabagismo: ${t}`;
         
-        if (t.includes('Tabagista')) {
+        // FIX: Calcula para ambos
+        if (t === 'Tabagista' || t === 'Ex-tabagista') {
             var c = parseFloat(document.getElementById('numCigarros').value) || 0;
             var y = parseFloat(document.getElementById('numAnosFumo').value) || 0;
             var r = (c / 20) * y;
@@ -646,6 +648,10 @@
         document.getElementById('listaGoniometria').innerHTML = '';
         document.getElementById('avADM').value = '';
         
+        // Resetar Calculadora Tabagismo
+        document.getElementById('selTabagismo').selectedIndex = 0;
+        toggleTabagismo();
+
         var m = new bootstrap.Modal(document.getElementById('modalProntuario'));
         m.show();
         
@@ -792,7 +798,7 @@
         });
     }
     
-    // FUNÇÃO DE VOZ (NOVA)
+    // FUNÇÃO DE VOZ
     function startVoice(inputId, btn) {
         const input = document.getElementById(inputId);
         if ('webkitSpeechRecognition' in window) {
