@@ -125,6 +125,7 @@
 
                                         <div class="mb-3 p-3 bg-light rounded border">
                                             <label class="form-label fw-bold text-dark">Comorbidades (HPP)</label>
+                                            
                                             <div class="row g-2 mb-2">
                                                 <div class="col-md-4">
                                                     <select class="form-select form-select-sm" onchange="addComorbidade(this)">
@@ -132,8 +133,11 @@
                                                         <option value="AVC">AVC</option>
                                                         <option value="Parkinson">Parkinson</option>
                                                         <option value="Alzheimer">Alzheimer</option>
-                                                        <option value="Hernia de Disco">Hernia de Disco</option>
-                                                        </select>
+                                                        <option value="Esclerose Múltipla">Esclerose Múltipla</option>
+                                                        <option value="Epilepsia">Epilepsia</option>
+                                                        <option value="Neuropatias">Neuropatias</option>
+                                                        <option value="Cefaleias">Cefaleias (Enxaqueca)</option>
+                                                    </select>
                                                 </div>
                                                 <div class="col-md-4">
                                                     <select class="form-select form-select-sm" onchange="addComorbidade(this)">
@@ -141,19 +145,51 @@
                                                         <option value="Diabetes">Diabetes</option>
                                                         <option value="Hipertensão">Hipertensão</option>
                                                         <option value="Obesidade">Obesidade</option>
+                                                        <option value="Dislipidemias">Dislipidemias</option>
+                                                        <option value="Hipotireoidismo">Hipotireoidismo</option>
+                                                        <option value="Osteoporose">Osteoporose</option>
                                                     </select>
                                                 </div>
                                                 <div class="col-md-4">
                                                     <select class="form-select form-select-sm" onchange="addComorbidade(this)">
                                                         <option value="" selected disabled>🦴 Ortopédicas...</option>
                                                         <option value="Artrose">Artrose</option>
-                                                        <option value="Fratura Antiga">Fratura Antiga</option>
-                                                        <option value="Lombalgia Crônica">Lombalgia Crônica</option>
+                                                        <option value="Fratura">Fratura</option>
+                                                        <option value="Lombalgia">Lombalgia</option>
+                                                        <option value="Hérnia de Disco">Hérnia de Disco</option>
+                                                        <option value="Tendinopatia">Tendinopatia</option>
+                                                        <option value="Bursite">Bursite</option>
                                                     </select>
                                                 </div>
                                             </div>
+
+                                            <div class="row g-2 mb-2">
+                                                <div class="col-md-6">
+                                                    <select class="form-select form-select-sm" onchange="addComorbidade(this)">
+                                                        <option value="" selected disabled>❤️ Cardiovasculares...</option>
+                                                        <option value="DAC / Isquêmica">DAC / Isquêmica</option>
+                                                        <option value="Insuficiência Cardíaca">Insuficiência Cardíaca</option>
+                                                        <option value="Arritmias">Arritmias</option>
+                                                        <option value="Doenças Valvares">Doenças Valvares</option>
+                                                        <option value="AVC">AVC</option>
+                                                        <option value="TVP / TEP">TVP / TEP</option>
+                                                    </select>
+                                                </div>
+                                                <div class="col-md-6">
+                                                    <select class="form-select form-select-sm" onchange="addComorbidade(this)">
+                                                        <option value="" selected disabled>🫁 Respiratórias...</option>
+                                                        <option value="Asma">Asma</option>
+                                                        <option value="DPOC">DPOC</option>
+                                                        <option value="Fibrose Pulmonar">Fibrose Pulmonar</option>
+                                                        <option value="Pneumonia">Pneumonia</option>
+                                                        <option value="Apneia do Sono">Apneia do Sono</option>
+                                                        <option value="Sequela COVID-19">Sequela COVID-19</option>
+                                                    </select>
+                                                </div>
+                                            </div>
+
                                             <div class="input-group">
-                                                <textarea id="avHPP" class="form-control" rows="2" placeholder="Selecione acima..."></textarea>
+                                                <textarea id="avHPP" class="form-control" rows="2" placeholder="Selecione acima ou digite..."></textarea>
                                                 <button class="btn btn-outline-secondary" onclick="startVoice('avHPP', this)"><i class="bi bi-mic-fill"></i></button>
                                             </div>
                                         </div>
@@ -285,7 +321,7 @@
         }
     }
 
-    // --- GERADOR DE HÁBITOS DE VIDA (LÓGICA NOVA) ---
+    // --- GERADOR DE HÁBITOS DE VIDA ---
     function toggleTabagismo() {
         var status = document.getElementById('selTabagismo').value;
         var divCalc = document.getElementById('divCargaTabagica');
@@ -307,9 +343,8 @@
         if (tab !== 'Nega tabagismo') {
             var cigs = parseFloat(document.getElementById('numCigarros').value) || 0;
             var anos = parseFloat(document.getElementById('numAnosFumo').value) || 0;
-            // Cálculo Maços-Ano: (Cigarros/dia / 20) * Anos
             var carga = (cigs / 20) * anos;
-            var cargaFormatada = carga.toFixed(1).replace('.0', ''); // Remove decimal se for inteiro
+            var cargaFormatada = carga.toFixed(1).replace('.0', '');
             
             document.getElementById('resCargaTabagica').innerText = `${cargaFormatada} Maços-ano`;
             textoFinal += ` (${cigs} cigarros/dia por ${anos} anos = Carga Tabágica: ${cargaFormatada} maços-ano).`;
@@ -320,12 +355,16 @@
         document.getElementById('avHabitos').value = textoFinal;
     }
 
-    // --- ADICIONAR COMORBIDADES ---
+    // --- ADICIONAR COMORBIDADES (TODAS AS 5 CATEGORIAS) ---
     function addComorbidade(select) {
         var valor = select.value;
         var campoTexto = document.getElementById('avHPP');
         if (valor) {
-            if (campoTexto.value === "") { campoTexto.value = valor; } else { campoTexto.value += ", " + valor; }
+            if (campoTexto.value === "") {
+                campoTexto.value = valor;
+            } else {
+                campoTexto.value += ", " + valor;
+            }
             select.selectedIndex = 0;
         }
     }
@@ -344,7 +383,7 @@
         document.getElementById('selAtividade').selectedIndex = 0;
         document.getElementById('selEtilismo').selectedIndex = 0;
         document.getElementById('selTabagismo').selectedIndex = 0;
-        toggleTabagismo(); // Esconde a calc
+        toggleTabagismo();
         document.getElementById('avHabitos').value = '';
 
         var modal = new bootstrap.Modal(document.getElementById('modalProntuario'));
@@ -356,7 +395,6 @@
     }
 
     // --- CARREGAR DADOS ---
-    // (Mantido igual ao anterior, mas agora carrega o texto gerado no campo avHabitos)
     function carregarAvaliacao(id) {
         fetch(`/api/get_avaliacao/${id}`).then(r => r.json()).then(data => {
             if(data.encontrado) {
@@ -366,10 +404,8 @@
                 document.getElementById('avQP').value = data.queixa_principal || '';
                 document.getElementById('avHMA').value = data.hma || '';
                 document.getElementById('avHPP').value = data.hpp || '';
-                // O campo Habitos agora recebe o texto salvo (que foi gerado pelos selects)
-                document.getElementById('avHabitos').value = data.habitos || '';
+                document.getElementById('avHabitos').value = data.habitos || ''; // Carrega o texto salvo
                 
-                // Os outros campos...
                 document.getElementById('avSinais').value = data.sinais_vitais || '';
                 document.getElementById('avDor').value = data.avaliacao_dor || '';
                 document.getElementById('avInspecao').value = data.inspecao || '';
@@ -387,7 +423,7 @@
         });
     }
 
-    // --- FUNÇÕES DE SALVAR (Mantidas) ---
+    // --- SALVAR ---
     function salvarAvaliacao() {
         const id = document.getElementById('idPacienteProntuario').value;
         const dados = {
@@ -398,7 +434,7 @@
             queixa_principal: document.getElementById('avQP').value,
             hma: document.getElementById('avHMA').value,
             hpp: document.getElementById('avHPP').value,
-            habitos: document.getElementById('avHabitos').value, // Salva o texto gerado
+            habitos: document.getElementById('avHabitos').value,
             sinais_vitais: document.getElementById('avSinais').value,
             avaliacao_dor: document.getElementById('avDor').value,
             inspecao: document.getElementById('avInspecao').value,
@@ -418,7 +454,7 @@
         });
     }
 
-    // --- RESTANTE DO CÓDIGO (EVOLUÇÃO, FOTOS, VOZ) MANTIDO IGUAL ---
+    // --- RESTANTE (EVOLUÇÃO, FOTOS, VOZ) ---
     function carregarHistorico(id) {
         const divLista = document.getElementById('listaHistorico');
         divLista.innerHTML = '<div class="text-center py-4"><div class="spinner-border text-primary"></div></div>';
