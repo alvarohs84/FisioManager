@@ -328,5 +328,58 @@ def get_fotos(pid):
     if r: return jsonify({'encontrado': True, 'frontal': r[0], 'posterior': r[1], 'lat_dir': r[2], 'lat_esq': r[3], 'analise': r[4], 'data': r[5].strftime("%d/%m/%Y")})
     return jsonify({'encontrado': False})
 
+# --- NO FINAL DO SEU APP.PY, MAS ANTES DO if __name__ == '__main__': ---
+
+# Rota para buscar dados de um paciente (para edição)
+@app.route('/api/get_paciente/<int:id>', methods=['GET'])
+def get_paciente(id):
+    conn = get_db_connection()
+    cur = conn.cursor()
+    # Ajuste os campos conforme sua tabela real
+    cur.execute('SELECT id, nome, data_nascimento, telefone, cpf, endereco FROM pacientes WHERE id = %s', (id,))
+    p = cur.fetchone()
+    cur.close()
+    conn.close()
+    
+    if p:
+        return jsonify({
+            'id': p[0],
+            'nome': p[1],
+            'data_nascimento': p[2].strftime('%Y-%m-%d') if p[2] else '',
+            'telefone': p[3],
+            'cpf': p[4],
+            'endereco': p[5]
+        })
+    return jsonify({'erro': 'Paciente não encontrado'}), 404
+
+# Rota Unificada: Salvar (Novo) ou Editar (Existente)
+@app.route('/api/salvar_paciente', methods=['POST'])
+def salvar_paciente():
+    data = request.json
+    conn = get_db_connection()
+    cur = conn.cursor()
+    
+    try:
+        if data.get('id'): # Se tem ID, é UMA EDIÇÃO (UPDATE)
+            cur.execute('''
+                UPDATE pacientes 
+                SET nome=%s, data_nascimento=%s, telefone=%s, cpf=%s, endereco=%s
+                WHERE id=%s
+            ''', (data['nome'], data['data_nascimento'], data['telefone'], data['cpf'], data['endereco'], data['id']))
+        else: # Se não tem ID, é UM NOVO CADASTRO (INSERT)
+            cur.execute('''
+                INSERT INTO pacientes (nome, data_nascimento, telefone, cpf, endereco)
+                VALUES (%s, %s, %s, %s, %s)
+            ''', (data['nome'], data['data_nascimento'], data['telefone'], data['cpf'], data['endereco']))
+        
+        conn.commit()
+        return jsonify({'mensagem': 'Salvo com sucesso!'})
+    except Exception as e:
+        conn.rollback()
+        return jsonify({'erro': str(e)}), 500
+    finally:
+        cur.close()
+        conn.close()
+
 if __name__ == '__main__':
     app.run(debug=True)

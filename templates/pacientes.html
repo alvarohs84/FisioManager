@@ -1,174 +1,163 @@
 {% extends "layout.html" %}
 
 {% block content %}
-<div class="d-flex justify-content-between align-items-center mb-4">
-    <h2><i class="bi bi-people-fill text-primary"></i> Gestão de Pacientes</h2>
+<div class="d-flex justify-content-between align-items-center mb-3 px-2">
+    <h2 class="brand-title m-0 fs-4 fw-bold text-dark">Meus Pacientes</h2>
+    <button class="btn btn-primary rounded-circle shadow p-3" onclick="abrirModalPaciente()">
+        <i class="bi bi-plus-lg fs-4"></i>
+    </button>
 </div>
 
-<div class="row">
-    <div class="col-md-4">
-        <div class="card border-0 shadow-sm">
-            <div class="card-header bg-primary text-white pt-3 pb-3">
-                <h5 class="mb-0"><i class="bi bi-lightning-charge-fill"></i> Cadastro Rápido</h5>
-            </div>
-            <div class="card-body">
-                <p class="text-muted small mb-3">Preencha apenas o nome para agilizar. Complete o resto depois.</p>
-                
-                <form method="POST">
-                    <div class="mb-3">
-                        <label class="form-label fw-bold">Nome Completo</label>
-                        <div class="input-group">
-                            <input type="text" id="nomePaciente" name="nome" class="form-control" placeholder="Fale ou digite..." required>
-                            <button class="btn btn-outline-primary" type="button" id="btnVoiceName">
-                                <i class="bi bi-mic-fill"></i>
-                            </button>
-                        </div>
-                    </div>
-                    
-                    <div class="mb-3">
-                        <label class="form-label">Data de Nascimento <span class="text-muted small">(Opcional)</span></label>
-                        <input type="date" name="nascimento" class="form-control">
-                    </div>
-                    
-                    <div class="mb-3">
-                        <label class="form-label">Telefone <span class="text-muted small">(Opcional)</span></label>
-                        <input type="text" name="telefone" class="form-control" placeholder="(xx) 9...">
-                    </div>
+<div class="px-2 mb-4">
+    <div class="input-group input-group-lg shadow-sm rounded-pill overflow-hidden bg-white">
+        <span class="input-group-text bg-white border-0 ps-4"><i class="bi bi-search text-muted"></i></span>
+        <input type="text" id="filtro" class="form-control border-0" placeholder="Buscar por nome..." onkeyup="filtrarLista()">
+    </div>
+</div>
 
-                    <div class="d-grid">
-                        <button type="submit" class="btn btn-primary">
-                            <i class="bi bi-person-plus-fill"></i> Cadastrar Agora
-                        </button>
-                    </div>
-                </form>
+<div class="row g-3 px-2 pb-5" id="listaPacientes">
+    {% for p in pacientes %}
+    <div class="col-12 col-md-6 item-lista">
+        <div class="card border-0 shadow-sm rounded-4 h-100" onclick="editarPaciente({{ p[0] }})">
+            <div class="card-body d-flex align-items-center p-3">
+                <div class="rounded-circle bg-light text-primary fw-bold fs-4 me-3 d-flex align-items-center justify-content-center" style="width: 50px; height: 50px;">
+                    {{ p[1][0] | upper }}
+                </div>
+                <div class="flex-grow-1 overflow-hidden">
+                    <h6 class="fw-bold text-dark mb-0 text-truncate nome-p">{{ p[1] }}</h6>
+                    <small class="text-muted">
+                        <i class="bi bi-telephone me-1"></i> {{ p[3] or 'S/ Tel' }}
+                    </small>
+                </div>
+                <div class="text-muted ms-2">
+                    <i class="bi bi-pencil-square fs-4"></i>
+                </div>
             </div>
         </div>
     </div>
+    {% else %}
+    <div class="text-center text-muted py-5">
+        <i class="bi bi-people fs-1 d-block mb-2"></i>
+        Nenhum paciente cadastrado.
+    </div>
+    {% endfor %}
+</div>
 
-    <div class="col-md-8">
-        <div class="card border-0 shadow-sm">
-            <div class="card-body">
-                <div class="d-flex justify-content-between align-items-center mb-3">
-                    <h5 class="card-title text-muted mb-0">Base de Pacientes</h5>
-                    <span class="badge bg-light text-dark">{{ pacientes|length }} cadastrados</span>
-                </div>
+<div class="modal fade" id="modalPaciente" tabindex="-1">
+    <div class="modal-dialog modal-fullscreen-sm-down modal-lg">
+        <div class="modal-content">
+            <div class="modal-header border-0 pb-0">
+                <h5 class="modal-title fw-bold" id="modalTitulo">Novo Paciente</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body pt-4">
+                <input type="hidden" id="idPaciente">
                 
-                {% if pacientes %}
-                <div class="table-responsive" style="max-height: 600px; overflow-y: auto;">
-                    <table class="table table-hover align-middle">
-                        <thead class="table-light sticky-top">
-                            <tr>
-                                <th>Nome</th>
-                                <th>Idade</th>
-                                <th>Contato</th>
-                                <th class="text-end" style="width: 160px;">Ações</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            {% for p in pacientes %}
-                            <tr>
-                                <td class="fw-bold text-primary">{{ p[1] }}</td> <td>
-                                    {% if p[2] != "---" %}
-                                        <span class="badge bg-success-subtle text-success-emphasis border border-success-subtle">{{ p[2] }}</span>
-                                    {% else %}
-                                        <span class="text-muted small">-</span>
-                                    {% endif %}
-                                </td>
-                                <td>{{ p[3] if p[3] else '' }}</td>
-                                <td class="text-end">
-                                    <button class="btn btn-sm btn-info text-white me-1" title="Prontuário / Evolução" 
-                                            onclick="window.location.href='{{ url_for('prontuarios') }}'">
-                                        <i class="bi bi-clipboard2-pulse-fill"></i>
-                                    </button>
-                                    
-                                    <button class="btn btn-sm btn-outline-danger" title="Excluir Paciente" onclick="excluirPaciente({{ p[0] }}, '{{ p[1] }}')">
-                                        <i class="bi bi-trash"></i>
-                                    </button>
-                                </td>
-                            </tr>
-                            {% endfor %}
-                        </tbody>
-                    </table>
+                <div class="form-floating mb-3">
+                    <input type="text" class="form-control rounded-3" id="nome" placeholder="Nome Completo">
+                    <label for="nome">Nome Completo</label>
                 </div>
-                {% else %}
-                    <div class="alert alert-light text-center py-5 border border-dashed">
-                        <i class="bi bi-people fs-1 text-muted opacity-50"></i>
-                        <p class="mt-2 text-muted">Nenhum paciente na base.</p>
+
+                <div class="row g-2 mb-3">
+                    <div class="col-6">
+                        <div class="form-floating">
+                            <input type="date" class="form-control rounded-3" id="dataNasc">
+                            <label>Nascimento</label>
+                        </div>
                     </div>
-                {% endif %}
+                    <div class="col-6">
+                        <div class="form-floating">
+                            <input type="tel" class="form-control rounded-3" id="telefone" placeholder="(00) 00000-0000">
+                            <label>Telefone</label>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="form-floating mb-3">
+                    <input type="number" class="form-control rounded-3" id="cpf" placeholder="CPF (Apenas números)">
+                    <label>CPF</label>
+                </div>
+
+                <div class="form-floating mb-4">
+                    <textarea class="form-control rounded-3" id="endereco" placeholder="Endereço" style="height: 100px"></textarea>
+                    <label>Endereço Completo</label>
+                </div>
+
+                <div class="d-grid">
+                    <button onclick="salvarPaciente()" class="btn btn-primary btn-lg rounded-pill fw-bold shadow-sm">
+                        <i class="bi bi-check-lg me-2"></i> SALVAR DADOS
+                    </button>
+                </div>
             </div>
         </div>
     </div>
 </div>
 
 <script>
-    // --- FUNÇÃO DE EXCLUIR REFORÇADA ---
-    function excluirPaciente(id, nome) {
-        if (confirm(`ATENÇÃO: Tem certeza que deseja excluir ${nome}?\n\nIsso apagará:\n- Todo o histórico de consultas\n- Prontuários e Evoluções\n- Avaliações e Fotos`)) {
-            
-            // Feedback visual imediato (Opcional: muda cursor para aguarde)
-            document.body.style.cursor = 'wait';
-
-            fetch('/api/deletar_paciente', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json'
-                },
-                body: JSON.stringify({ id: id })
-            })
-            .then(response => response.json())
-            .then(data => {
-                document.body.style.cursor = 'default';
-                
-                if (data.status === 'success') {
-                    // Força o recarregamento da página vindo do servidor, ignorando cache
-                    window.location.href = window.location.href;
-                } else {
-                    alert('ERRO DO SISTEMA: ' + (data.message || 'Erro desconhecido ao excluir.'));
-                }
-            })
-            .catch(error => {
-                document.body.style.cursor = 'default';
-                console.error('Error:', error);
-                alert('Erro de conexão com o servidor. Tente novamente.');
-            });
-        }
+    // Abre modal limpo para criar novo
+    function abrirModalPaciente() {
+        document.getElementById('idPaciente').value = '';
+        document.getElementById('nome').value = '';
+        document.getElementById('dataNasc').value = '';
+        document.getElementById('telefone').value = '';
+        document.getElementById('cpf').value = '';
+        document.getElementById('endereco').value = '';
+        document.getElementById('modalTitulo').innerText = 'Novo Paciente';
+        new bootstrap.Modal(document.getElementById('modalPaciente')).show();
     }
 
-    // --- RECONHECIMENTO DE VOZ ---
-    const btnVoiceName = document.getElementById('btnVoiceName');
-    const inputNome = document.getElementById('nomePaciente');
+    // Carrega dados e abre modal para editar
+    function editarPaciente(id) {
+        fetch(`/api/get_paciente/${id}`)
+            .then(response => response.json())
+            .then(data => {
+                if(data.erro) return alert(data.erro);
+                
+                document.getElementById('idPaciente').value = data.id;
+                document.getElementById('nome').value = data.nome;
+                document.getElementById('dataNasc').value = data.data_nascimento;
+                document.getElementById('telefone').value = data.telefone;
+                document.getElementById('cpf').value = data.cpf;
+                document.getElementById('endereco').value = data.endereco;
+                
+                document.getElementById('modalTitulo').innerText = 'Editar Paciente';
+                new bootstrap.Modal(document.getElementById('modalPaciente')).show();
+            })
+            .catch(err => alert('Erro ao carregar dados.'));
+    }
 
-    if ('webkitSpeechRecognition' in window) {
-        const recognition = new webkitSpeechRecognition();
-        recognition.lang = 'pt-BR';
-        recognition.continuous = false;
+    // Envia para o backend (Serve tanto para novo quanto para editar)
+    function salvarPaciente() {
+        const dados = {
+            id: document.getElementById('idPaciente').value, // Se vazio = novo, Se preenchido = update
+            nome: document.getElementById('nome').value,
+            data_nascimento: document.getElementById('dataNasc').value,
+            telefone: document.getElementById('telefone').value,
+            cpf: document.getElementById('cpf').value,
+            endereco: document.getElementById('endereco').value
+        };
 
-        btnVoiceName.addEventListener('click', () => {
-            recognition.start();
-            btnVoiceName.classList.remove('btn-outline-primary');
-            btnVoiceName.classList.add('btn-danger'); 
-            btnVoiceName.innerHTML = '<i class="bi bi-record-circle-fill"></i>';
+        if(!dados.nome) return alert("O nome é obrigatório!");
+
+        fetch('/api/salvar_paciente', {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify(dados)
+        }).then(res => res.json()).then(data => {
+            alert(data.mensagem || 'Salvo!');
+            location.reload(); // Recarrega para atualizar a lista
         });
+    }
 
-        recognition.onresult = (event) => {
-            const transcript = event.results[0][0].transcript;
-            const nomeFormatado = transcript.toLowerCase().replace(/(^\w{1})|(\s+\w{1})/g, letter => letter.toUpperCase());
-            inputNome.value = nomeFormatado;
-            btnVoiceName.classList.remove('btn-danger');
-            btnVoiceName.classList.add('btn-outline-primary');
-            btnVoiceName.innerHTML = '<i class="bi bi-mic-fill"></i>';
-        };
+    // Filtro da lista
+    function filtrarLista() {
+        const termo = document.getElementById('filtro').value.toLowerCase();
+        const itens = document.getElementsByClassName('item-lista');
         
-        recognition.onend = () => {
-            if(btnVoiceName.classList.contains('btn-danger')) {
-                 btnVoiceName.classList.remove('btn-danger');
-                 btnVoiceName.classList.add('btn-outline-primary');
-                 btnVoiceName.innerHTML = '<i class="bi bi-mic-fill"></i>';
-            }
-        };
-    } else {
-        btnVoiceName.style.display = 'none';
+        for (let item of itens) {
+            const nome = item.getElementsByClassName('nome-p')[0].innerText.toLowerCase();
+            item.style.display = nome.includes(termo) ? '' : 'none';
+        }
     }
 </script>
 {% endblock %}
