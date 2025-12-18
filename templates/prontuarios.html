@@ -1,293 +1,339 @@
 {% extends "layout.html" %}
 
 {% block content %}
-<style>
-    /* CSS ESPECÍFICO PARA MOBILE - SENSAÇÃO DE APP */
-    .btn-app { padding: 12px; font-size: 1.1rem; border-radius: 12px; }
-    .form-floating > label { padding-top: 0.6rem; }
-    .form-control, .form-select { height: 55px; font-size: 16px; /* Evita zoom no iPhone */ }
-    .card-option { transition: all 0.2s; border: 2px solid transparent; cursor: pointer; }
-    .card-option.active { border-color: var(--bs-primary); background-color: var(--bs-primary-bg-subtle); }
-    .sticky-bottom-action { position: fixed; bottom: 0; left: 0; right: 0; padding: 15px; background: white; border-top: 1px solid #ddd; z-index: 1050; box-shadow: 0 -2px 10px rgba(0,0,0,0.1); }
-    /* Ajuste para o conteúdo não ficar escondido atrás do botão fixo */
-    .modal-body { padding-bottom: 100px !important; } 
-</style>
-
-<div class="d-flex justify-content-between align-items-center mb-3 px-2">
-    <h2 class="brand-title m-0 fs-4 fw-bold"><i class="bi bi-journal-medical text-primary"></i> Prontuário</h2>
+<div class="d-flex flex-column flex-md-row justify-content-between align-items-center mb-4">
+    <h2 class="brand-title mb-3 mb-md-0 fs-3"><i class="bi bi-journal-medical text-primary me-2"></i> Prontuário</h2>
 </div>
 
-<div class="px-2 mb-3">
-    <div class="input-group input-group-lg shadow-sm rounded-pill overflow-hidden">
-        <span class="input-group-text bg-white border-0 ps-4"><i class="bi bi-search text-muted"></i></span>
-        <input type="text" id="filtroPaciente" class="form-control border-0" placeholder="Buscar..." onkeyup="filtrarLista()">
+<div class="card border-0 shadow-sm mb-4">
+    <div class="card-body p-3">
+        <div class="input-group input-group-lg">
+            <span class="input-group-text bg-white border-end-0"><i class="bi bi-search text-muted"></i></span>
+            <input type="text" id="filtroPaciente" class="form-control border-start-0" placeholder="Buscar paciente..." onkeyup="filtrarLista()">
+        </div>
     </div>
 </div>
 
-<div class="row g-3 px-2 pb-5" id="listaPacientesCards">
+<div class="row g-3" id="listaPacientesCards">
     {% for p in pacientes %}
-    <div class="col-12 col-md-6 item-paciente">
-        <div class="card border-0 shadow-sm rounded-4" onclick="abrirProntuario({{ p[0] }}, '{{ p[1] }}')">
+    <div class="col-12 col-md-4 item-paciente">
+        <div class="card h-100 border-0 shadow-sm" onclick="abrirProntuario({{ p[0] }}, '{{ p[1] }}')">
             <div class="card-body d-flex align-items-center p-3">
-                <div class="rounded-circle bg-primary text-white p-3 me-3 d-flex align-items-center justify-content-center" style="width: 50px; height: 50px; font-size: 1.2rem;">
-                    {{ p[1][0] }}
-                </div>
+                <div class="rounded-circle bg-primary bg-opacity-10 p-3 me-3 text-primary"><i class="bi bi-person-fill fs-1"></i></div>
                 <div>
-                    <h6 class="fw-bold text-dark mb-0 nome-paciente">{{ p[1] }}</h6>
-                    <small class="text-muted"><i class="bi bi-calendar"></i> {% if p[2] %} {{ p[2].strftime('%d/%m/%Y') }} {% else %} --/-- {% endif %}</small>
+                    <h5 class="card-title fw-bold text-dark mb-1 fs-5 nome-paciente">{{ p[1] }}</h5>
+                    <p class="text-muted mb-0"><i class="bi bi-cake2"></i> {% if p[2] %} {{ p[2].strftime('%d/%m/%Y') }} {% else %} --/--/-- {% endif %}</p>
                 </div>
-                <div class="ms-auto bg-light rounded-circle p-2 text-primary">
-                    <i class="bi bi-chevron-right"></i>
-                </div>
+                <div class="ms-auto"><i class="bi bi-chevron-right text-muted fs-4"></i></div>
             </div>
         </div>
     </div>
     {% else %}
-    <div class="col-12 text-center py-5 text-muted">Nenhum paciente.</div>
+    <div class="col-12 text-center py-5"><p class="text-muted">Nenhum paciente encontrado.</p></div>
     {% endfor %}
 </div>
 
 <div class="modal fade" id="modalProntuario" tabindex="-1">
-    <div class="modal-dialog modal-fullscreen">
-        <div class="modal-content bg-light">
-            
-            <div class="modal-header bg-white border-bottom py-2 shadow-sm sticky-top">
-                <button type="button" class="btn btn-light rounded-circle me-2" data-bs-dismiss="modal"><i class="bi bi-arrow-left fs-4"></i></button>
-                <h5 class="modal-title fs-6 fw-bold text-truncate flex-grow-1" id="tituloProntuario">Paciente</h5>
-                <div class="dropdown">
-                    <button class="btn btn-light rounded-circle" data-bs-toggle="dropdown"><i class="bi bi-three-dots-vertical"></i></button>
-                    <ul class="dropdown-menu dropdown-menu-end">
-                        <li><a class="dropdown-item" href="#" onclick="limparFotos()">Limpar Fotos</a></li>
-                    </ul>
-                </div>
+    <div class="modal-dialog modal-fullscreen-lg-down modal-xl modal-dialog-scrollable">
+        <div class="modal-content">
+            <div class="modal-header bg-primary text-white py-3">
+                <h5 class="modal-title fs-5 text-truncate"><i class="bi bi-person-circle me-2"></i><span id="tituloProntuario">Nome</span></h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
             </div>
-
-            <div class="modal-body p-0">
+            
+            <div class="modal-body bg-light p-0">
                 <input type="hidden" id="idPacienteProntuario">
 
-                <div class="bg-white px-3 py-2">
-                    <ul class="nav nav-pills nav-fill gap-2 p-1 bg-light rounded-3" id="prontuarioTabs" role="tablist">
-                        <li class="nav-item"><button class="nav-link active rounded-3 fw-bold small py-2 shadow-sm" data-bs-toggle="tab" data-bs-target="#tab-evolucao">Evolução</button></li>
-                        <li class="nav-item"><button class="nav-link rounded-3 fw-bold small py-2" data-bs-toggle="tab" data-bs-target="#tab-avaliacao">Avaliação</button></li>
-                        <li class="nav-item"><button class="nav-link rounded-3 fw-bold small py-2" data-bs-toggle="tab" data-bs-target="#tab-postural">Fotos</button></li>
+                <div class="bg-white shadow-sm sticky-top" style="z-index: 1020;">
+                    <ul class="nav nav-tabs nav-fill" id="prontuarioTabs" role="tablist">
+                        <li class="nav-item"><button class="nav-link active py-3 fs-6" data-bs-toggle="tab" data-bs-target="#tab-evolucao"><i class="bi bi-clock"></i> Evolução</button></li>
+                        <li class="nav-item"><button class="nav-link py-3 fs-6" data-bs-toggle="tab" data-bs-target="#tab-avaliacao"><i class="bi bi-clipboard-pulse"></i> Avaliação</button></li>
+                        <li class="nav-item"><button class="nav-link py-3 fs-6" data-bs-toggle="tab" data-bs-target="#tab-funcional"><i class="bi bi-lungs"></i> TC6 & Func.</button></li>
+                        <li class="nav-item"><button class="nav-link py-3 fs-6" data-bs-toggle="tab" data-bs-target="#tab-postural"><i class="bi bi-camera"></i> Fotos</button></li>
                     </ul>
                 </div>
 
-                <div class="tab-content">
+                <div class="tab-content p-3">
                     
-                    <div class="tab-pane fade show active p-3" id="tab-evolucao">
-                        <div class="card border-0 shadow-sm rounded-4 mb-3">
-                            <div class="card-body">
-                                <label class="fw-bold text-primary mb-2">Nova Evolução</label>
-                                <textarea id="textoEvolucao" class="form-control bg-light border-0 rounded-3 mb-3" rows="6" placeholder="Toque para escrever..."></textarea>
-                                <div class="d-flex gap-2">
-                                    <button class="btn btn-light btn-lg flex-grow-0" id="btnVoiceEvo"><i class="bi bi-mic-fill text-danger"></i></button>
-                                    <button onclick="salvarEvolucao()" class="btn btn-primary btn-lg flex-grow-1 fw-bold">Salvar</button>
+                    <div class="tab-pane fade show active" id="tab-evolucao">
+                        <div class="d-flex flex-column gap-3">
+                            <div class="card border-0 shadow-sm">
+                                <div class="card-body">
+                                    <label class="form-label fw-bold text-primary">Nova Evolução</label>
+                                    <div class="input-group mb-3">
+                                        <textarea id="textoEvolucao" class="form-control form-control-lg" rows="4" placeholder="Toque para escrever..."></textarea>
+                                        <button class="btn btn-outline-secondary px-3" type="button" id="btnVoiceEvo"><i class="bi bi-mic-fill fs-3"></i></button>
+                                    </div>
+                                    <button onclick="salvarEvolucao()" class="btn btn-success btn-lg w-100 py-3 fw-bold">Salvar Agora</button>
                                 </div>
                             </div>
+                            <h6 class="text-muted fw-bold mt-2 ms-1">Histórico Anterior</h6>
+                            <div id="listaHistorico"></div>
                         </div>
-                        <h6 class="text-muted small fw-bold ms-2">HISTÓRICO RECENTE</h6>
-                        <div id="listaHistorico" class="d-flex flex-column gap-2"></div>
                     </div>
 
-                    <div class="tab-pane fade p-3" id="tab-avaliacao">
-                        
-                        <div class="accordion accordion-flush rounded-4 shadow-sm bg-white overflow-hidden" id="accAvaliacao">
+                    <div class="tab-pane fade" id="tab-avaliacao">
+                        <div class="accordion" id="accordionAvaliacao">
                             
-                            <div class="accordion-item">
-                                <h2 class="accordion-header"><button class="accordion-button fw-bold py-3" type="button" data-bs-toggle="collapse" data-bs-target="#colAnamnese">1. Anamnese & HDA</button></h2>
-                                <div id="colAnamnese" class="accordion-collapse collapse show" data-bs-parent="#accAvaliacao">
-                                    <div class="accordion-body bg-light">
-                                        <div class="d-flex flex-wrap gap-2 mb-3">
-                                            <button class="badge rounded-pill bg-danger border-0 py-2 px-3 text-white" onclick="addRedFlag('Perda Peso')">📉 Perda Peso</button>
-                                            <button class="badge rounded-pill bg-danger border-0 py-2 px-3 text-white" onclick="addRedFlag('Dor Noturna')">🌙 Dor Noturna</button>
-                                            <button class="badge rounded-pill bg-danger border-0 py-2 px-3 text-white" onclick="addRedFlag('Câncer')">🎗️ Câncer</button>
-                                            <button class="badge rounded-pill bg-danger border-0 py-2 px-3 text-white" onclick="addRedFlag('Febre')">🌡️ Febre</button>
-                                            <button class="badge rounded-pill bg-danger border-0 py-2 px-3 text-white" onclick="addRedFlag('Neuro')">🧠 Neuro</button>
-                                        </div>
-
-                                        <div class="form-floating mb-2"><input type="text" id="avQP" class="form-control rounded-3"><label>Queixa Principal</label></div>
-                                        <div class="form-floating mb-3"><textarea id="avHMA" class="form-control rounded-3" style="height: 100px"></textarea><label>História (HDA)</label></div>
-
-                                        <div class="bg-white p-3 rounded-3 mb-3 border">
-                                            <label class="small fw-bold text-muted mb-2">SELEÇÃO RÁPIDA (HPP)</label>
-                                            <div class="d-grid gap-2">
-                                                <select class="form-select form-select-lg fw-bold text-primary" onchange="addComorbidade(this)"><option value="" disabled selected>+ Adicionar Doença...</option><option value="Hipertensão">Hipertensão</option><option value="Diabetes">Diabetes</option><option value="Hernia de Disco">Hérnia de Disco</option><option value="Artrose">Artrose</option><option value="Ansiedade">Ansiedade</option></select>
+                            <div class="accordion-item shadow-sm mb-3 border-0 rounded">
+                                <h2 class="accordion-header"><button class="accordion-button fw-bold fs-5 py-3" type="button" data-bs-toggle="collapse" data-bs-target="#collapseOne">I. Anamnese</button></h2>
+                                <div id="collapseOne" class="accordion-collapse collapse show" data-bs-parent="#accordionAvaliacao">
+                                    <div class="accordion-body p-3">
+                                        <div class="alert alert-danger shadow-sm">
+                                            <label class="fw-bold mb-2 d-block small"><i class="bi bi-shield-exclamation"></i> Red Flags</label>
+                                            <div class="d-flex flex-wrap gap-2">
+                                                <button class="btn btn-sm btn-outline-danger flex-grow-1" onclick="addRedFlag('Perda Peso')">Perda Peso</button>
+                                                <button class="btn btn-sm btn-outline-danger flex-grow-1" onclick="addRedFlag('Dor Noturna')">Dor Noturna</button>
+                                                <button class="btn btn-sm btn-outline-danger flex-grow-1" onclick="addRedFlag('Câncer')">Câncer</button>
+                                                <button class="btn btn-sm btn-outline-danger flex-grow-1" onclick="addRedFlag('Febre')">Febre</button>
+                                                <button class="btn btn-sm btn-outline-danger flex-grow-1" onclick="addRedFlag('Neuro')">Neuro</button>
+                                                <button class="btn btn-sm btn-outline-danger flex-grow-1" onclick="addRedFlag('Bexiga')">Bexiga</button>
                                             </div>
-                                            <textarea id="avHPP" class="form-control mt-2 border-0 bg-light" placeholder="Comorbidades selecionadas..."></textarea>
                                         </div>
-                                        
-                                        <div class="row g-2">
-                                            <div class="col-6"><input type="text" id="avOcupacao" class="form-control" placeholder="Ocupação"></div>
-                                            <div class="col-6"><input type="text" id="avDiagMedico" class="form-control" placeholder="Diag. Médico"></div>
-                                        </div>
+                                        <div class="row g-2 mb-2"><div class="col-12"><div class="form-floating"><input type="text" class="form-control" id="avOcupacao" placeholder="Oc"><label>Ocupação</label></div></div><div class="col-6"><div class="form-floating"><select class="form-select" id="avLateralidade"><option>Destro</option><option>Canhoto</option></select><label>Lado</label></div></div><div class="col-6"><div class="form-floating"><input type="text" class="form-control" id="avDiagMedico" placeholder="Dx"><label>Diag. Med</label></div></div></div>
+                                        <div class="form-floating mb-2"><input type="text" class="form-control" id="avQP" placeholder="QP"><label>Queixa Principal (QP)</label><button class="btn btn-sm btn-light position-absolute top-50 end-0 translate-middle-y me-2" onclick="startVoice('avQP', this)"><i class="bi bi-mic-fill"></i></button></div>
+                                        <div class="form-floating mb-3"><textarea class="form-control" id="avHMA" placeholder="HDA" style="height: 100px"></textarea><label>HDA (História)</label><button class="btn btn-sm btn-light position-absolute top-0 end-0 mt-2 me-2" onclick="startVoice('avHMA', this)"><i class="bi bi-mic-fill"></i></button></div>
+                                        <div class="card bg-light border-0 mb-3"><div class="card-body"><label class="fw-bold text-dark mb-2 small">Comorbidades (HPP)</label><select class="form-select form-select-lg mb-2" onchange="addComorbidade(this)"><option value="" disabled selected>🧠 Neurológicas</option><option>AVC</option><option>Parkinson</option><option>Alzheimer</option></select><select class="form-select form-select-lg mb-2" onchange="addComorbidade(this)"><option value="" disabled selected>⚖️ Metabólicas</option><option>Diabetes</option><option>Hipertensão</option><option>Obesidade</option></select><select class="form-select form-select-lg mb-2" onchange="addComorbidade(this)"><option value="" disabled selected>🦴 Ortopédicas</option><option>Artrose</option><option>Hérnia Discal</option><option>Lombalgia</option></select><div class="form-floating mt-2"><textarea class="form-control" id="avHPP" style="height: 80px" placeholder="HPP"></textarea><label>Texto HPP</label></div></div></div>
+                                        <div class="card border-0 mb-3"><div class="card-body p-0"><label class="fw-bold text-primary mb-2 small">Hábitos</label><div class="row g-2"><div class="col-12"><select id="selAtividade" class="form-select form-select-lg" onchange="gerarTextoHabitos()"><option>Sedentário</option><option>Ativo Leve</option><option>Ativo Moderado</option><option>Atleta</option></select></div><div class="col-6"><select id="selEtilismo" class="form-select form-select-lg" onchange="gerarTextoHabitos()"><option>Nega Etilismo</option><option>Social</option><option>Moderado</option></select></div><div class="col-6"><select id="selTabagismo" class="form-select form-select-lg" onchange="toggleTabagismo()"><option>Nega Tabagismo</option><option>Ex-tabagista</option><option>Tabagista</option></select></div></div><div id="divCargaTabagica" class="bg-warning-subtle p-3 rounded mt-2 d-none"><div class="row g-2 align-items-center"><div class="col-4"><div class="form-floating"><input type="number" inputmode="numeric" id="numCigarros" class="form-control" value="20" oninput="gerarTextoHabitos()"><label>Cigs/Dia</label></div></div><div class="col-4"><div class="form-floating"><input type="number" inputmode="numeric" id="numAnosFumo" class="form-control" value="10" oninput="gerarTextoHabitos()"><label>Anos</label></div></div><div class="col-4 text-end"><span class="badge bg-danger fs-6" id="resCargaTabagica">--</span></div></div></div><input type="text" id="avHabitos" class="form-control bg-light mt-2" readonly></div></div>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <div class="accordion-item shadow-sm mb-3 border-0 rounded">
+                                <h2 class="accordion-header"><button class="accordion-button collapsed fw-bold fs-5 py-3" type="button" data-bs-toggle="collapse" data-bs-target="#collapseTwo">II. Exame Físico</button></h2>
+                                <div id="collapseTwo" class="accordion-collapse collapse" data-bs-parent="#accordionAvaliacao">
+                                    <div class="accordion-body p-3">
+                                        <div class="mb-3"><label class="fw-bold small">Sinais Vitais</label><div class="input-group input-group-lg"><input type="tel" class="form-control" id="sinPA" placeholder="PA"><input type="tel" class="form-control" id="sinFC" placeholder="FC"><input type="tel" class="form-control" id="sinSpO2" placeholder="SpO2"><input type="tel" class="form-control" id="sinTemp" placeholder="Temp"></div></div>
+                                        <div class="card bg-light border-0 mb-3"><div class="card-body"><label class="fw-bold mb-2 text-danger small">Dor</label><div class="row g-2 mb-2"><div class="col-3"><div class="form-floating"><input type="number" inputmode="numeric" class="form-control" id="dorEVA" placeholder="EVA"><label>EVA</label></div></div><div class="col-9"><div class="form-floating"><input type="text" class="form-control" id="dorLocal" placeholder="Local"><label>Local</label></div></div><div class="col-12"><select class="form-select form-select-lg" id="dorTipo"><option value="">Tipo...</option><option>Pontada</option><option>Queimação</option><option>Pulsátil</option><option>Cansaço</option><option>Choque</option></select></div><div class="col-6"><input type="text" class="form-control" id="dorPiora" placeholder="Piora..."></div><div class="col-6"><input type="text" class="form-control" id="dorAlivio" placeholder="Alivia..."></div></div></div></div>
+                                        <div class="card border-warning mb-3"><div class="card-header bg-warning text-dark fw-bold small"><i class="bi bi-lightning"></i> Neurológico</div><div class="card-body p-2 bg-light"><select id="neuroCat" class="form-select form-select-lg mb-2" onchange="atualizarTestesNeuro()"><option value="" disabled selected>1. Tipo</option><option value="Reflexos">Reflexos</option><option value="Sensibilidade">Sensibilidade</option><option value="Tensão Neural">Tensão Neural (ULTT)</option></select><select id="neuroTeste" class="form-select form-select-lg mb-2" disabled><option selected>2. Teste</option></select><div class="row g-1 mb-2"><div class="col-6"><div class="btn-group w-100"><input type="radio" class="btn-check" name="neuroLat" id="nLatD" value="D" checked><label class="btn btn-outline-warning text-dark" for="nLatD">Dir</label><input type="radio" class="btn-check" name="neuroLat" id="nLatE" value="E"><label class="btn btn-outline-warning text-dark" for="nLatE">Esq</label></div></div><div class="col-6"><select id="neuroRes" class="form-select" disabled><option selected>3. Result.</option></select></div></div><button class="btn btn-warning w-100" onclick="adicionarNeuro()">Adicionar</button><ul id="listaNeuro" class="list-group mt-2 small"></ul><textarea id="avNeuro" class="d-none"></textarea></div></div>
+                                        <div class="card border-info mb-3"><div class="card-header bg-info text-white fw-bold small"><i class="bi bi-ui-checks"></i> Testes Ortopédicos</div><div class="card-body p-2 bg-light"><select id="testeRegiao" class="form-select form-select-lg mb-2" onchange="atualizarListaTestes()"><option value="" disabled selected>1. Região</option><option value="Cervical">Cervical</option><option value="Ombro">Ombro</option><option value="Cotovelo">Cotovelo</option><option value="Lombar">Lombar</option><option value="Joelho">Joelho</option></select><select id="testeNome" class="form-select form-select-lg mb-2" disabled><option selected>2. Teste</option></select><div class="row g-1 mb-2"><div class="col-6"><div class="btn-group w-100"><input type="radio" class="btn-check" name="testeLat" id="tLatD" value="D" checked><label class="btn btn-outline-info text-dark" for="tLatD">Dir</label><input type="radio" class="btn-check" name="testeLat" id="tLatE" value="E"><label class="btn btn-outline-info text-dark" for="tLatE">Esq</label></div></div><div class="col-6"><select id="testeRes" class="form-select fw-bold"><option value="NEGATIVO" class="text-success">Negativo</option><option value="POSITIVO" class="text-danger">POSITIVO</option></select></div></div><button class="btn btn-info text-white w-100" onclick="adicionarTeste()">Adicionar</button><ul id="listaTestes" class="list-group mt-2 small"></ul><textarea id="avTestes" class="d-none"></textarea></div></div>
+                                        <div class="card border-primary mb-3"><div class="card-header bg-primary text-white fw-bold small">Goniometria</div><div class="card-body p-2 bg-light"><select id="gonioRegiao" class="form-select form-select-lg mb-2" onchange="atualizarArticulacoes()"><option value="" disabled selected>1. Região</option><option value="coluna">Coluna</option><option value="superior">Membros Sup.</option><option value="inferior">Membros Inf.</option></select><div class="row g-2 mb-2"><div class="col-6"><select id="gonioArticulacao" class="form-select" onchange="atualizarMovimentos()" disabled><option selected>2. Artic.</option></select></div><div class="col-6"><select id="gonioMovimento" class="form-select" onchange="atualizarGraus()" disabled><option selected>3. Mov.</option></select></div></div><div class="btn-group w-100 mb-2"><input type="radio" class="btn-check" name="gonioLat" id="gLatD" value="D" checked><label class="btn btn-outline-primary py-2" for="gLatD">Dir</label><input type="radio" class="btn-check" name="gonioLat" id="gLatE" value="E"><label class="btn btn-outline-primary py-2" for="gLatE">Esq</label></div><div class="row g-1 align-items-center"><div class="col-12"><select id="gonioGraus" class="form-select form-select-lg mb-2" disabled><option selected>4. Grau</option></select></div><div class="col-6"><div class="form-check form-switch ms-2"><input class="form-check-input" type="checkbox" id="gonioDor" style="transform: scale(1.3);"><label class="form-check-label fw-bold ms-2" for="gonioDor">Dor?</label></div></div><div class="col-6"><button class="btn btn-success w-100" onclick="adicionarGoniometria()">Add</button></div></div><ul id="listaGoniometria" class="list-group mt-2 small"></ul><textarea id="avADM" class="d-none"></textarea></div></div>
+                                        <div class="card border-success mb-3"><div class="card-header bg-success text-white fw-bold small">Força (MRC)</div><div class="card-body p-2 bg-light"><select id="forcaRegiao" class="form-select form-select-lg mb-2" onchange="atualizarMusculosForca()"><option value="" disabled selected>1. Região</option><option value="superior">Superior</option><option value="inferior">Inferior</option><option value="tronco">Tronco</option></select><select id="forcaMusculo" class="form-select form-select-lg mb-2" disabled><option selected>2. Músculo</option></select><div class="btn-group w-100 mb-2"><input type="radio" class="btn-check" name="forcaLat" id="fLatD" value="D" checked><label class="btn btn-outline-success py-2" for="fLatD">Dir</label><input type="radio" class="btn-check" name="forcaLat" id="fLatE" value="E"><label class="btn btn-outline-success py-2" for="fLatE">Esq</label></div><select id="forcaGrau" class="form-select form-select-lg mb-3" disabled><option selected>3. Grau (0-5)</option><option value="0 - Plegia">0 - Plegia</option><option value="1 - Contração">1 - Contração</option><option value="2 - S/ Gravidade">2 - S/ Gravidade</option><option value="3 - Vence Gravidade">3 - Vence Gravidade</option><option value="4 - Resistência">4 - Resistência</option><option value="5 - Normal">5 - Normal</option></select><button class="btn btn-success btn-lg w-100" onclick="adicionarForca()">Adicionar</button><ul id="listaForca" class="list-group mt-2 small"></ul><textarea id="avForca" class="d-none"></textarea></div></div>
+                                        <div class="form-floating mb-2"><textarea id="avInspecao" class="form-control" style="height: 80px" placeholder="Insp"></textarea><label>Inspeção</label></div>
+                                        <div class="form-floating mb-3"><textarea id="avPalpacao" class="form-control" style="height: 80px" placeholder="Palp"></textarea><label>Palpação</label></div>
                                     </div>
                                 </div>
                             </div>
 
-                            <div class="accordion-item">
-                                <h2 class="accordion-header"><button class="accordion-button collapsed fw-bold py-3" type="button" data-bs-toggle="collapse" data-bs-target="#colFisico">2. Exame Físico</button></h2>
-                                <div id="colFisico" class="accordion-collapse collapse" data-bs-parent="#accAvaliacao">
-                                    <div class="accordion-body bg-light">
-                                        
-                                        <div class="card border-0 shadow-sm mb-3">
-                                            <div class="card-body p-3">
-                                                <label class="fw-bold text-danger mb-2">Avaliação da Dor</label>
-                                                <div class="row g-2 align-items-center">
-                                                    <div class="col-3">
-                                                        <div class="form-floating"><input type="number" inputmode="numeric" id="dorEVA" class="form-control fw-bold text-center fs-4 text-danger"><label>EVA</label></div>
-                                                    </div>
-                                                    <div class="col-9">
-                                                        <input type="text" id="dorLocal" class="form-control mb-2" placeholder="Local da dor">
-                                                        <select id="dorTipo" class="form-select"><option value="">Tipo...</option><option>Pontada</option><option>Queimação</option><option>Pulsátil</option></select>
-                                                    </div>
-                                                </div>
-                                            </div>
-                                        </div>
-
-                                        <div class="row g-2 mb-3">
-                                            <div class="col-3"><input type="tel" id="sinPA" class="form-control text-center" placeholder="PA"></div>
-                                            <div class="col-3"><input type="tel" id="sinFC" class="form-control text-center" placeholder="FC"></div>
-                                            <div class="col-3"><input type="tel" id="sinSpO2" class="form-control text-center" placeholder="%"></div>
-                                            <div class="col-3"><input type="tel" id="sinTemp" class="form-control text-center" placeholder="°C"></div>
-                                        </div>
-
-                                        <div class="card border-primary mb-3">
-                                            <div class="card-header bg-primary text-white fw-bold">Goniometria</div>
-                                            <div class="card-body p-2">
-                                                <select id="gonioRegiao" class="form-select form-select-lg mb-2 fw-bold" onchange="atualizarArticulacoes()"><option selected disabled>1. Região</option><option value="superior">Superior</option><option value="inferior">Inferior</option><option value="coluna">Coluna</option></select>
-                                                <div class="row g-2 mb-2">
-                                                    <div class="col-6"><select id="gonioArticulacao" class="form-select" disabled onchange="atualizarMovimentos()"><option>2. Artic.</option></select></div>
-                                                    <div class="col-6"><select id="gonioMovimento" class="form-select" disabled onchange="atualizarGraus()"><option>3. Mov.</option></select></div>
-                                                </div>
-                                                <div class="btn-group w-100 mb-2">
-                                                    <input type="radio" class="btn-check" name="gonioLat" id="gLatD" value="D" checked><label class="btn btn-outline-primary py-2" for="gLatD">Dir</label>
-                                                    <input type="radio" class="btn-check" name="gonioLat" id="gLatE" value="E"><label class="btn btn-outline-primary py-2" for="gLatE">Esq</label>
-                                                </div>
-                                                <select id="gonioGraus" class="form-select form-select-lg mb-2 fw-bold text-primary" disabled><option>4. Grau</option></select>
-                                                <button class="btn btn-primary w-100 py-2" onclick="adicionarGoniometria()">+ Adicionar</button>
-                                                <ul id="listaGoniometria" class="list-group mt-2"></ul>
-                                                <textarea id="avADM" class="d-none"></textarea>
-                                            </div>
-                                        </div>
-
-                                        <div class="card border-success mb-3">
-                                            <div class="card-header bg-success text-white fw-bold">Força Muscular</div>
-                                            <div class="card-body p-2">
-                                                <select id="forcaRegiao" class="form-select form-select-lg mb-2 fw-bold" onchange="atualizarMusculosForca()"><option selected disabled>1. Região</option><option value="superior">Superior</option><option value="inferior">Inferior</option></select>
-                                                <select id="forcaMusculo" class="form-select mb-2" disabled><option>2. Músculo</option></select>
-                                                <div class="btn-group w-100 mb-2">
-                                                    <input type="radio" class="btn-check" name="forcaLat" id="fLatD" value="D" checked><label class="btn btn-outline-success py-2" for="fLatD">Dir</label>
-                                                    <input type="radio" class="btn-check" name="forcaLat" id="fLatE" value="E"><label class="btn btn-outline-success py-2" for="fLatE">Esq</label>
-                                                </div>
-                                                <select id="forcaGrau" class="form-select form-select-lg mb-2 fw-bold text-success" disabled><option>3. Grau (0-5)</option><option value="5">Grau 5 (Normal)</option><option value="4">Grau 4 (Bom)</option><option value="3">Grau 3 (Regular)</option></select>
-                                                <button class="btn btn-success w-100 py-2" onclick="adicionarForca()">+ Adicionar</button>
-                                                <ul id="listaForca" class="list-group mt-2"></ul>
-                                                <textarea id="avForca" class="d-none"></textarea>
-                                            </div>
-                                        </div>
-
-                                        <div class="form-floating mb-2"><textarea id="avInspecao" class="form-control" style="height:80px"></textarea><label>Inspeção</label></div>
-                                        <div class="form-floating"><textarea id="avPalpacao" class="form-control" style="height:80px"></textarea><label>Palpação</label></div>
+                            <div class="accordion-item shadow-sm border-0 rounded">
+                                <h2 class="accordion-header"><button class="accordion-button collapsed fw-bold fs-5 py-3" type="button" data-bs-toggle="collapse" data-bs-target="#collapseThree">III. Conduta</button></h2>
+                                <div id="collapseThree" class="accordion-collapse collapse" data-bs-parent="#accordionAvaliacao">
+                                    <div class="accordion-body p-3">
+                                        <div class="form-floating mb-2"><textarea id="avCIF" class="form-control" style="height: 80px" placeholder="CIF"></textarea><label>Diagnóstico (CIF)</label></div>
+                                        <div class="form-floating mb-2"><textarea id="avObjetivos" class="form-control" style="height: 80px" placeholder="Obj"></textarea><label>Objetivos</label></div>
+                                        <div class="form-floating"><textarea id="avConduta" class="form-control" style="height: 100px" placeholder="Conduta"></textarea><label>Conduta</label></div>
                                     </div>
                                 </div>
                             </div>
-
-                            <div class="accordion-item">
-                                <h2 class="accordion-header"><button class="accordion-button collapsed fw-bold py-3" type="button" data-bs-toggle="collapse" data-bs-target="#colNeuro">3. Testes & Neuro</button></h2>
-                                <div id="colNeuro" class="accordion-collapse collapse" data-bs-parent="#accAvaliacao">
-                                    <div class="accordion-body bg-light">
-                                        <select id="testeRegiao" class="form-select form-select-lg mb-2" onchange="atualizarListaTestes()"><option selected disabled>1. Região/Neuro</option><option value="Lombar">Lombar</option><option value="Cervical">Cervical</option><option value="Ombro">Ombro</option><option value="Joelho">Joelho</option><option value="Neuro">Neurológico</option></select>
-                                        <select id="testeNome" class="form-select mb-2" disabled><option>2. Teste</option></select>
-                                        <div class="row g-2 mb-2">
-                                            <div class="col-6">
-                                                <div class="btn-group w-100"><input type="radio" class="btn-check" name="testeLat" id="tD" value="D" checked><label class="btn btn-outline-secondary" for="tD">Dir</label><input type="radio" class="btn-check" name="testeLat" id="tE" value="E"><label class="btn btn-outline-secondary" for="tE">Esq</label></div>
-                                            </div>
-                                            <div class="col-6"><select id="testeRes" class="form-select fw-bold"><option value="NEGATIVO" class="text-success">Negativo</option><option value="POSITIVO" class="text-danger">POSITIVO</option></select></div>
-                                        </div>
-                                        <button class="btn btn-dark w-100 py-2" onclick="adicionarTeste()">+ Adicionar Teste</button>
-                                        <ul id="listaTestes" class="list-group mt-2"></ul>
-                                        <textarea id="avTestes" class="d-none"></textarea>
-                                        
-                                        <input type="hidden" id="neuroCat"><input type="hidden" id="neuroTeste"><input type="hidden" id="neuroRes"><input type="hidden" id="avNeuro"><input type="radio" name="neuroLat" value="D" checked hidden>
-                                    </div>
-                                </div>
-                            </div>
-
-                            <div class="accordion-item">
-                                <h2 class="accordion-header"><button class="accordion-button collapsed fw-bold py-3" type="button" data-bs-toggle="collapse" data-bs-target="#colConduta">4. Diagnóstico & Conduta</button></h2>
-                                <div id="colConduta" class="accordion-collapse collapse" data-bs-parent="#accAvaliacao">
-                                    <div class="accordion-body bg-light">
-                                        <div class="form-floating mb-2"><textarea id="avCIF" class="form-control" style="height:100px"></textarea><label>Diagnóstico CIF</label></div>
-                                        <div class="form-floating mb-2"><textarea id="avObjetivos" class="form-control" style="height:100px"></textarea><label>Objetivos</label></div>
-                                        <div class="form-floating"><textarea id="avConduta" class="form-control" style="height:120px"></textarea><label>Conduta</label></div>
-                                        <input type="hidden" id="selAtividade"><input type="hidden" id="selEtilismo"><input type="hidden" id="selTabagismo"><input type="hidden" id="numCigarros"><input type="hidden" id="numAnosFumo"><input type="hidden" id="avHabitos">
-                                    </div>
-                                </div>
-                            </div>
-
                         </div>
+                        <div class="d-grid mt-4 mb-5">
+                            <button onclick="salvarAvaliacao()" class="btn btn-primary btn-lg py-3 fs-4 shadow"><i class="bi bi-save2"></i> SALVAR FICHA</button>
+                            <small class="text-center mt-2 text-muted" id="dataUltimaAvaliacao"></small>
+                        </div>
+                    </div>
+
+                    <div class="tab-pane fade p-3" id="tab-funcional">
                         
-                        <br><br><br> </div>
+                        <div class="accordion accordion-flush rounded-4 shadow-sm bg-white overflow-hidden mb-3" id="accTC6">
+                            <div class="accordion-item">
+                                <h2 class="accordion-header">
+                                    <button class="accordion-button fw-bold py-3 bg-primary text-white" type="button" data-bs-toggle="collapse" data-bs-target="#collapseTC6">
+                                        <i class="bi bi-lungs-fill me-2"></i> TC6 (Caminhada 6 min)
+                                    </button>
+                                </h2>
+                                <div id="collapseTC6" class="accordion-collapse collapse show" data-bs-parent="#accTC6">
+                                    <div class="accordion-body bg-light">
+                                        <div class="alert alert-primary small mb-3">Calcula predito (Enright & Sherrill + Britto/Brasil).</div>
+                                        
+                                        <div class="row g-2 mb-3">
+                                            <div class="col-3"><div class="form-floating"><input type="number" inputmode="numeric" id="tc6Idade" class="form-control" placeholder="Idade"><label>Idade</label></div></div>
+                                            <div class="col-3"><div class="form-floating"><input type="number" inputmode="numeric" id="tc6Altura" class="form-control" placeholder="cm"><label>Alt(cm)</label></div></div>
+                                            <div class="col-3"><div class="form-floating"><input type="number" inputmode="numeric" id="tc6Peso" class="form-control" placeholder="kg"><label>Peso</label></div></div>
+                                            <div class="col-3"><div class="form-floating"><select id="tc6Sexo" class="form-select"><option value="M">M</option><option value="F">F</option></select><label>Sexo</label></div></div>
+                                        </div>
+
+                                        <div class="card border-0 shadow-sm mb-3">
+                                            <div class="card-body">
+                                                <div class="form-floating mb-3">
+                                                    <input type="number" inputmode="numeric" id="tc6Distancia" class="form-control form-control-lg fw-bold text-primary" placeholder="Metros">
+                                                    <label>Distância Percorrida (m)</label>
+                                                </div>
+                                                <div class="row g-2 align-items-center">
+                                                    <div class="col-6"><div class="form-floating"><input type="number" inputmode="numeric" id="tc6Paradas" class="form-control" placeholder="0"><label>Nº Paradas</label></div></div>
+                                                    <div class="col-6">
+                                                        <div class="form-check form-switch border p-2 rounded bg-white">
+                                                            <input class="form-check-input ms-0 me-2" type="checkbox" id="tc6O2" onchange="toggleO2()">
+                                                            <label class="form-check-label fw-bold small" for="tc6O2">Usou O2?</label>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                                <div class="mt-2 d-none" id="divFluxoO2">
+                                                    <div class="form-floating"><input type="number" inputmode="numeric" id="tc6Fluxo" class="form-control" placeholder="L/min"><label>Fluxo (L/min)</label></div>
+                                                </div>
+                                            </div>
+                                        </div>
+
+                                        <button class="btn btn-primary w-100 btn-lg mb-3" onclick="calcularTC6()">CALCULAR & ADICIONAR</button>
+                                        <div id="resTC6" class="d-none alert alert-success small"></div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="card border-dark shadow-sm">
+                            <div class="card-header bg-dark text-white fw-bold"><i class="bi bi-stopwatch"></i> Outros Testes Funcionais</div>
+                            <div class="card-body">
+                                <select id="funcNome" class="form-select form-select-lg mb-3" onchange="atualizarUnidadeFuncional()">
+                                    <option value="" disabled selected>Selecione...</option>
+                                    <option value="TUG">TUG (Timed Up & Go)</option>
+                                    <option value="Sentar-Levantar 5x">Sentar-Levantar (5x)</option>
+                                    <option value="Sentar-Levantar 30s">Sentar-Levantar (30s)</option>
+                                    <option value="Alcance Funcional">Alcance Funcional</option>
+                                    <option value="Apoio Unipodal">Apoio Unipodal</option>
+                                    <option value="Step Test">Teste do Degrau</option>
+                                </select>
+
+                                <div class="form-floating mb-3">
+                                    <input type="number" inputmode="numeric" class="form-control form-control-lg" id="funcRes" placeholder="Resultado">
+                                    <label id="lblFuncUnidade">Resultado</label>
+                                </div>
+
+                                <button class="btn btn-outline-dark w-100 btn-lg mb-3" onclick="adicionarFuncional()">Adicionar Resultado</button>
+
+                                <h6 class="fw-bold border-bottom pb-2">Histórico (Sessão Atual)</h6>
+                                <ul id="listaFuncional" class="list-group list-group-flush"></ul>
+                                <textarea id="avFuncional" class="d-none"></textarea>
+                            </div>
+                        </div>
+                    </div>
 
                     <div class="tab-pane fade p-3" id="tab-postural">
-                        <div class="row g-2 mb-3">
-                            <div class="col-6"><button class="btn btn-outline-dark w-100 py-3 rounded-3" onclick="document.getElementById('fileFrontal').click()"><i class="bi bi-person fs-1 d-block"></i> Frontal</button><input type="file" id="fileFrontal" accept="image/*" capture="environment" hidden onchange="processarImagem(this,'imgFrontal','iconFrontal')"><img id="imgFrontal" class="d-none w-100 rounded mt-2"></div>
-                            <div class="col-6"><button class="btn btn-outline-dark w-100 py-3 rounded-3" onclick="document.getElementById('filePosterior').click()"><i class="bi bi-person-fill fs-1 d-block"></i> Posterior</button><input type="file" id="filePosterior" accept="image/*" capture="environment" hidden onchange="processarImagem(this,'imgPosterior','iconPosterior')"><img id="imgPosterior" class="d-none w-100 rounded mt-2"></div>
-                            <div class="col-6"><button class="btn btn-outline-dark w-100 py-3 rounded-3" onclick="document.getElementById('fileLatDir').click()"><i class="bi bi-arrow-right fs-1 d-block"></i> Lat. Dir</button><input type="file" id="fileLatDir" accept="image/*" capture="environment" hidden onchange="processarImagem(this,'imgLatDir','iconLatDir')"><img id="imgLatDir" class="d-none w-100 rounded mt-2"></div>
-                            <div class="col-6"><button class="btn btn-outline-dark w-100 py-3 rounded-3" onclick="document.getElementById('fileLatEsq').click()"><i class="bi bi-arrow-left fs-1 d-block"></i> Lat. Esq</button><input type="file" id="fileLatEsq" accept="image/*" capture="environment" hidden onchange="processarImagem(this,'imgLatEsq','iconLatEsq')"><img id="imgLatEsq" class="d-none w-100 rounded mt-2"></div>
+                        <div class="row g-2 text-center mb-3">
+                            <div class="col-6"><div class="card h-100 bg-light shadow-sm" onclick="document.getElementById('fileFrontal').click()"><div class="card-body d-flex align-items-center justify-content-center p-1" style="height:140px"><img id="imgFrontal" class="d-none mw-100 mh-100"><i id="iconFrontal" class="bi bi-person fs-1 text-secondary"></i></div><div class="card-footer fw-bold small">Frontal</div><input type="file" id="fileFrontal" accept="image/*" capture="environment" hidden onchange="processarImagem(this,'imgFrontal','iconFrontal')"></div></div>
+                            <div class="col-6"><div class="card h-100 bg-light shadow-sm" onclick="document.getElementById('filePosterior').click()"><div class="card-body d-flex align-items-center justify-content-center p-1" style="height:140px"><img id="imgPosterior" class="d-none mw-100 mh-100"><i id="iconPosterior" class="bi bi-person fs-1 text-secondary"></i></div><div class="card-footer fw-bold small">Posterior</div><input type="file" id="filePosterior" accept="image/*" capture="environment" hidden onchange="processarImagem(this,'imgPosterior','iconPosterior')"></div></div>
+                            <div class="col-6"><div class="card h-100 bg-light shadow-sm" onclick="document.getElementById('fileLatDir').click()"><div class="card-body d-flex align-items-center justify-content-center p-1" style="height:140px"><img id="imgLatDir" class="d-none mw-100 mh-100"><i id="iconLatDir" class="bi bi-arrow-right fs-1 text-secondary"></i></div><div class="card-footer fw-bold small">Lat. Dir</div><input type="file" id="fileLatDir" accept="image/*" capture="environment" hidden onchange="processarImagem(this,'imgLatDir','iconLatDir')"></div></div>
+                            <div class="col-6"><div class="card h-100 bg-light shadow-sm" onclick="document.getElementById('fileLatEsq').click()"><div class="card-body d-flex align-items-center justify-content-center p-1" style="height:140px"><img id="imgLatEsq" class="d-none mw-100 mh-100"><i id="iconLatEsq" class="bi bi-arrow-left fs-1 text-secondary"></i></div><div class="card-footer fw-bold small">Lat. Esq</div><input type="file" id="fileLatEsq" accept="image/*" capture="environment" hidden onchange="processarImagem(this,'imgLatEsq','iconLatEsq')"></div></div>
                         </div>
-                        <div class="form-floating mb-5">
-                            <textarea id="analiseIA" class="form-control" style="height: 100px" placeholder="IA"></textarea>
-                            <label>Análise IA</label>
-                        </div>
+                        <div class="form-floating mb-3"><textarea id="analiseIA" class="form-control" style="height: 100px" placeholder="IA"></textarea><label>Análise IA</label></div>
+                        <button onclick="salvarFotos()" class="btn btn-success w-100 btn-lg py-3 shadow">Salvar Fotos</button>
                     </div>
                 </div>
             </div>
-
-            <div class="sticky-bottom-action d-flex justify-content-between align-items-center">
-                <small class="text-muted" id="dataUltimaAvaliacao">...</small>
-                <button onclick="salvarAvaliacao()" class="btn btn-primary rounded-pill px-4 fw-bold shadow"><i class="bi bi-save"></i> SALVAR</button>
-            </div>
-
         </div>
     </div>
 </div>
 
 <script>
-    // --- DADOS ---
+    // REFERÊNCIAS
     const REF_GONIO = {'coluna':{'Cervical':{'Flexão':65,'Extensão':50},'Lombar':{'Flexão':95,'Extensão':35}},'superior':{'Ombro':{'Flexão':180,'Abdução':180},'Cotovelo':{'Flexão':145}},'inferior':{'Quadril':{'Flexão':125},'Joelho':{'Flexão':140}}};
     const REF_FORCA = {'superior':['Ombro-Flex','Cotovelo-Flex'],'inferior':['Quadril-Flex','Joelho-Ext']};
-    const REF_TESTES = {'Lombar':['Lasegue','Slump'],'Ombro':['Neer','Hawkins'],'Joelho':['Lachman','Gaveta'],'Neuro':['Reflexo Patelar','Babinski']};
+    const REF_TESTES = {'Lombar':['Lasegue','Slump'],'Ombro':['Neer','Hawkins'],'Joelho':['Lachman','Gaveta']};
+    const REF_NEURO = {'Reflexos':['Patelar','Bicipital'],'Sensibilidade':['L4','L5','S1'],'Tensão Neural':['ULTT1','ULTT2']};
+    const REF_FUNC = {'TUG':'Segundos (s)','Sentar-Levantar 5x':'Segundos (s)','Sentar-Levantar 30s':'Repetições','Alcance Funcional':'cm','Apoio Unipodal':'Segundos (s)','Step Test':'Repetições'};
 
-    // --- FUNÇÕES SIMPLIFICADAS ---
-    function abrirProntuario(id, n) { document.getElementById('idPacienteProntuario').value=id; document.getElementById('tituloProntuario').innerText=n; new bootstrap.Modal(document.getElementById('modalProntuario')).show(); carregarAvaliacao(id); carregarHistorico(id); }
-    function salvarEvolucao() { fetch('/api/nova_evolucao',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({paciente_id:document.getElementById('idPacienteProntuario').value, texto:document.getElementById('textoEvolucao').value})}).then(()=>{ document.getElementById('textoEvolucao').value=''; carregarHistorico(document.getElementById('idPacienteProntuario').value); }); }
-    function carregarHistorico(id) { fetch(`/api/evolucoes/${id}`).then(r=>r.json()).then(d=>{ document.getElementById('listaHistorico').innerHTML=d.map(i=>`<div class="card p-2 border-0 bg-white shadow-sm"><small class="fw-bold text-primary">${i.data}</small><div>${i.texto}</div></div>`).join(''); }); }
+    // --- CÁLCULO TC6 (Enright & Britto) ---
+    function toggleO2() { document.getElementById('divFluxoO2').classList.toggle('d-none'); }
     
-    // ATUALIZAÇÃO DOS MENUS
+    function calcularTC6() {
+        const id = parseFloat(document.getElementById('tc6Idade').value);
+        const alt = parseFloat(document.getElementById('tc6Altura').value); // cm
+        const peso = parseFloat(document.getElementById('tc6Peso').value);
+        const sexo = document.getElementById('tc6Sexo').value;
+        const dist = parseFloat(document.getElementById('tc6Distancia').value);
+        
+        if(!id || !alt || !peso || !dist) return alert("Preencha Idade, Altura, Peso e Distância.");
+
+        let preditoEnright = 0;
+        let preditoBritto = 0;
+
+        // Fórmulas
+        if(sexo === 'M') {
+            // Enright & Sherrill (1998) Homens
+            preditoEnright = (7.57 * alt) - (5.02 * id) - (1.76 * peso) - 309;
+            // Britto et al. (2013) Homens (Brasil)
+            preditoBritto = 890.46 - (6.11 * id) + (0.0345 * alt * alt) + 48.87;
+        } else {
+            // Enright & Sherrill (1998) Mulheres
+            preditoEnright = (2.11 * alt) - (2.29 * peso) - (5.78 * id) + 667;
+            // Britto et al. (2013) Mulheres (Brasil)
+            preditoBritto = 890.46 - (6.11 * id) + (0.0345 * alt * alt);
+        }
+
+        const percEnright = (dist / preditoEnright) * 100;
+        const percBritto = (dist / preditoBritto) * 100;
+        
+        // Detalhes extras
+        const paradas = document.getElementById('tc6Paradas').value || "0";
+        const usaO2 = document.getElementById('tc6O2').checked ? `Sim (${document.getElementById('tc6Fluxo').value} L/min)` : "Não";
+
+        // Exibir na tela (Feedback)
+        const divRes = document.getElementById('resTC6');
+        divRes.innerHTML = `<strong>Predito (Brasil):</strong> ${preditoBritto.toFixed(0)}m <br> <strong>Alcançado:</strong> ${percBritto.toFixed(0)}% do predito`;
+        divRes.classList.remove('d-none');
+
+        // Adicionar à lista
+        const hoje = new Date().toLocaleDateString('pt-BR', {day: '2-digit', month: '2-digit'});
+        const texto = `${hoje} - TC6: <strong>${dist}m</strong> (${percBritto.toFixed(0)}% Br / ${percEnright.toFixed(0)}% Int). Paradas: ${paradas}. O2: ${usaO2}.`;
+        
+        document.getElementById('listaFuncional').innerHTML += `<li class="list-group-item d-flex justify-content-between align-items-center small">${texto} <button class="btn btn-sm btn-outline-danger" onclick="this.parentElement.remove();atualizarCampoFuncional()">X</button></li>`;
+        atualizarCampoFuncional();
+    }
+
+    // --- FUNCIONAL GERAL ---
+    function atualizarUnidadeFuncional() {
+        const teste = document.getElementById('funcNome').value;
+        document.getElementById('lblFuncUnidade').innerText = REF_FUNC[teste] ? "Resultado em " + REF_FUNC[teste] : "Resultado";
+    }
+    function adicionarFuncional() {
+        const teste = document.getElementById('funcNome').value;
+        const val = document.getElementById('funcRes').value;
+        if(!teste || !val) return alert("Preencha teste e valor.");
+        const hoje = new Date().toLocaleDateString('pt-BR', {day: '2-digit', month: '2-digit'});
+        const un = REF_FUNC[teste] || "";
+        const texto = `${hoje} - ${teste}: <strong>${val}</strong> <small class="text-muted">${un}</small>`;
+        document.getElementById('listaFuncional').innerHTML += `<li class="list-group-item d-flex justify-content-between align-items-center">${texto} <button class="btn btn-sm btn-outline-danger" onclick="this.parentElement.remove();atualizarCampoFuncional()">X</button></li>`;
+        document.getElementById('funcRes').value='';
+        atualizarCampoFuncional();
+    }
+    function atualizarCampoFuncional() {
+        let txt = "";
+        for(let i of document.getElementById('listaFuncional').children) {
+            let limpo = i.innerHTML.replace('<button class="btn btn-sm btn-outline-danger" onclick="this.parentElement.remove();atualizarCampoFuncional()">X</button>', '').trim();
+            limpo = limpo.replace(/<[^>]*>?/gm, ''); 
+            txt += limpo + "\n";
+        }
+        document.getElementById('avFuncional').value = txt;
+    }
+
+    // --- OUTROS ---
+    function atualizarTestesNeuro(){ const c=document.getElementById('neuroCat').value, s=document.getElementById('neuroTeste'), r=document.getElementById('neuroRes'); s.innerHTML='<option>2. Teste</option>';s.disabled=false; r.innerHTML='<option>3. Res</option>';r.disabled=false; if(REF_NEURO[c]) REF_NEURO[c].forEach(k=>s.add(new Option(k,k))); if(c=='Reflexos'){['0','1+','2+','3+','4+'].forEach(k=>r.add(new Option(k,k)));}else if(c=='Sensibilidade'){['Normal','Hipo','Anestesia'].forEach(k=>r.add(new Option(k,k)));}else{['(-)','(+)'].forEach(k=>r.add(new Option(k,k)));}}
+    function adicionarNeuro(){ document.getElementById('listaNeuro').innerHTML+=`<li class="list-group-item d-flex justify-content-between">${document.getElementById('neuroTeste').value} (${document.querySelector('input[name="neuroLat"]:checked').value}): ${document.getElementById('neuroRes').value} <button class="btn btn-sm btn-outline-secondary" onclick="this.parentElement.remove();updt('avNeuro','listaNeuro')">X</button></li>`; updt('avNeuro','listaNeuro');}
+    function atualizarListaTestes(){ const r=document.getElementById('testeRegiao').value,s=document.getElementById('testeNome'); s.innerHTML='<option>2. Teste</option>';s.disabled=false; if(REF_TESTES[r]) REF_TESTES[r].forEach(k=>s.add(new Option(k,k))); }
+    function adicionarTeste(){ const r=document.getElementById('testeRes').value, c=r=='POSITIVO'?'text-danger':'text-success'; document.getElementById('listaTestes').innerHTML+=`<li class="list-group-item d-flex justify-content-between">${document.getElementById('testeNome').value}: <span class="${c} fw-bold">${r}</span> <button class="btn btn-sm btn-outline-secondary" onclick="this.parentElement.remove();updt('avTestes','listaTestes')">X</button></li>`; updt('avTestes','listaTestes');}
+    function atualizarMusculosForca(){ const r=document.getElementById('forcaRegiao').value,s=document.getElementById('forcaMusculo'); s.innerHTML='<option>2. Músculo</option>';s.disabled=false; if(REF_FORCA[r]) REF_FORCA[r].forEach(k=>s.add(new Option(k,k))); document.getElementById('forcaGrau').disabled=false;}
+    function adicionarForca(){ document.getElementById('listaForca').innerHTML+=`<li class="list-group-item d-flex justify-content-between">${document.getElementById('forcaMusculo').value} (${document.querySelector('input[name="forcaLat"]:checked').value}): ${document.getElementById('forcaGrau').value} <button class="btn btn-sm btn-outline-danger" onclick="this.parentElement.remove();updt('avForca','listaForca')">X</button></li>`; updt('avForca','listaForca');}
     function atualizarArticulacoes(){ const r=document.getElementById('gonioRegiao').value,s=document.getElementById('gonioArticulacao'); s.innerHTML='<option>2. Artic.</option>';s.disabled=false; if(REF_GONIO[r]) Object.keys(REF_GONIO[r]).forEach(k=>s.add(new Option(k,k))); document.getElementById('gonioMovimento').disabled=true;}
     function atualizarMovimentos(){ const r=document.getElementById('gonioRegiao').value,a=document.getElementById('gonioArticulacao').value,s=document.getElementById('gonioMovimento'); s.innerHTML='<option>3. Mov.</option>';s.disabled=false; if(REF_GONIO[r][a]) Object.keys(REF_GONIO[r][a]).forEach(k=>s.add(new Option(k,k)));}
     function atualizarGraus(){ const r=document.getElementById('gonioRegiao').value,a=document.getElementById('gonioArticulacao').value,m=document.getElementById('gonioMovimento').value,s=document.getElementById('gonioGraus'); s.innerHTML='<option>4. Grau</option>';s.disabled=false; const max=REF_GONIO[r][a][m]; s.add(new Option(`Normal (${max}°)`,`${max}`)); s.add(new Option(`Limitado (${Math.round(max/2)}°)`,`${Math.round(max/2)}`)); }
-    function adicionarGoniometria(){ const l=document.getElementById('listaGoniometria'); l.innerHTML+=`<li class="list-group-item d-flex justify-content-between">${document.getElementById('gonioArticulacao').value} ${document.getElementById('gonioMovimento').value}: ${document.getElementById('gonioGraus').value} <button class="btn btn-sm btn-outline-danger" onclick="this.parentElement.remove();updt('avADM','listaGoniometria')">X</button></li>`; updt('avADM','listaGoniometria');}
+    function adicionarGoniometria(){ document.getElementById('listaGoniometria').innerHTML+=`<li class="list-group-item d-flex justify-content-between">${document.getElementById('gonioArticulacao').value} ${document.getElementById('gonioMovimento').value}: ${document.getElementById('gonioGraus').value} <button class="btn btn-sm btn-outline-danger" onclick="this.parentElement.remove();updt('avADM','listaGoniometria')">X</button></li>`; updt('avADM','listaGoniometria');}
     
-    function atualizarMusculosForca(){ const r=document.getElementById('forcaRegiao').value,s=document.getElementById('forcaMusculo'); s.innerHTML='<option>2. Músculo</option>';s.disabled=false; if(REF_FORCA[r]) REF_FORCA[r].forEach(k=>s.add(new Option(k,k))); document.getElementById('forcaGrau').disabled=false;}
-    function adicionarForca(){ document.getElementById('listaForca').innerHTML+=`<li class="list-group-item d-flex justify-content-between">${document.getElementById('forcaMusculo').value}: Grau ${document.getElementById('forcaGrau').value} <button class="btn btn-sm btn-outline-danger" onclick="this.parentElement.remove();updt('avForca','listaForca')">X</button></li>`; updt('avForca','listaForca');}
-
-    function atualizarListaTestes(){ const r=document.getElementById('testeRegiao').value,s=document.getElementById('testeNome'); s.innerHTML='<option>2. Teste</option>';s.disabled=false; if(REF_TESTES[r]) REF_TESTES[r].forEach(k=>s.add(new Option(k,k))); }
-    function adicionarTeste(){ const res=document.getElementById('testeRes').value; const cor=res=='POSITIVO'?'text-danger':'text-success'; document.getElementById('listaTestes').innerHTML+=`<li class="list-group-item d-flex justify-content-between">${document.getElementById('testeNome').value}: <span class="${cor} fw-bold">${res}</span> <button class="btn btn-sm btn-outline-secondary" onclick="this.parentElement.remove();updt('avTestes','listaTestes')">X</button></li>`; updt('avTestes','listaTestes');}
-
     function updt(idInput, idLista) { let t=""; for(let i of document.getElementById(idLista).children) t+=i.innerText.replace("X","").trim()+"\n"; document.getElementById(idInput).value=t; }
-    function addRedFlag(t) { document.getElementById('avHMA').value = `[🚩 ${t}] ` + document.getElementById('avHMA').value; }
+    function filtrarLista() { var f=document.getElementById("filtroPaciente").value.toUpperCase(), c=document.getElementsByClassName("item-paciente"); for(let i=0;i<c.length;i++) c[i].style.display=c[i].innerText.toUpperCase().indexOf(f)>-1?"":"none"; }
     function addComorbidade(s) { document.getElementById('avHPP').value += (document.getElementById('avHPP').value?", ":"") + s.value; s.selectedIndex=0; }
-    
+    function addRedFlag(t) { document.getElementById('avHMA').value = `[🚩 ${t}] ` + document.getElementById('avHMA').value; }
+    function toggleTabagismo() { var s=document.getElementById('selTabagismo').value; document.getElementById('divCargaTabagica').className=(s.includes('Tabagista')||s.includes('Ex-tabagista'))?'bg-warning-subtle p-3 rounded mt-2':'d-none'; gerarTextoHabitos(); }
+    function gerarTextoHabitos() { var a=document.getElementById('selAtividade').value, e=document.getElementById('selEtilismo').value, t=document.getElementById('selTabagismo').value; var txt=`Atividade: ${a}. Etilismo: ${e}. Tabagismo: ${t}`; if(t.includes('Tabagista')||t.includes('Ex-tabagista')) { var c=document.getElementById('numCigarros').value, y=document.getElementById('numAnosFumo').value, r=(c/20)*y; document.getElementById('resCargaTabagica').innerText=r.toFixed(1)+" Maços-ano"; txt+=` (${c} cigs/dia, ${y} anos = ${r.toFixed(1)} maços-ano)`; } document.getElementById('avHabitos').value=txt; }
+
     function salvarAvaliacao() {
+        // ESTRATÉGIA: Juntar Testes Especiais + Funcional
+        const testesCombinados = (document.getElementById('avTestes').value || "") + "\n--- FUNCIONAL ---\n" + (document.getElementById('avFuncional').value || "");
         const d = {
             paciente_id: document.getElementById('idPacienteProntuario').value,
             ocupacao: document.getElementById('avOcupacao').value, lateralidade: document.getElementById('avLateralidade').value, diagnostico_medico: document.getElementById('avDiagMedico').value,
-            queixa_principal: document.getElementById('avQP').value, hma: document.getElementById('avHMA').value, hpp: document.getElementById('avHPP').value,
+            queixa_principal: document.getElementById('avQP').value, hma: document.getElementById('avHMA').value, hpp: document.getElementById('avHPP').value, habitos: document.getElementById('avHabitos').value,
             inspecao: document.getElementById('avInspecao').value, palpacao: document.getElementById('avPalpacao').value,
-            adm: document.getElementById('avADM').value, forca_muscular: document.getElementById('avForca').value, testes_especiais: document.getElementById('avTestes').value,
+            adm: document.getElementById('avADM').value, forca_muscular: document.getElementById('avForca').value, neuro: document.getElementById('avNeuro').value,
+            testes_especiais: testesCombinados,
             diagnostico_cif: document.getElementById('avCIF').value, objetivos: document.getElementById('avObjetivos').value, conduta: document.getElementById('avConduta').value,
             sinais_vitais: JSON.stringify({pa:document.getElementById('sinPA').value, fc:document.getElementById('sinFC').value, spo2:document.getElementById('sinSpO2').value, temp:document.getElementById('sinTemp').value}),
             avaliacao_dor: JSON.stringify({eva:document.getElementById('dorEVA').value, local:document.getElementById('dorLocal').value, tipo:document.getElementById('dorTipo').value, piora:document.getElementById('dorPiora').value, alivia:document.getElementById('dorAlivio').value})
@@ -299,11 +345,16 @@
         fetch(`/api/get_avaliacao/${id}`).then(r=>r.json()).then(d=>{
             if(d.encontrado) {
                 ['avOcupacao','avDiagMedico','avQP','avHMA','avHPP','avInspecao','avPalpacao','avCIF','avObjetivos','avConduta'].forEach(k=>document.getElementById(k).value=d[k.replace('av','').toLowerCase()]||d[k]||'');
-                document.getElementById('avADM').value=d.adm||''; document.getElementById('avForca').value=d.forca_muscular||''; document.getElementById('avTestes').value=d.testes_especiais||'';
-                // Recria listas visuais (simplificado)
-                if(d.adm) { document.getElementById('listaGoniometria').innerHTML = d.adm.split('\n').filter(x=>x).map(x=>`<li class="list-group-item d-flex justify-content-between">${x} <button onclick="this.parentElement.remove();updt('avADM','listaGoniometria')" class="btn btn-sm btn-outline-danger">X</button></li>`).join(''); }
-                if(d.forca_muscular) { document.getElementById('listaForca').innerHTML = d.forca_muscular.split('\n').filter(x=>x).map(x=>`<li class="list-group-item d-flex justify-content-between">${x} <button onclick="this.parentElement.remove();updt('avForca','listaForca')" class="btn btn-sm btn-outline-danger">X</button></li>`).join(''); }
-                if(d.testes_especiais) { document.getElementById('listaTestes').innerHTML = d.testes_especiais.split('\n').filter(x=>x).map(x=>`<li class="list-group-item d-flex justify-content-between">${x} <button onclick="this.parentElement.remove();updt('avTestes','listaTestes')" class="btn btn-sm btn-outline-secondary">X</button></li>`).join(''); }
+                document.getElementById('avADM').value=d.adm||''; if(d.adm) document.getElementById('listaGoniometria').innerHTML=d.adm.split('\n').filter(x=>x).map(x=>`<li class="list-group-item d-flex justify-content-between">${x} <button onclick="this.parentElement.remove();updt('avADM','listaGoniometria')" class="btn btn-sm btn-outline-danger">X</button></li>`).join('');
+                document.getElementById('avForca').value=d.forca_muscular||''; if(d.forca_muscular) document.getElementById('listaForca').innerHTML=d.forca_muscular.split('\n').filter(x=>x).map(x=>`<li class="list-group-item d-flex justify-content-between">${x} <button onclick="this.parentElement.remove();updt('avForca','listaForca')" class="btn btn-sm btn-outline-danger">X</button></li>`).join('');
+                document.getElementById('avNeuro').value=d.neuro||''; if(d.neuro) document.getElementById('listaNeuro').innerHTML=d.neuro.split('\n').filter(x=>x).map(x=>`<li class="list-group-item d-flex justify-content-between">${x} <button onclick="this.parentElement.remove();updt('avNeuro','listaNeuro')" class="btn btn-sm btn-outline-secondary">X</button></li>`).join('');
+                
+                // SEPARAR ORTO x FUNCIONAL
+                if(d.testes_especiais) {
+                    const partes = d.testes_especiais.split("--- FUNCIONAL ---");
+                    if(partes[0]) { document.getElementById('avTestes').value=partes[0].trim(); document.getElementById('listaTestes').innerHTML=partes[0].trim().split('\n').filter(x=>x).map(x=>`<li class="list-group-item d-flex justify-content-between">${x} <button onclick="this.parentElement.remove();updt('avTestes','listaTestes')" class="btn btn-sm btn-outline-secondary">X</button></li>`).join(''); }
+                    if(partes[1]) { document.getElementById('avFuncional').value=partes[1].trim(); document.getElementById('listaFuncional').innerHTML=partes[1].trim().split('\n').filter(x=>x).map(x=>`<li class="list-group-item d-flex justify-content-between">${x} <button onclick="this.parentElement.remove();atualizarCampoFuncional()" class="btn btn-sm btn-outline-danger">X</button></li>`).join(''); }
+                }
                 try{let s=JSON.parse(d.sinais_vitais);document.getElementById('sinPA').value=s.pa;document.getElementById('sinFC').value=s.fc;document.getElementById('sinSpO2').value=s.spo2;document.getElementById('sinTemp').value=s.temp;}catch(e){}
                 try{let o=JSON.parse(d.avaliacao_dor);document.getElementById('dorEVA').value=o.eva;document.getElementById('dorLocal').value=o.local;document.getElementById('dorTipo').value=o.tipo;document.getElementById('dorPiora').value=o.piora;document.getElementById('dorAlivio').value=o.alivia;}catch(e){}
                 document.getElementById('dataUltimaAvaliacao').innerText = "Salvo em: " + d.data;
@@ -311,8 +362,11 @@
         });
     }
     
+    function abrirProntuario(id,n){ document.getElementById('idPacienteProntuario').value=id; document.getElementById('tituloProntuario').innerText=n; new bootstrap.Modal(document.getElementById('modalProntuario')).show(); carregarHistorico(id); carregarAvaliacao(id); }
+    function salvarEvolucao(){ fetch('/api/nova_evolucao',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({paciente_id:document.getElementById('idPacienteProntuario').value, texto:document.getElementById('textoEvolucao').value})}).then(()=>{ document.getElementById('textoEvolucao').value=''; carregarHistorico(document.getElementById('idPacienteProntuario').value); }); }
+    function carregarHistorico(id){ fetch(`/api/evolucoes/${id}`).then(r=>r.json()).then(d=>{ document.getElementById('listaHistorico').innerHTML=d.map(i=>`<div class="card p-2 border-0 bg-white shadow-sm"><small class="fw-bold text-primary">${i.data}</small><div>${i.texto}</div></div>`).join(''); }); }
     function processarImagem(i,m,c){ if(i.files[0]){var r=new FileReader();r.onload=function(e){var img=new Image();img.src=e.target.result;img.onload=function(){var cv=document.createElement('canvas');var ctx=cv.getContext('2d');var rt=Math.min(600/img.width,1);cv.width=img.width*rt;cv.height=img.height*rt;ctx.drawImage(img,0,0,cv.width,cv.height);document.getElementById(m).src=cv.toDataURL('image/jpeg',0.7);document.getElementById(m).classList.remove('d-none');}};r.readAsDataURL(i.files[0]);}}
-    function salvarFotos(){ const id=document.getElementById('idPacienteProntuario').value; const d={paciente_id:id, frontal:document.getElementById('imgFrontal').src, posterior:document.getElementById('imgPosterior').src, lat_dir:document.getElementById('imgLatDir').src, lat_esq:document.getElementById('imgLatEsq').src, analise_ia:document.getElementById('analiseIA').value}; if(d.frontal.length<100)return alert('Foto?'); fetch('/api/salvar_fotos',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(d)}).then(()=>alert('Fotos Salvas')); }
+    function salvarFotos(){ const d={paciente_id:document.getElementById('idPacienteProntuario').value, frontal:document.getElementById('imgFrontal').src, posterior:document.getElementById('imgPosterior').src, lat_dir:document.getElementById('imgLatDir').src, lat_esq:document.getElementById('imgLatEsq').src, analise_ia:document.getElementById('analiseIA').value}; if(d.frontal.length<100)return alert('Adicione foto'); fetch('/api/salvar_fotos',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(d)}).then(()=>alert('Fotos Salvas')); }
     const v=document.getElementById('btnVoiceEvo');if(v)v.addEventListener('click',()=>{const r=new webkitSpeechRecognition();r.lang='pt-BR';r.start();r.onresult=(e)=>{document.getElementById('textoEvolucao').value+=e.results[0][0].transcript+'. '}});
 </script>
 {% endblock %}
