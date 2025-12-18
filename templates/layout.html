@@ -2,156 +2,104 @@
 <html lang="pt-br">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
-    <title>FisioManager Pro</title>
-    
+    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
+    <title>FisioManager</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.0/font/bootstrap-icons.css">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.0/font/bootstrap-icons.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700&display=swap" rel="stylesheet">
     
     <style>
-        body { 
-            background-color: #f4f7f6; 
-            font-family: 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; 
-        }
+        :root { --bs-primary: #0d6efd; --bs-body-bg: #f8f9fa; }
+        body { font-family: 'Inter', sans-serif; background-color: var(--bs-body-bg); padding-bottom: 80px; /* Espaço para o menu inferior */ }
         
-        /* --- Sidebar (Menu Lateral) --- */
-        .sidebar { 
-            min-height: 100vh; 
-            background-color: #ffffff; 
-            border-right: 1px solid #e0e0e0;
-            box-shadow: 2px 0 10px rgba(0,0,0,0.03);
-            position: sticky;
-            top: 0;
-            height: 100vh;
-            overflow-y: auto;
-        }
+        /* Navbar Superior (Desktop/Tablet) */
+        .navbar-brand { font-weight: 700; letter-spacing: -0.5px; }
         
-        .brand-container {
-            display: flex;
-            align-items: center;
-            padding: 10px 0;
-            margin-bottom: 40px;
+        /* Menu Inferior Fixo (Apenas Mobile) */
+        .bottom-nav {
+            position: fixed; bottom: 0; left: 0; right: 0;
+            background: white; border-top: 1px solid #dee2e6;
+            display: flex; justify-content: space-around; padding: 10px 0;
+            z-index: 1040; box-shadow: 0 -4px 10px rgba(0,0,0,0.05);
         }
+        .nav-item-mobile {
+            text-align: center; color: #6c757d; text-decoration: none; font-size: 0.75rem; flex: 1;
+        }
+        .nav-item-mobile i { font-size: 1.5rem; display: block; margin-bottom: 2px; }
+        .nav-item-mobile.active { color: var(--bs-primary); font-weight: 600; }
 
-        .logo-img {
-            width: 55px; 
-            height: auto;
-            margin-right: 12px;
-        }
-        
-        .brand-title {
-            font-size: 1.8rem;
-            font-weight: 800;
-            color: #007bff;
-            letter-spacing: -0.5px;
-            line-height: 1.2;
-        }
-        
-        /* Links do Menu */
-        .nav-link { 
-            color: #555; 
-            font-weight: 500; 
-            font-size: 1.05rem;
-            margin-bottom: 8px; 
-            padding: 12px 15px;
-            border-radius: 10px;
-            transition: all 0.2s ease-in-out;
-            display: flex;
-            align-items: center;
-        }
-        
-        .nav-link:hover { 
-            background-color: #f0f4f8; 
-            color: #007bff; 
-            transform: translateX(5px);
-        }
-
-        /* Estado Ativo (Página Atual) */
-        .nav-link.active { 
-            background-color: #e7f1ff; 
-            color: #007bff; 
-            font-weight: 700;
-            border-left: 4px solid #007bff;
-        }
-        
-        .nav-link i {
-            margin-right: 12px;
-            font-size: 1.2rem;
-        }
-        
-        /* Botão Sair */
-        .logout-link {
-            color: #dc3545 !important;
-        }
-        .logout-link:hover {
-            background-color: #fde8e8 !important;
-        }
-
-        /* Área Principal */
-        .main-content { 
-            padding: 30px; 
-            width: 100%;
+        /* Esconde Menu Inferior no Desktop */
+        @media (min-width: 768px) {
+            .bottom-nav { display: none; }
+            body { padding-bottom: 0; }
         }
     </style>
 </head>
 <body>
 
-<div class="d-flex">
-    <div class="sidebar p-4 d-none d-md-block" style="width: 280px; flex-shrink: 0;">
-        
-        <div class="brand-container">
-            <img src="{{ url_for('static', filename='logo_fisio.png') }}" alt="Logo" class="logo-img">
-            <span class="brand-title">FisioManager</span>
+    <nav class="navbar navbar-expand-md navbar-dark bg-primary shadow-sm d-none d-md-flex">
+        <div class="container">
+            <a class="navbar-brand" href="/"><i class="bi bi-activity"></i> FisioManager</a>
+            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
+                <span class="navbar-toggler-icon"></span>
+            </button>
+            <div class="collapse navbar-collapse" id="navbarNav">
+                <ul class="navbar-nav ms-auto">
+                    <li class="nav-item"><a class="nav-link" href="/"><i class="bi bi-speedometer2"></i> Painel</a></li>
+                    <li class="nav-item"><a class="nav-link" href="/pacientes"><i class="bi bi-people"></i> Pacientes</a></li>
+                    <li class="nav-item"><a class="nav-link" href="/prontuarios"><i class="bi bi-journal-medical"></i> Prontuários</a></li>
+                    <li class="nav-item"><a class="nav-link" href="/financeiro"><i class="bi bi-cash-coin"></i> Financeiro</a></li>
+                </ul>
+            </div>
         </div>
-        
-        <ul class="nav flex-column">
-            <li class="nav-item">
-                <a class="nav-link {% if request.endpoint == 'dashboard' %}active{% endif %}" href="{{ url_for('dashboard') }}">
-                    <i class="bi bi-speedometer2"></i> Painel Geral
-                </a>
-            </li>
-            <li class="nav-item">
-                <a class="nav-link {% if request.endpoint == 'pacientes' %}active{% endif %}" href="{{ url_for('pacientes') }}">
-                    <i class="bi bi-people"></i> Pacientes
-                </a>
-            </li>
-            <li class="nav-item">
-                <a class="nav-link {% if request.endpoint == 'agenda' %}active{% endif %}" href="{{ url_for('agenda') }}">
-                    <i class="bi bi-calendar-check-fill"></i> Agenda Inteligente
-                </a>
-            </li>
-            
-            <li class="nav-item">
-                <a class="nav-link {% if request.endpoint == 'prontuarios' %}active{% endif %}" href="{{ url_for('prontuarios') }}">
-                    <i class="bi bi-journal-medical"></i> Prontuários
-                </a>
-            </li>
-            
-            <li class="nav-item mt-5 pt-5 border-top">
-                <a class="nav-link logout-link" href="{{ url_for('logout') }}">
-                    <i class="bi bi-box-arrow-left"></i> Sair do Sistema
-                </a>
-            </li>
-        </ul>
+    </nav>
+
+    <div class="d-md-none bg-primary text-white p-3 shadow-sm d-flex justify-content-between align-items-center">
+        <span class="fw-bold fs-5"><i class="bi bi-activity"></i> FisioManager</span>
+        <i class="bi bi-person-circle fs-4"></i>
     </div>
 
-    <div class="flex-grow-1 main-content">
-        {% with messages = get_flashed_messages() %}
+    <div class="container mt-4">
+        {% with messages = get_flashed_messages(with_categories=true) %}
             {% if messages %}
-                {% for message in messages %}
-                    <div class="alert alert-warning alert-dismissible fade show shadow-sm" role="alert">
-                        <i class="bi bi-exclamation-triangle-fill me-2"></i> {{ message }}
-                        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Fechar"></button>
+                {% for category, message in messages %}
+                    <div class="alert alert-{{ category }} alert-dismissible fade show" role="alert">
+                        {{ message }}
+                        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
                     </div>
                 {% endfor %}
             {% endif %}
         {% endwith %}
-        
+
         {% block content %}{% endblock %}
     </div>
-</div>
 
-<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <nav class="bottom-nav d-md-none">
+        <a href="/" class="nav-item-mobile {% if request.path == '/' %}active{% endif %}">
+            <i class="bi bi-house-door"></i> Início
+        </a>
+        <a href="/pacientes" class="nav-item-mobile {% if request.path == '/pacientes' %}active{% endif %}">
+            <i class="bi bi-people"></i> Pacientes
+        </a>
+        <a href="/prontuarios" class="nav-item-mobile {% if request.path == '/prontuarios' %}active{% endif %}">
+            <i class="bi bi-clipboard2-pulse"></i> Fichas
+        </a>
+        <a href="/financeiro" class="nav-item-mobile {% if request.path == '/financeiro' %}active{% endif %}">
+            <i class="bi bi-wallet2"></i> Caixa
+        </a>
+    </nav>
 
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    
+    <script>
+        // Fecha alertas automaticamente após 4s
+        setTimeout(function() {
+            var alerts = document.querySelectorAll('.alert');
+            alerts.forEach(function(alert) {
+                var bsAlert = new bootstrap.Alert(alert);
+                bsAlert.close();
+            });
+        }, 4000);
+    </script>
 </body>
 </html>
