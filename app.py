@@ -381,5 +381,25 @@ def salvar_paciente():
         cur.close()
         conn.close()
 
+# --- ROTA PARA O BOTÃO DE EXCLUIR (VIA FORMULÁRIO HTML) ---
+@app.route('/delete_paciente_via_form/<int:id>', methods=['POST'])
+def delete_paciente_via_form(id):
+    if not session.get('logged_in'): return redirect(url_for('login'))
+    
+    conn = get_db_connection()
+    cur = conn.cursor()
+    try:
+        # A exclusão em cascata (configurada no banco) remove agendamentos/evoluções automaticamente
+        cur.execute("DELETE FROM pacientes WHERE id = %s", (id,))
+        conn.commit()
+    except Exception as e:
+        conn.rollback()
+        print(f"Erro ao excluir: {e}")
+    finally:
+        cur.close()
+        conn.close()
+        
+    return redirect(url_for('pacientes'))
+
 if __name__ == '__main__':
     app.run(debug=True)
