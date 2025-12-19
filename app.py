@@ -336,7 +336,7 @@ def get_paciente(id):
     conn = get_db_connection()
     cur = conn.cursor()
     # Ajuste os campos conforme sua tabela real
-    cur.execute('SELECT id, nome, data_data_nascimento, telefone, cpf, endereco FROM pacientes WHERE id = %s', (id,))
+    cur.execute('SELECT id, nome, data_nascimento, telefone, cpf, endereco FROM pacientes WHERE id = %s', (id,))
     p = cur.fetchone()
     cur.close()
     conn.close()
@@ -345,7 +345,7 @@ def get_paciente(id):
         return jsonify({
             'id': p[0],
             'nome': p[1],
-            'data_data_nascimento': p[2].strftime('%Y-%m-%d') if p[2] else '',
+            'data_nascimento': p[2].strftime('%Y-%m-%d') if p[2] else '',
             'telefone': p[3],
             'cpf': p[4],
             'endereco': p[5]
@@ -363,14 +363,14 @@ def salvar_paciente():
         if data.get('id'): # Se tem ID, é UMA EDIÇÃO (UPDATE)
             cur.execute('''
                 UPDATE pacientes 
-                SET nome=%s, data_data_nascimento=%s, telefone=%s, cpf=%s, endereco=%s
+                SET nome=%s, data_nascimento=%s, telefone=%s, cpf=%s, endereco=%s
                 WHERE id=%s
-            ''', (data['nome'], data['data_data_nascimento'], data['telefone'], data['cpf'], data['endereco'], data['id']))
+            ''', (data['nome'], data['data_nascimento'], data['telefone'], data['cpf'], data['endereco'], data['id']))
         else: # Se não tem ID, é UM NOVO CADASTRO (INSERT)
             cur.execute('''
-                INSERT INTO pacientes (nome, data_data_nascimento, telefone, cpf, endereco)
+                INSERT INTO pacientes (nome, data_nascimento, telefone, cpf, endereco)
                 VALUES (%s, %s, %s, %s, %s)
-            ''', (data['nome'], data['data_data_nascimento'], data['telefone'], data['cpf'], data['endereco']))
+            ''', (data['nome'], data['data_nascimento'], data['telefone'], data['cpf'], data['endereco']))
         
         conn.commit()
         return jsonify({'mensagem': 'Salvo com sucesso!'})
