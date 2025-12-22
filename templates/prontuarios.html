@@ -94,7 +94,7 @@
                                     <div class="card border-0 shadow-sm rounded-4 mb-4">
                                         <div class="card-header bg-white border-0 py-3"><h5 class="fw-bold text-danger mb-0">Comorbidades (HPP)</h5></div>
                                         <div class="card-body">
-                                            <div class="mb-2"><small class="text-muted">Selecione as condições pré-existentes:</small></div>
+                                            <div class="mb-2"><small class="text-muted">Selecione:</small></div>
                                             <div class="row g-2">
                                                 <div class="col-md-3"><div class="form-check"><input class="form-check-input check-hpp" type="checkbox" value="HAS"><label>Hipertensão</label></div></div>
                                                 <div class="col-md-3"><div class="form-check"><input class="form-check-input check-hpp" type="checkbox" value="Diabetes"><label>Diabetes</label></div></div>
@@ -139,21 +139,16 @@
                                             <div class="row g-3">
                                                 <div class="col-md-3"><label class="small fw-bold text-muted">Distância (m)</label><input type="number" id="tc6_distancia" class="form-control border-0"></div>
                                                 <div class="col-md-3"><label class="small fw-bold text-muted">Paradas</label><input type="number" id="tc6_paradas" class="form-control border-0"></div>
-                                                <div class="col-md-3"><label class="small fw-bold text-muted">Borg</label><input type="text" id="tc6_borg" class="form-control border-0" placeholder="Ex: 3/10"></div>
-                                                <div class="col-md-3"><label class="small fw-bold text-muted">Sinais Finais</label><input type="text" id="tc6_sinais" class="form-control border-0" placeholder="SpO2/FC"></div>
-                                                <div class="col-12">
-                                                    <div class="d-flex align-items-center bg-white p-2 rounded border mt-2">
-                                                        <div class="form-check form-switch ms-2">
-                                                            <input class="form-check-input" type="checkbox" id="tc6_usa_o2" onchange="toggleO2Input()">
-                                                            <label class="form-check-label fw-bold" for="tc6_usa_o2">Usou O2?</label>
-                                                        </div>
-                                                        <div class="ms-4 d-none align-items-center" id="div_litragem">
-                                                            <label class="small text-muted me-2">Fluxo:</label>
-                                                            <input type="number" step="0.5" id="tc6_litros" class="form-control form-control-sm border-secondary" style="width: 80px;">
-                                                            <span class="small text-muted ms-1">L/min</span>
-                                                        </div>
+                                                <div class="col-md-6">
+                                                    <label class="small fw-bold text-muted">O2 Suplementar</label>
+                                                    <div class="d-flex align-items-center bg-white p-2 rounded border">
+                                                        <div class="form-check form-switch ms-2"><input class="form-check-input" type="checkbox" id="tc6_usa_o2" onchange="toggleO2Input()"><label class="small fw-bold ms-1" for="tc6_usa_o2">Usou?</label></div>
+                                                        <div class="ms-3 d-none align-items-center" id="div_litragem"><input type="number" step="0.5" id="tc6_litros" class="form-control form-control-sm border-secondary p-0 text-center" style="width: 50px;"><span class="small text-muted ms-1">L/min</span></div>
                                                     </div>
                                                 </div>
+                                                <div class="col-md-3"><label class="small fw-bold text-muted">Borg (Dispneia)</label><input type="number" step="0.5" id="tc6_borg_dispneia" class="form-control border-0" placeholder="0-10"></div>
+                                                <div class="col-md-3"><label class="small fw-bold text-muted">Borg (MMII)</label><input type="number" step="0.5" id="tc6_borg_mmii" class="form-control border-0" placeholder="0-10"></div>
+                                                <div class="col-md-6"><label class="small fw-bold text-muted">Sinais Finais (SpO2/FC/PA)</label><input type="text" id="tc6_sinais" class="form-control border-0"></div>
                                             </div>
                                         </div>
                                         <div class="row g-3 mb-4">
@@ -275,14 +270,15 @@
                 document.getElementById('pilates_exercicios').value = d.dados_pilates || '';
                 document.getElementById('quiro_obs').value = d.dados_quiro || '';
                 
-                // Cardio: Exibe histórico no campo de texto grande para referência
+                // Cardio
                 if(d.dados_cardio) document.getElementById('cardio_treino').value = "--- ÚLTIMO REGISTRO ---\n" + d.dados_cardio + "\n-----------------------\n";
                 else document.getElementById('cardio_treino').value = "";
                 
-                // Limpa campos numéricos do TC6 para nova entrada
+                // Limpa campos numéricos do TC6
                 document.getElementById('tc6_distancia').value = '';
                 document.getElementById('tc6_paradas').value = '';
-                document.getElementById('tc6_borg').value = '';
+                document.getElementById('tc6_borg_dispneia').value = ''; // Limpa novo campo
+                document.getElementById('tc6_borg_mmii').value = ''; // Limpa novo campo
                 document.getElementById('tc6_sinais').value = '';
                 document.getElementById('tc6_usa_o2').checked = false; toggleO2Input();
             } else {
@@ -306,7 +302,7 @@
 
         let cardioEq = []; document.querySelectorAll('.check-cardio:checked').forEach(e => cardioEq.push(e.value));
         const usaO2 = document.getElementById('tc6_usa_o2').checked;
-        const cardioFinal = `TC6: ${document.getElementById('tc6_distancia').value}m | Paradas: ${document.getElementById('tc6_paradas').value} | O2: ${usaO2 ? document.getElementById('tc6_litros').value + 'L' : 'Não'} | Borg: ${document.getElementById('tc6_borg').value} | Sinais: ${document.getElementById('tc6_sinais').value} | MRC: ${document.getElementById('cardio_mrc').value} | Espiro: ${document.getElementById('cardio_espiro').value} | Eq: ${cardioEq.join(", ")} | Treino: ${document.getElementById('cardio_treino').value}`;
+        const cardioFinal = `TC6: ${document.getElementById('tc6_distancia').value}m | Paradas: ${document.getElementById('tc6_paradas').value} | O2: ${usaO2 ? document.getElementById('tc6_litros').value + 'L' : 'Não'} | Borg Disp: ${document.getElementById('tc6_borg_dispneia').value} | Borg MMII: ${document.getElementById('tc6_borg_mmii').value} | Sinais: ${document.getElementById('tc6_sinais').value} | MRC: ${document.getElementById('cardio_mrc').value} | Espiro: ${document.getElementById('cardio_espiro').value} | Eq: ${cardioEq.join(", ")} | Treino: ${document.getElementById('cardio_treino').value}`;
 
         const dados = {
             paciente_id: id,

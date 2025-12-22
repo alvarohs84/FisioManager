@@ -49,7 +49,7 @@ def reparar_banco():
             data TIMESTAMP DEFAULT CURRENT_TIMESTAMP, texto TEXT);''')
         log.append("Tabela Evoluções: OK")
 
-        # 3. Tabela Avaliação Completa (Criação Base)
+        # 3. Tabela Avaliação Completa
         cursor.execute('''CREATE TABLE IF NOT EXISTS avaliacoes_completa (
             id SERIAL PRIMARY KEY, paciente_id INTEGER REFERENCES pacientes(id) ON DELETE CASCADE,
             data_avaliacao TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
@@ -61,8 +61,8 @@ def reparar_banco():
         # 4. Atualização de Colunas Extras (Pilates, Quiro, Cardio)
         cursor.execute("ALTER TABLE avaliacoes_completa ADD COLUMN IF NOT EXISTS dados_pilates TEXT;")
         cursor.execute("ALTER TABLE avaliacoes_completa ADD COLUMN IF NOT EXISTS dados_quiro TEXT;")
-        cursor.execute("ALTER TABLE avaliacoes_completa ADD COLUMN IF NOT EXISTS dados_cardio TEXT;") # <--- IMPORTANTE PARA O TC6
-        log.append("Colunas Extras Avaliação (Pilates/Quiro/Cardio): OK")
+        cursor.execute("ALTER TABLE avaliacoes_completa ADD COLUMN IF NOT EXISTS dados_cardio TEXT;") 
+        log.append("Colunas Extras Avaliação: OK")
 
         # 5. Tabela Fotos
         cursor.execute('''CREATE TABLE IF NOT EXISTS avaliacao_postural (
@@ -164,8 +164,13 @@ def prontuarios():
     conn.close()
     return render_template('prontuarios.html', pacientes=pacientes)
 
+@app.route('/financeiro')
+def financeiro():
+    if not session.get('logged_in'): return redirect(url_for('login'))
+    return render_template('financeiro.html')
+
 # ==========================================
-# API INTELIGENTE DO DASHBOARD (GRÁFICOS)
+# API INTELIGENTE DO DASHBOARD
 # ==========================================
 @app.route('/api/dados_dashboard')
 def dados_dashboard():
@@ -224,11 +229,6 @@ def dados_dashboard():
 # APIs FINANCEIRO
 # ==========================================
 
-@app.route('/financeiro')
-def financeiro():
-    if not session.get('logged_in'): return redirect(url_for('login'))
-    return render_template('financeiro.html')
-
 @app.route('/api/financeiro/resumo')
 def financeiro_resumo():
     conn = get_db_connection()
@@ -276,35 +276,53 @@ def financeiro_deletar():
     return jsonify({'status': 'success'})
 
 # ==========================================
-# APIs E FUNÇÕES GERAIS (Pacientes, Agenda, Avaliação)
+# APIs CLINICAS (AVALIAÇÃO, EVOLUÇÃO, ETC)
 # ==========================================
 
-# --- EXCLUSÃO SEGURA ---
-@app.route('/api/deletar_paciente', methods=['POST'])
-def deletar_paciente():
-    if not session.get('logged_in'): return jsonify({'status': 'error'}), 403
-    data = request.json
-    pid = data['id']
+@app.route('/api/salvar_avaliacao', methods=['POST'])
+def salvar_avaliacao():
+    d = request.json
     conn = get_db_connection()
     cur = conn.cursor()
     try:
-        def delete_if_exists(table_name):
-            cur.execute(f"SELECT to_regclass('public.{table_name}')")
-            if cur.fetchone()[0]: cur.execute(f"DELETE FROM {table_name} WHERE paciente_id = %s", (pid,))
-        
-        # Limpa dependências
-        for t in ['agendamentos', 'evolucoes', 'avaliacoes_completa', 'avaliacao_postural', 'avaliacoes']:
-            delete_if_exists(t)
+        dados_pilates = d.get('dados_pilates', '')
+        dados_quiro = d.get('dados_quiro', '')
+        dados_cardio = d.get('dados_cardio', '') # Cardio TC6
 
-        cur.execute("DELETE FROM pacientes WHERE id = %s", (pid,))
+        cur.execute("""
+            INSERT INTO avaliacoes_completa 
+            (paciente_id, ocupacao, lateralidade, diagnostico_medico, queixa_principal, hma, hpp, habitos, sinais_vitais, avaliacao_dor, inspecao, palpacao, adm, forca_muscular, neuro, testes_especiais, diagnostico_cif, objetivos, conduta, dados_pilates, dados_quiro, dados_cardio) 
+            VALUES (%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s)
+        """, (d['paciente_id'], d['ocupacao'], d['lateralidade'], d['diagnostico_medico'], d['queixa_principal'], d['hma'], d['hpp'], d['habitos'], d['sinais_vitais'], d['avaliacao_dor'], d['inspecao'], d['palpacao'], d['adm'], d['forca_muscular'], d['neuro'], d['testes_especiais'], d['diagnostico_cif'], d['objetivos'], d['conduta'], dados_pilates, dados_quiro, dados_cardio))
+        
         conn.commit()
         return jsonify({'status': 'success'})
     except Exception as e:
         conn.rollback()
-        return jsonify({'status': 'error', 'message': str(e)}), 500
+        return jsonify({'status': 'error', 'msg': str(e)}), 500
     finally: conn.close()
 
-# --- APIs DE AGENDA ---
+@app.route('/api/get_avaliacao/<int:pid>', methods=['GET'])
+def get_avaliacao(pid):
+    conn = get_db_connection()
+    cur = conn.cursor()
+    try:
+        cur.execute("SELECT ocupacao, lateralidade, diagnostico_medico, queixa_principal, hma, hpp, habitos, sinais_vitais, avaliacao_dor, inspecao, palpacao, adm, forca_muscular, neuro, testes_especiais, diagnostico_cif, objetivos, conduta, data_avaliacao, dados_pilates, dados_quiro, dados_cardio FROM avaliacoes_completa WHERE paciente_id = %s ORDER BY id DESC LIMIT 1", (pid,))
+        r = cur.fetchone()
+        if r: 
+            return jsonify({
+                'encontrado': True, 
+                'ocupacao': r[0], 'lateralidade': r[1], 'diagnostico_medico': r[2], 'queixa_principal': r[3], 'hma': r[4], 'hpp': r[5], 'habitos': r[6], 'sinais_vitais': r[7], 'avaliacao_dor': r[8], 'inspecao': r[9], 'palpacao': r[10], 'adm': r[11], 'forca_muscular': r[12], 'neuro': r[13], 'testes_especiais': r[14], 'diagnostico_cif': r[15], 'objetivos': r[16], 'conduta': r[17], 
+                'data': r[18].strftime("%d/%m/%Y"),
+                'dados_pilates': r[19] if len(r) > 19 else '', 
+                'dados_quiro': r[20] if len(r) > 20 else '',
+                'dados_cardio': r[21] if len(r) > 21 else ''
+            })
+        return jsonify({'encontrado': False})
+    except: return jsonify({'encontrado': False})
+    finally: conn.close()
+
+# APIs padrão (eventos, evolucoes, paciente, fotos)
 @app.route('/api/eventos')
 def api_eventos():
     conn = get_db_connection()
@@ -326,8 +344,7 @@ def criar_evento():
     cur = conn.cursor()
     try:
         start = datetime.fromisoformat(d['start'])
-        cur.execute("INSERT INTO agendamentos (paciente_id, start_time, end_time, obs, status) VALUES (%s, %s, %s, %s, 'Agendado')", 
-                    (d['paciente_id'], start, start + timedelta(hours=1), d.get('obs', '')))
+        cur.execute("INSERT INTO agendamentos (paciente_id, start_time, end_time, obs, status) VALUES (%s, %s, %s, %s, 'Agendado')", (d['paciente_id'], start, start + timedelta(hours=1), d.get('obs', '')))
         conn.commit()
         return jsonify({'status': 'success'})
     except: return jsonify({'status': 'error'}), 500
@@ -363,7 +380,6 @@ def deletar_evento():
     conn.close()
     return jsonify({'status': 'success'})
 
-# --- APIs DE EVOLUÇÃO ---
 @app.route('/api/evolucoes/<int:pid>', methods=['GET'])
 def get_evolucoes(pid):
     conn = get_db_connection()
@@ -383,81 +399,6 @@ def nova_evolucao():
     conn.close()
     return jsonify({'status': 'success'})
 
-# --- APIs DE AVALIAÇÃO (COMPLETA + PILATES + QUIRO + CARDIO) ---
-@app.route('/api/salvar_avaliacao', methods=['POST'])
-def salvar_avaliacao():
-    d = request.json
-    conn = get_db_connection()
-    cur = conn.cursor()
-    try:
-        # Prepara campos novos
-        dados_pilates = d.get('dados_pilates', '')
-        dados_quiro = d.get('dados_quiro', '')
-        dados_cardio = d.get('dados_cardio', '') # <--- NOVO (TC6/Cardio)
-
-        cur.execute("""
-            INSERT INTO avaliacoes_completa 
-            (paciente_id, ocupacao, lateralidade, diagnostico_medico, queixa_principal, hma, hpp, habitos, sinais_vitais, avaliacao_dor, inspecao, palpacao, adm, forca_muscular, neuro, testes_especiais, diagnostico_cif, objetivos, conduta, dados_pilates, dados_quiro, dados_cardio) 
-            VALUES (%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s)
-        """, (d['paciente_id'], d['ocupacao'], d['lateralidade'], d['diagnostico_medico'], d['queixa_principal'], d['hma'], d['hpp'], d['habitos'], d['sinais_vitais'], d['avaliacao_dor'], d['inspecao'], d['palpacao'], d['adm'], d['forca_muscular'], d['neuro'], d['testes_especiais'], d['diagnostico_cif'], d['objetivos'], d['conduta'], dados_pilates, dados_quiro, dados_cardio))
-        
-        conn.commit()
-        return jsonify({'status': 'success'})
-    except Exception as e:
-        conn.rollback()
-        return jsonify({'status': 'error', 'msg': str(e)}), 500
-    finally: conn.close()
-
-@app.route('/api/get_avaliacao/<int:pid>', methods=['GET'])
-def get_avaliacao(pid):
-    conn = get_db_connection()
-    cur = conn.cursor()
-    try:
-        # Adicionamos a leitura de dados_cardio
-        cur.execute("SELECT ocupacao, lateralidade, diagnostico_medico, queixa_principal, hma, hpp, habitos, sinais_vitais, avaliacao_dor, inspecao, palpacao, adm, forca_muscular, neuro, testes_especiais, diagnostico_cif, objetivos, conduta, data_avaliacao, dados_pilates, dados_quiro, dados_cardio FROM avaliacoes_completa WHERE paciente_id = %s ORDER BY id DESC LIMIT 1", (pid,))
-        r = cur.fetchone()
-        
-        if r: 
-            return jsonify({
-                'encontrado': True, 
-                'ocupacao': r[0], 'lateralidade': r[1], 'diagnostico_medico': r[2], 'queixa_principal': r[3], 'hma': r[4], 'hpp': r[5], 'habitos': r[6], 'sinais_vitais': r[7], 'avaliacao_dor': r[8], 'inspecao': r[9], 'palpacao': r[10], 'adm': r[11], 'forca_muscular': r[12], 'neuro': r[13], 'testes_especiais': r[14], 'diagnostico_cif': r[15], 'objetivos': r[16], 'conduta': r[17], 
-                'data': r[18].strftime("%d/%m/%Y"),
-                'dados_pilates': r[19] if len(r) > 19 else '', 
-                'dados_quiro': r[20] if len(r) > 20 else '',
-                'dados_cardio': r[21] if len(r) > 21 else '' # <--- NOVO (TC6/Cardio)
-            })
-        return jsonify({'encontrado': False})
-    except Exception as e:
-        return jsonify({'encontrado': False})
-    finally:
-        conn.close()
-
-@app.route('/api/salvar_fotos', methods=['POST'])
-def salvar_fotos():
-    d = request.json
-    conn = get_db_connection()
-    cur = conn.cursor()
-    try:
-        cur.execute("INSERT INTO avaliacao_postural (paciente_id, foto_frontal, foto_posterior, foto_lat_dir, foto_lat_esq, analise_ia) VALUES (%s,%s,%s,%s,%s,%s)", 
-                    (d['paciente_id'], d.get('frontal'), d.get('posterior'), d.get('lat_dir'), d.get('lat_esq'), d.get('analise_ia')))
-        conn.commit()
-        return jsonify({'status': 'success'})
-    except Exception as e:
-        conn.rollback()
-        return jsonify({'status': 'error', 'msg': str(e)}), 500
-    finally: conn.close()
-
-@app.route('/api/get_fotos/<int:pid>', methods=['GET'])
-def get_fotos(pid):
-    conn = get_db_connection()
-    cur = conn.cursor()
-    cur.execute("SELECT foto_frontal, foto_posterior, foto_lat_dir, foto_lat_esq, analise_ia, data_foto FROM avaliacao_postural WHERE paciente_id = %s ORDER BY id DESC LIMIT 1", (pid,))
-    r = cur.fetchone()
-    conn.close()
-    if r: return jsonify({'encontrado': True, 'frontal': r[0], 'posterior': r[1], 'lat_dir': r[2], 'lat_esq': r[3], 'analise': r[4], 'data': r[5].strftime("%d/%m/%Y")})
-    return jsonify({'encontrado': False})
-
-# --- APIs PACIENTE ---
 @app.route('/api/get_paciente/<int:id>', methods=['GET'])
 def get_paciente(id):
     conn = get_db_connection()
@@ -475,17 +416,15 @@ def salvar_paciente():
     cur = conn.cursor()
     try:
         nome = data.get('nome')
-        if not nome: return jsonify({'erro': 'O nome é obrigatório!'}), 400
+        if not nome: return jsonify({'erro': 'Nome obrigatório'}), 400
         args = (nome, data.get('data_nascimento') or None, data.get('telefone') or None, data.get('cpf') or None, data.get('endereco') or None)
         if data.get('id'):
             cur.execute("UPDATE pacientes SET nome=%s, data_nascimento=%s, telefone=%s, cpf=%s, endereco=%s WHERE id=%s", args + (data['id'],))
         else:
             cur.execute("INSERT INTO pacientes (nome, data_nascimento, telefone, cpf, endereco) VALUES (%s, %s, %s, %s, %s)", args)
         conn.commit()
-        return jsonify({'mensagem': 'Salvo com sucesso!'})
-    except Exception as e:
-        conn.rollback()
-        return jsonify({'erro': f"Erro no sistema: {str(e)}"}), 500
+        return jsonify({'mensagem': 'Salvo!'})
+    except Exception as e: return jsonify({'erro': str(e)}), 500
     finally: conn.close()
 
 @app.route('/delete_paciente_via_form/<int:id>', methods=['POST'])
