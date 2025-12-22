@@ -62,9 +62,11 @@
                             <button class="nav-link text-start mb-2 rounded-3 py-3" data-bs-toggle="pill" data-bs-target="#tab-avaliacao">
                                 <i class="bi bi-file-medical me-2"></i> Avaliação Físio
                             </button>
+                            
                             <button class="nav-link text-start mb-2 rounded-3 py-3" data-bs-toggle="pill" data-bs-target="#tab-pilates">
-                                <i class="bi bi-yin-yang me-2"></i> Pilates
+                                <i class="bi bi-person-arms-up me-2"></i> Pilates
                             </button>
+                            
                             <button class="nav-link text-start mb-2 rounded-3 py-3" data-bs-toggle="pill" data-bs-target="#tab-quiro">
                                 <i class="bi bi-hand-index-thumb me-2"></i> Quiro / T. Manual
                             </button>
@@ -169,6 +171,8 @@
                                                     <div class="form-check"><input class="form-check-input check-hpp" type="checkbox" value="ICC"><label class="form-check-label">ICC (Insuficiência Cardíaca)</label></div>
                                                     <div class="form-check"><input class="form-check-input check-hpp" type="checkbox" value="Arritmia"><label class="form-check-label">Arritmia</label></div>
                                                     <div class="form-check"><input class="form-check-input check-hpp" type="checkbox" value="IAM Prévio"><label class="form-check-label">IAM Prévio (Infarto)</label></div>
+                                                    <div class="form-check"><input class="form-check-input check-hpp" type="checkbox" value="Marcapasso"><label class="form-check-label">Uso de Marcapasso</label></div>
+                                                    <div class="form-check"><input class="form-check-input check-hpp" type="checkbox" value="AVC/AVE Prévio"><label class="form-check-label">AVC/AVE Prévio</label></div>
                                                 </div>
                                             </div>
                                             <div class="border rounded-3 mb-2 overflow-hidden">
@@ -176,10 +180,12 @@
                                                     <span><i class="bi bi-lungs text-info me-2"></i> Respiratórias</span> <i class="bi bi-chevron-down"></i>
                                                 </button>
                                                 <div id="collapseResp" class="collapse bg-white border-top p-3">
-                                                    <div class="form-check"><input class="form-check-input check-hpp" type="checkbox" value="Asma"><label class="form-check-label">Asma</label></div>
-                                                    <div class="form-check"><input class="form-check-input check-hpp" type="checkbox" value="DPOC"><label class="form-check-label">DPOC</label></div>
+                                                    <div class="form-check"><input class="form-check-input check-hpp" type="checkbox" value="Asma Brônquica"><label class="form-check-label">Asma Brônquica</label></div>
+                                                    <div class="form-check"><input class="form-check-input check-hpp" type="checkbox" value="DPOC"><label class="form-check-label">DPOC (Enfisema/Bronquite)</label></div>
                                                     <div class="form-check"><input class="form-check-input check-hpp" type="checkbox" value="Pneumonia Recente"><label class="form-check-label">Pneumonia Recente</label></div>
-                                                    <div class="form-check"><input class="form-check-input check-hpp" type="checkbox" value="Sequelas COVID"><label class="form-check-label">Sequelas COVID-19</label></div>
+                                                    <div class="form-check"><input class="form-check-input check-hpp" type="checkbox" value="Fibrose Pulmonar"><label class="form-check-label">Fibrose Pulmonar</label></div>
+                                                    <div class="form-check"><input class="form-check-input check-hpp" type="checkbox" value="COVID-19 (Sequelas)"><label class="form-check-label">COVID-19 (Sequelas)</label></div>
+                                                    <div class="form-check"><input class="form-check-input check-hpp" type="checkbox" value="Uso de O2 Domiciliar"><label class="form-check-label">Uso de O2 Domiciliar</label></div>
                                                 </div>
                                             </div>
 
@@ -225,7 +231,7 @@
                             <div class="tab-pane fade" id="tab-pilates">
                                 <div class="card border-0 shadow-sm rounded-4 mb-4">
                                     <div class="card-header bg-white border-0 py-3">
-                                        <h5 class="fw-bold text-success mb-0"><i class="bi bi-yin-yang me-2"></i> Avaliação de Pilates</h5>
+                                        <h5 class="fw-bold text-success mb-0"><i class="bi bi-person-arms-up me-2"></i> Avaliação de Pilates</h5>
                                     </div>
                                     <div class="card-body">
                                         <h6 class="text-muted fw-bold mb-3">Aparelhos / Equipamentos Indicados</h6>
@@ -348,7 +354,7 @@
                 document.getElementById('av_diag_medico').value = d.diagnostico_medico || '';
                 document.getElementById('av_qp').value = d.queixa_principal || '';
                 document.getElementById('av_hma').value = d.hma || '';
-                document.getElementById('av_hpp_texto').value = d.hpp || ''; // HPP vem como texto completo
+                document.getElementById('av_hpp_texto').value = d.hpp || '';
                 document.getElementById('av_sinais').value = d.sinais_vitais || '';
                 document.getElementById('av_inspecao').value = d.inspecao || '';
                 document.getElementById('av_palpacao').value = d.avaliacao_dor || '';
@@ -358,7 +364,7 @@
                 document.getElementById('av_objetivos').value = d.objetivos || '';
                 document.getElementById('av_conduta').value = d.conduta || '';
                 
-                // Novos Módulos
+                // Novos Módulos - Preenchimento
                 document.getElementById('pilates_exercicios').value = d.dados_pilates || '';
                 document.getElementById('quiro_obs').value = d.dados_quiro || '';
             } else {
