@@ -360,23 +360,39 @@ def salvar_paciente():
     cur = conn.cursor()
     
     try:
-        if data.get('id'): # Se tem ID, é UMA EDIÇÃO (UPDATE)
+        # 1. PEGA O NOME (Obrigatório)
+        nome = data.get('nome')
+        if not nome:
+            return jsonify({'erro': 'O nome é obrigatório!'}), 400
+
+        # 2. TRATA OS CAMPOS OPCIONAIS
+        # O segredo: 'data.get(x) or None' transforma texto vazio "" em None
+        dt_nasc = data.get('data_nascimento') or None
+        telefone = data.get('telefone') or None
+        cpf = data.get('cpf') or None
+        endereco = data.get('endereco') or None
+
+        # 3. SALVA NO BANCO
+        if data.get('id'): # EDIÇÃO
             cur.execute('''
                 UPDATE pacientes 
                 SET nome=%s, data_nascimento=%s, telefone=%s, cpf=%s, endereco=%s
                 WHERE id=%s
-            ''', (data['nome'], data['data_nascimento'], data['telefone'], data['cpf'], data['endereco'], data['id']))
-        else: # Se não tem ID, é UM NOVO CADASTRO (INSERT)
+            ''', (nome, dt_nasc, telefone, cpf, endereco, data['id']))
+        else: # NOVO CADASTRO
             cur.execute('''
                 INSERT INTO pacientes (nome, data_nascimento, telefone, cpf, endereco)
                 VALUES (%s, %s, %s, %s, %s)
-            ''', (data['nome'], data['data_nascimento'], data['telefone'], data['cpf'], data['endereco']))
+            ''', (nome, dt_nasc, telefone, cpf, endereco))
         
         conn.commit()
         return jsonify({'mensagem': 'Salvo com sucesso!'})
+
     except Exception as e:
         conn.rollback()
-        return jsonify({'erro': str(e)}), 500
+        # Loga o erro no painel do Render para você saber o que houve
+        print(f"ERRO AO SALVAR: {e}") 
+        return jsonify({'erro': f"Erro no sistema: {str(e)}"}), 500
     finally:
         cur.close()
         conn.close()
