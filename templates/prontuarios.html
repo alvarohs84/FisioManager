@@ -39,7 +39,6 @@
 <div class="modal fade" id="modalProntuario" tabindex="-1" aria-hidden="true">
     <div class="modal-dialog modal-fullscreen">
         <div class="modal-content bg-light">
-            
             <div class="modal-header bg-primary text-white py-2">
                 <div class="d-flex align-items-center">
                     <i class="bi bi-person-vcard fs-3 me-3"></i>
@@ -48,257 +47,176 @@
                         <h5 class="modal-title fw-bold" id="lblNomePaciente">Carregando...</h5>
                     </div>
                 </div>
-                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
             </div>
-
             <div class="modal-body p-0">
                 <div class="d-flex h-100 flex-column flex-lg-row">
-                    
                     <div class="bg-white border-end col-lg-2 col-12">
                         <div class="nav flex-column nav-pills p-3" id="v-pills-tab" role="tablist">
-                            <button class="nav-link active text-start mb-2 rounded-3 py-3" data-bs-toggle="pill" data-bs-target="#tab-evolucao">
-                                <i class="bi bi-clock-history me-2"></i> Evolução Diária
-                            </button>
-                            <button class="nav-link text-start mb-2 rounded-3 py-3" data-bs-toggle="pill" data-bs-target="#tab-avaliacao">
-                                <i class="bi bi-file-medical me-2"></i> Avaliação Físio
-                            </button>
-                            
-                            <button class="nav-link text-start mb-2 rounded-3 py-3" data-bs-toggle="pill" data-bs-target="#tab-pilates">
-                                <i class="bi bi-person-arms-up me-2"></i> Pilates
-                            </button>
-                            
-                            <button class="nav-link text-start mb-2 rounded-3 py-3" data-bs-toggle="pill" data-bs-target="#tab-quiro">
-                                <i class="bi bi-hand-index-thumb me-2"></i> Quiro / T. Manual
-                            </button>
-                            
-                            <button class="nav-link text-start mb-2 rounded-3 py-3" data-bs-toggle="pill" data-bs-target="#tab-fotos">
-                                <i class="bi bi-images me-2"></i> Fotos / Postural
-                            </button>
+                            <button class="nav-link active text-start mb-2 rounded-3 py-3" data-bs-toggle="pill" data-bs-target="#tab-evolucao"><i class="bi bi-clock-history me-2"></i> Evolução</button>
+                            <button class="nav-link text-start mb-2 rounded-3 py-3" data-bs-toggle="pill" data-bs-target="#tab-avaliacao"><i class="bi bi-file-medical me-2"></i> Avaliação Físio</button>
+                            <button class="nav-link text-start mb-2 rounded-3 py-3" data-bs-toggle="pill" data-bs-target="#tab-cardio"><i class="bi bi-lungs me-2"></i> Cardiopulmonar</button>
+                            <button class="nav-link text-start mb-2 rounded-3 py-3" data-bs-toggle="pill" data-bs-target="#tab-pilates"><i class="bi bi-person-arms-up me-2"></i> Pilates</button>
+                            <button class="nav-link text-start mb-2 rounded-3 py-3" data-bs-toggle="pill" data-bs-target="#tab-quiro"><i class="bi bi-hand-index-thumb me-2"></i> Quiro / T. Manual</button>
+                            <button class="nav-link text-start mb-2 rounded-3 py-3" data-bs-toggle="pill" data-bs-target="#tab-fotos"><i class="bi bi-images me-2"></i> Fotos</button>
                         </div>
                     </div>
 
                     <div class="col-lg-10 col-12 bg-light overflow-auto p-4" style="height: calc(100vh - 70px);">
                         <input type="hidden" id="idPacienteAtual">
-                        
-                        <div class="tab-content" id="v-pills-tabContent">
+                        <div class="tab-content">
                             
                             <div class="tab-pane fade show active" id="tab-evolucao">
                                 <div class="card border-0 shadow-sm rounded-4 mb-4">
                                     <div class="card-body">
                                         <h5 class="fw-bold text-primary mb-3">Nova Evolução</h5>
-                                        <textarea class="form-control bg-light border-0 rounded-3 p-3 mb-3" id="txtEvolucao" rows="4" placeholder="Descreva o atendimento de hoje..."></textarea>
-                                        <div class="text-end">
-                                            <button onclick="salvarEvolucao()" class="btn btn-primary rounded-pill px-4">
-                                                <i class="bi bi-send me-2"></i> Salvar Evolução
-                                            </button>
-                                        </div>
+                                        <textarea class="form-control bg-light border-0 rounded-3 p-3 mb-3" id="txtEvolucao" rows="4"></textarea>
+                                        <div class="text-end"><button onclick="salvarEvolucao()" class="btn btn-primary rounded-pill px-4">Salvar</button></div>
                                     </div>
                                 </div>
-                                <h6 class="text-muted ms-2 mb-3">Histórico Recente</h6>
                                 <div id="listaEvolucoes"></div>
                             </div>
 
                             <div class="tab-pane fade" id="tab-avaliacao">
                                 <div class="container p-0" style="max-width: 900px;">
+                                    <div class="card border-0 shadow-sm rounded-4 mb-4">
+                                        <div class="card-header bg-white border-0 py-3"><h5 class="fw-bold text-primary mb-0">Anamnese</h5></div>
+                                        <div class="card-body">
+                                            <div class="row g-3">
+                                                <div class="col-md-6"><label class="small text-muted">Ocupação</label><input type="text" id="av_ocupacao" class="form-control bg-light border-0"></div>
+                                                <div class="col-md-6"><label class="small text-muted">Diagnóstico</label><input type="text" id="av_diag_medico" class="form-control bg-light border-0"></div>
+                                                <div class="col-12"><label class="small text-muted">Queixa Principal</label><textarea id="av_qp" class="form-control bg-light border-0"></textarea></div>
+                                                <div class="col-12"><label class="small text-muted">HDA</label><textarea id="av_hma" class="form-control bg-light border-0"></textarea></div>
+                                            </div>
+                                        </div>
+                                    </div>
                                     
                                     <div class="card border-0 shadow-sm rounded-4 mb-4">
-                                        <div class="card-header bg-white border-0 py-3">
-                                            <h5 class="fw-bold text-primary mb-0"><i class="bi bi-journal-text me-2"></i> Anamnese</h5>
-                                        </div>
+                                        <div class="card-header bg-white border-0 py-3"><h5 class="fw-bold text-danger mb-0">Comorbidades (HPP)</h5></div>
                                         <div class="card-body">
-                                            <div class="row g-3">
-                                                <div class="col-md-6">
-                                                    <label class="form-label fw-bold small text-muted">Ocupação</label>
-                                                    <input type="text" id="av_ocupacao" class="form-control bg-light border-0">
-                                                </div>
-                                                <div class="col-md-6">
-                                                    <label class="form-label fw-bold small text-muted">Diagnóstico Médico</label>
-                                                    <input type="text" id="av_diag_medico" class="form-control bg-light border-0">
-                                                </div>
-                                                <div class="col-12">
-                                                    <label class="form-label fw-bold small text-muted">Queixa Principal (QP)</label>
-                                                    <textarea id="av_qp" class="form-control bg-light border-0" rows="2"></textarea>
-                                                </div>
-                                                <div class="col-12">
-                                                    <label class="form-label fw-bold small text-muted">História da Doença Atual (HDA)</label>
-                                                    <textarea id="av_hma" class="form-control bg-light border-0" rows="3"></textarea>
-                                                </div>
+                                            <div class="mb-2"><small class="text-muted">Selecione as condições pré-existentes:</small></div>
+                                            <div class="row g-2">
+                                                <div class="col-md-3"><div class="form-check"><input class="form-check-input check-hpp" type="checkbox" value="HAS"><label>Hipertensão</label></div></div>
+                                                <div class="col-md-3"><div class="form-check"><input class="form-check-input check-hpp" type="checkbox" value="Diabetes"><label>Diabetes</label></div></div>
+                                                <div class="col-md-3"><div class="form-check"><input class="form-check-input check-hpp" type="checkbox" value="Asma"><label>Asma</label></div></div>
+                                                <div class="col-md-3"><div class="form-check"><input class="form-check-input check-hpp" type="checkbox" value="Hernia"><label>Hérnia Discal</label></div></div>
                                             </div>
+                                            <textarea id="av_hpp_texto" class="form-control bg-light border-0 mt-3" placeholder="Outras observações..."></textarea>
                                         </div>
                                     </div>
 
                                     <div class="card border-0 shadow-sm rounded-4 mb-4">
-                                        <div class="card-header bg-white border-0 py-3">
-                                            <h5 class="fw-bold text-danger mb-0"><i class="bi bi-activity me-2"></i> Histórico Patológico (Comorbidades)</h5>
-                                        </div>
-                                        <div class="card-body">
-                                            <div class="border rounded-3 mb-2 overflow-hidden">
-                                                <button class="btn btn-light w-100 text-start d-flex justify-content-between py-3 px-3 fw-bold" type="button" data-bs-toggle="collapse" data-bs-target="#collapseNeuro">
-                                                    <span><i class="bi bi-brain text-secondary me-2"></i> Neurológicas</span> <i class="bi bi-chevron-down"></i>
-                                                </button>
-                                                <div id="collapseNeuro" class="collapse bg-white border-top p-3">
-                                                    <div class="form-check"><input class="form-check-input check-hpp" type="checkbox" value="AVE/AVC"><label class="form-check-label">AVE/AVC</label></div>
-                                                    <div class="form-check"><input class="form-check-input check-hpp" type="checkbox" value="Parkinson"><label class="form-check-label">Parkinson</label></div>
-                                                    <div class="form-check"><input class="form-check-input check-hpp" type="checkbox" value="Alzheimer"><label class="form-check-label">Alzheimer</label></div>
-                                                </div>
-                                            </div>
-                                            <div class="border rounded-3 mb-2 overflow-hidden">
-                                                <button class="btn btn-light w-100 text-start d-flex justify-content-between py-3 px-3 fw-bold" type="button" data-bs-toggle="collapse" data-bs-target="#collapseMeta">
-                                                    <span><i class="bi bi-droplet text-warning me-2"></i> Metabólicas</span> <i class="bi bi-chevron-down"></i>
-                                                </button>
-                                                <div id="collapseMeta" class="collapse bg-white border-top p-3">
-                                                    <div class="form-check"><input class="form-check-input check-hpp" type="checkbox" value="Diabetes Tipo 1"><label class="form-check-label">Diabetes Tipo 1</label></div>
-                                                    <div class="form-check"><input class="form-check-input check-hpp" type="checkbox" value="Diabetes Tipo 2"><label class="form-check-label">Diabetes Tipo 2</label></div>
-                                                    <div class="form-check"><input class="form-check-input check-hpp" type="checkbox" value="Dislipidemia"><label class="form-check-label">Dislipidemia (Colesterol)</label></div>
-                                                </div>
-                                            </div>
-                                            <div class="border rounded-3 mb-2 overflow-hidden">
-                                                <button class="btn btn-light w-100 text-start d-flex justify-content-between py-3 px-3 fw-bold" type="button" data-bs-toggle="collapse" data-bs-target="#collapseOrto">
-                                                    <span><i class="bi bi-bone text-success me-2"></i> Ortopédicas</span> <i class="bi bi-chevron-down"></i>
-                                                </button>
-                                                <div id="collapseOrto" class="collapse bg-white border-top p-3">
-                                                    <div class="form-check"><input class="form-check-input check-hpp" type="checkbox" value="Artrose"><label class="form-check-label">Artrose/Artrite</label></div>
-                                                    <div class="form-check"><input class="form-check-input check-hpp" type="checkbox" value="Hernia de Disco"><label class="form-check-label">Hérnia de Disco</label></div>
-                                                    <div class="form-check"><input class="form-check-input check-hpp" type="checkbox" value="Osteoporose"><label class="form-check-label">Osteoporose</label></div>
-                                                </div>
-                                            </div>
-                                            <div class="border rounded-3 mb-2 overflow-hidden">
-                                                <button class="btn btn-light w-100 text-start d-flex justify-content-between py-3 px-3 fw-bold" type="button" data-bs-toggle="collapse" data-bs-target="#collapseCardio">
-                                                    <span><i class="bi bi-heart-pulse text-danger me-2"></i> Cardiovasculares</span> <i class="bi bi-chevron-down"></i>
-                                                </button>
-                                                <div id="collapseCardio" class="collapse bg-white border-top p-3">
-                                                    <div class="form-check"><input class="form-check-input check-hpp" type="checkbox" value="HAS (Hipertensão)"><label class="form-check-label">HAS (Hipertensão)</label></div>
-                                                    <div class="form-check"><input class="form-check-input check-hpp" type="checkbox" value="ICC"><label class="form-check-label">ICC (Insuficiência Cardíaca)</label></div>
-                                                    <div class="form-check"><input class="form-check-input check-hpp" type="checkbox" value="Arritmia"><label class="form-check-label">Arritmia</label></div>
-                                                    <div class="form-check"><input class="form-check-input check-hpp" type="checkbox" value="IAM Prévio"><label class="form-check-label">IAM Prévio (Infarto)</label></div>
-                                                    <div class="form-check"><input class="form-check-input check-hpp" type="checkbox" value="Marcapasso"><label class="form-check-label">Uso de Marcapasso</label></div>
-                                                    <div class="form-check"><input class="form-check-input check-hpp" type="checkbox" value="AVC/AVE Prévio"><label class="form-check-label">AVC/AVE Prévio</label></div>
-                                                </div>
-                                            </div>
-                                            <div class="border rounded-3 mb-2 overflow-hidden">
-                                                <button class="btn btn-light w-100 text-start d-flex justify-content-between py-3 px-3 fw-bold" type="button" data-bs-toggle="collapse" data-bs-target="#collapseResp">
-                                                    <span><i class="bi bi-lungs text-info me-2"></i> Respiratórias</span> <i class="bi bi-chevron-down"></i>
-                                                </button>
-                                                <div id="collapseResp" class="collapse bg-white border-top p-3">
-                                                    <div class="form-check"><input class="form-check-input check-hpp" type="checkbox" value="Asma Brônquica"><label class="form-check-label">Asma Brônquica</label></div>
-                                                    <div class="form-check"><input class="form-check-input check-hpp" type="checkbox" value="DPOC"><label class="form-check-label">DPOC (Enfisema/Bronquite)</label></div>
-                                                    <div class="form-check"><input class="form-check-input check-hpp" type="checkbox" value="Pneumonia Recente"><label class="form-check-label">Pneumonia Recente</label></div>
-                                                    <div class="form-check"><input class="form-check-input check-hpp" type="checkbox" value="Fibrose Pulmonar"><label class="form-check-label">Fibrose Pulmonar</label></div>
-                                                    <div class="form-check"><input class="form-check-input check-hpp" type="checkbox" value="COVID-19 (Sequelas)"><label class="form-check-label">COVID-19 (Sequelas)</label></div>
-                                                    <div class="form-check"><input class="form-check-input check-hpp" type="checkbox" value="Uso de O2 Domiciliar"><label class="form-check-label">Uso de O2 Domiciliar</label></div>
-                                                </div>
-                                            </div>
-
-                                            <div class="mt-3">
-                                                <label class="form-label small text-muted">Outras Observações HPP</label>
-                                                <textarea id="av_hpp_texto" class="form-control bg-light border-0" rows="3"></textarea>
-                                            </div>
-                                        </div>
-                                    </div>
-
-                                    <div class="card border-0 shadow-sm rounded-4 mb-4">
-                                        <div class="card-header bg-white border-0 py-3">
-                                            <h5 class="fw-bold text-success mb-0"><i class="bi bi-person-check me-2"></i> Exame Físico</h5>
-                                        </div>
+                                        <div class="card-header bg-white border-0 py-3"><h5 class="fw-bold text-success mb-0">Exame Físico</h5></div>
                                         <div class="card-body">
                                             <div class="row g-3">
-                                                <div class="col-12"><label class="fw-bold small text-muted">Sinais Vitais</label><input type="text" id="av_sinais" class="form-control bg-light border-0"></div>
-                                                <div class="col-12"><label class="fw-bold small text-muted">Inspeção</label><textarea id="av_inspecao" class="form-control bg-light border-0" rows="2"></textarea></div>
-                                                <div class="col-md-6"><label class="fw-bold small text-muted">Palpação / Dor</label><textarea id="av_palpacao" class="form-control bg-light border-0" rows="2"></textarea></div>
-                                                <div class="col-md-6"><label class="fw-bold small text-muted">ADM</label><textarea id="av_adm" class="form-control bg-light border-0" rows="2"></textarea></div>
-                                                <div class="col-12"><label class="fw-bold small text-muted">Testes Especiais</label><textarea id="av_testes" class="form-control bg-light border-0" rows="2"></textarea></div>
+                                                <div class="col-12"><label class="small text-muted">Sinais Vitais</label><input id="av_sinais" class="form-control bg-light border-0"></div>
+                                                <div class="col-md-6"><label class="small text-muted">Inspeção</label><textarea id="av_inspecao" class="form-control bg-light border-0"></textarea></div>
+                                                <div class="col-md-6"><label class="small text-muted">Palpação</label><textarea id="av_palpacao" class="form-control bg-light border-0"></textarea></div>
+                                                <div class="col-md-6"><label class="small text-muted">ADM</label><textarea id="av_adm" class="form-control bg-light border-0"></textarea></div>
+                                                <div class="col-md-6"><label class="small text-muted">Testes</label><textarea id="av_testes" class="form-control bg-light border-0"></textarea></div>
                                             </div>
                                         </div>
                                     </div>
 
                                     <div class="card border-0 shadow-sm rounded-4 mb-5">
-                                        <div class="card-header bg-white border-0 py-3">
-                                            <h5 class="fw-bold text-dark mb-0"><i class="bi bi-clipboard-check me-2"></i> Conclusão</h5>
-                                        </div>
+                                        <div class="card-header bg-white border-0 py-3"><h5 class="fw-bold text-dark mb-0">Conclusão</h5></div>
                                         <div class="card-body">
-                                            <div class="mb-3"><label class="fw-bold small text-muted">Diagnóstico CIF</label><textarea id="av_cif" class="form-control bg-light border-0" rows="2"></textarea></div>
-                                            <div class="mb-3"><label class="fw-bold small text-muted">Objetivos</label><textarea id="av_objetivos" class="form-control bg-light border-0" rows="3"></textarea></div>
-                                            <div class="mb-3"><label class="fw-bold small text-muted">Conduta</label><textarea id="av_conduta" class="form-control bg-light border-0" rows="3"></textarea></div>
+                                            <div class="mb-2"><label class="small text-muted">CIF</label><textarea id="av_cif" class="form-control bg-light border-0"></textarea></div>
+                                            <div class="mb-2"><label class="small text-muted">Objetivos</label><textarea id="av_objetivos" class="form-control bg-light border-0"></textarea></div>
+                                            <div class="mb-2"><label class="small text-muted">Conduta</label><textarea id="av_conduta" class="form-control bg-light border-0"></textarea></div>
                                         </div>
                                     </div>
-                                    
-                                    <div class="position-fixed bottom-0 end-0 p-4" style="z-index: 1050;">
-                                        <button onclick="salvarAvaliacaoCompleta()" class="btn btn-success btn-lg rounded-pill shadow-lg px-5 fw-bold">SALVAR TUDO</button>
+                                    <div class="text-end mb-5"><button onclick="salvarAvaliacaoCompleta()" class="btn btn-success rounded-pill px-5">Salvar Tudo</button></div>
+                                </div>
+                            </div>
+
+                            <div class="tab-pane fade" id="tab-cardio">
+                                <div class="card border-0 shadow-sm rounded-4 mb-4">
+                                    <div class="card-header bg-white border-0 py-3"><h5 class="fw-bold text-danger mb-0"><i class="bi bi-lungs me-2"></i>Cardiopulmonar</h5></div>
+                                    <div class="card-body">
+                                        <div class="bg-light p-4 rounded-4 mb-4 border">
+                                            <h6 class="fw-bold text-danger mb-3">Teste de Caminhada (TC6)</h6>
+                                            <div class="row g-3">
+                                                <div class="col-md-3"><label class="small fw-bold text-muted">Distância (m)</label><input type="number" id="tc6_distancia" class="form-control border-0"></div>
+                                                <div class="col-md-3"><label class="small fw-bold text-muted">Paradas</label><input type="number" id="tc6_paradas" class="form-control border-0"></div>
+                                                <div class="col-md-3"><label class="small fw-bold text-muted">Borg</label><input type="text" id="tc6_borg" class="form-control border-0" placeholder="Ex: 3/10"></div>
+                                                <div class="col-md-3"><label class="small fw-bold text-muted">Sinais Finais</label><input type="text" id="tc6_sinais" class="form-control border-0" placeholder="SpO2/FC"></div>
+                                                <div class="col-12">
+                                                    <div class="d-flex align-items-center bg-white p-2 rounded border mt-2">
+                                                        <div class="form-check form-switch ms-2">
+                                                            <input class="form-check-input" type="checkbox" id="tc6_usa_o2" onchange="toggleO2Input()">
+                                                            <label class="form-check-label fw-bold" for="tc6_usa_o2">Usou O2?</label>
+                                                        </div>
+                                                        <div class="ms-4 d-none align-items-center" id="div_litragem">
+                                                            <label class="small text-muted me-2">Fluxo:</label>
+                                                            <input type="number" step="0.5" id="tc6_litros" class="form-control form-control-sm border-secondary" style="width: 80px;">
+                                                            <span class="small text-muted ms-1">L/min</span>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                        <div class="row g-3 mb-4">
+                                            <div class="col-md-6"><label class="small fw-bold text-muted">MRC (Dispneia)</label><input type="text" id="cardio_mrc" class="form-control bg-light border-0"></div>
+                                            <div class="col-md-6"><label class="small fw-bold text-muted">Espirometria</label><input type="text" id="cardio_espiro" class="form-control bg-light border-0"></div>
+                                        </div>
+                                        <div class="mb-3">
+                                            <label class="fw-bold small text-muted">Zona de Treinamento / Histórico</label>
+                                            <textarea id="cardio_treino" class="form-control bg-light border-0" rows="5"></textarea>
+                                        </div>
+                                        <div class="row g-2">
+                                            <div class="col-md-3"><div class="form-check border p-2 rounded"><input class="form-check-input check-cardio" type="checkbox" value="Esteira"><label class="ms-1">Esteira</label></div></div>
+                                            <div class="col-md-3"><div class="form-check border p-2 rounded"><input class="form-check-input check-cardio" type="checkbox" value="Ciclo"><label class="ms-1">Ciclo</label></div></div>
+                                            <div class="col-md-3"><div class="form-check border p-2 rounded"><input class="form-check-input check-cardio" type="checkbox" value="VNI"><label class="ms-1">VNI</label></div></div>
+                                            <div class="col-md-3"><div class="form-check border p-2 rounded"><input class="form-check-input check-cardio" type="checkbox" value="TMI"><label class="ms-1">TMI</label></div></div>
+                                        </div>
                                     </div>
+                                    <div class="text-end mb-3 me-3"><button onclick="salvarAvaliacaoCompleta()" class="btn btn-success rounded-pill px-4">Salvar</button></div>
                                 </div>
                             </div>
 
                             <div class="tab-pane fade" id="tab-pilates">
                                 <div class="card border-0 shadow-sm rounded-4 mb-4">
-                                    <div class="card-header bg-white border-0 py-3">
-                                        <h5 class="fw-bold text-success mb-0"><i class="bi bi-person-arms-up me-2"></i> Avaliação de Pilates</h5>
-                                    </div>
+                                    <div class="card-header bg-white border-0 py-3"><h5 class="fw-bold text-success mb-0"><i class="bi bi-person-arms-up me-2"></i>Pilates</h5></div>
                                     <div class="card-body">
-                                        <h6 class="text-muted fw-bold mb-3">Aparelhos / Equipamentos Indicados</h6>
                                         <div class="row g-3 mb-4">
-                                            <div class="col-6 col-md-3"><div class="form-check p-3 border rounded"><input class="form-check-input check-pilates" type="checkbox" value="Solo (Mat)"><label class="form-check-label fw-bold">Solo (Mat)</label></div></div>
-                                            <div class="col-6 col-md-3"><div class="form-check p-3 border rounded"><input class="form-check-input check-pilates" type="checkbox" value="Bola Suíça"><label class="form-check-label fw-bold">Bola Suíça</label></div></div>
-                                            <div class="col-6 col-md-3"><div class="form-check p-3 border rounded"><input class="form-check-input check-pilates" type="checkbox" value="Reformer"><label class="form-check-label fw-bold">Reformer</label></div></div>
-                                            <div class="col-6 col-md-3"><div class="form-check p-3 border rounded"><input class="form-check-input check-pilates" type="checkbox" value="Cadillac"><label class="form-check-label fw-bold">Cadillac</label></div></div>
-                                            <div class="col-6 col-md-3"><div class="form-check p-3 border rounded"><input class="form-check-input check-pilates" type="checkbox" value="Chair"><label class="form-check-label fw-bold">Chair</label></div></div>
-                                            <div class="col-6 col-md-3"><div class="form-check p-3 border rounded"><input class="form-check-input check-pilates" type="checkbox" value="Barrel"><label class="form-check-label fw-bold">Barrel</label></div></div>
+                                            <div class="col-4"><div class="form-check border p-2 rounded"><input class="form-check-input check-pilates" type="checkbox" value="Solo"><label>Solo</label></div></div>
+                                            <div class="col-4"><div class="form-check border p-2 rounded"><input class="form-check-input check-pilates" type="checkbox" value="Bola"><label>Bola</label></div></div>
+                                            <div class="col-4"><div class="form-check border p-2 rounded"><input class="form-check-input check-pilates" type="checkbox" value="Reformer"><label>Reformer</label></div></div>
+                                            <div class="col-4"><div class="form-check border p-2 rounded"><input class="form-check-input check-pilates" type="checkbox" value="Cadillac"><label>Cadillac</label></div></div>
+                                            <div class="col-4"><div class="form-check border p-2 rounded"><input class="form-check-input check-pilates" type="checkbox" value="Chair"><label>Chair</label></div></div>
+                                            <div class="col-4"><div class="form-check border p-2 rounded"><input class="form-check-input check-pilates" type="checkbox" value="Barrel"><label>Barrel</label></div></div>
                                         </div>
-
-                                        <div class="mb-3">
-                                            <label class="fw-bold small text-muted">Exercícios e Progressão</label>
-                                            <textarea id="pilates_exercicios" class="form-control bg-light border-0" rows="5" placeholder="Descreva a série, repetições ou observações específicas do método..."></textarea>
-                                        </div>
+                                        <textarea id="pilates_exercicios" class="form-control bg-light border-0" rows="5" placeholder="Exercícios..."></textarea>
                                     </div>
-                                </div>
-                                <div class="text-end">
-                                    <button onclick="salvarAvaliacaoCompleta()" class="btn btn-success rounded-pill px-4">Salvar Tudo</button>
+                                    <div class="text-end mb-3 me-3"><button onclick="salvarAvaliacaoCompleta()" class="btn btn-success rounded-pill px-4">Salvar</button></div>
                                 </div>
                             </div>
 
                             <div class="tab-pane fade" id="tab-quiro">
                                 <div class="card border-0 shadow-sm rounded-4 mb-4">
-                                    <div class="card-header bg-white border-0 py-3">
-                                        <h5 class="fw-bold text-primary mb-0"><i class="bi bi-hand-index-thumb me-2"></i> Quiropraxia & T. Manual</h5>
-                                    </div>
+                                    <div class="card-header bg-white border-0 py-3"><h5 class="fw-bold text-primary mb-0"><i class="bi bi-hand-index-thumb me-2"></i>Quiropraxia</h5></div>
                                     <div class="card-body">
-                                        <h6 class="text-muted fw-bold mb-3">Regiões para Manipulação/Ajuste</h6>
                                         <div class="d-flex flex-wrap gap-2 mb-4">
-                                            <div class="form-check form-check-inline"><input class="form-check-input check-quiro" type="checkbox" value="Cervical Alta (C0-C2)"><label class="form-check-label">Cervical Alta</label></div>
-                                            <div class="form-check form-check-inline"><input class="form-check-input check-quiro" type="checkbox" value="Cervical Baixa (C3-C7)"><label class="form-check-label">Cervical Baixa</label></div>
-                                            <div class="form-check form-check-inline"><input class="form-check-input check-quiro" type="checkbox" value="Torácica"><label class="form-check-label">Torácica</label></div>
-                                            <div class="form-check form-check-inline"><input class="form-check-input check-quiro" type="checkbox" value="Lombar"><label class="form-check-label">Lombar</label></div>
-                                            <div class="form-check form-check-inline"><input class="form-check-input check-quiro" type="checkbox" value="Sacroilíaca"><label class="form-check-label">Sacroilíaca</label></div>
+                                            <div class="form-check"><input class="form-check-input check-quiro" type="checkbox" value="Cervical"><label>Cervical</label></div>
+                                            <div class="form-check"><input class="form-check-input check-quiro" type="checkbox" value="Torácica"><label>Torácica</label></div>
+                                            <div class="form-check"><input class="form-check-input check-quiro" type="checkbox" value="Lombar"><label>Lombar</label></div>
+                                            <div class="form-check"><input class="form-check-input check-quiro" type="checkbox" value="Sacro"><label>Sacro</label></div>
                                         </div>
-
-                                        <h6 class="text-muted fw-bold mb-3">Técnicas Utilizadas</h6>
                                         <div class="row g-2 mb-4">
-                                            <div class="col-md-4"><div class="form-check"><input class="form-check-input check-quiro-tec" type="checkbox" value="HVLA (Trust)"><label class="form-check-label">HVLA (Trust)</label></div></div>
-                                            <div class="col-md-4"><div class="form-check"><input class="form-check-input check-quiro-tec" type="checkbox" value="Mobilização"><label class="form-check-label">Mobilização</label></div></div>
-                                            <div class="col-md-4"><div class="form-check"><input class="form-check-input check-quiro-tec" type="checkbox" value="Liberação Miofascial"><label class="form-check-label">Liberação</label></div></div>
-                                            <div class="col-md-4"><div class="form-check"><input class="form-check-input check-quiro-tec" type="checkbox" value="Dry Needling"><label class="form-check-label">Dry Needling</label></div></div>
-                                            <div class="col-md-4"><div class="form-check"><input class="form-check-input check-quiro-tec" type="checkbox" value="Ventosa"><label class="form-check-label">Ventosa</label></div></div>
-                                            <div class="col-md-4"><div class="form-check"><input class="form-check-input check-quiro-tec" type="checkbox" value="Thompson"><label class="form-check-label">Thompson</label></div></div>
+                                            <div class="col-4"><div class="form-check"><input class="form-check-input check-quiro-tec" type="checkbox" value="Trust"><label>Trust</label></div></div>
+                                            <div class="col-4"><div class="form-check"><input class="form-check-input check-quiro-tec" type="checkbox" value="Miofascial"><label>Miofascial</label></div></div>
+                                            <div class="col-4"><div class="form-check"><input class="form-check-input check-quiro-tec" type="checkbox" value="Dry Needling"><label>Dry Needling</label></div></div>
                                         </div>
-
-                                        <div class="mb-3">
-                                            <label class="fw-bold small text-muted">Descrição da Conduta / Ajustes</label>
-                                            <textarea id="quiro_obs" class="form-control bg-light border-0" rows="5" placeholder="Detalhes dos ilíacos, vértebras específicas..."></textarea>
-                                        </div>
+                                        <textarea id="quiro_obs" class="form-control bg-light border-0" rows="5" placeholder="Conduta..."></textarea>
                                     </div>
-                                </div>
-                                <div class="text-end">
-                                    <button onclick="salvarAvaliacaoCompleta()" class="btn btn-success rounded-pill px-4">Salvar Tudo</button>
+                                    <div class="text-end mb-3 me-3"><button onclick="salvarAvaliacaoCompleta()" class="btn btn-success rounded-pill px-4">Salvar</button></div>
                                 </div>
                             </div>
 
                             <div class="tab-pane fade" id="tab-fotos">
-                                <div class="text-center py-5">
-                                    <i class="bi bi-camera fs-1 text-muted"></i>
-                                    <h4 class="mt-3">Avaliação Postural</h4>
-                                    <p class="text-muted">Funcionalidade em desenvolvimento.</p>
-                                </div>
+                                <div class="text-center py-5"><i class="bi bi-camera fs-1 text-muted"></i><p>Fotos em breve.</p></div>
                             </div>
-
                         </div>
                     </div>
                 </div>
@@ -316,35 +234,25 @@
         carregarAvaliacao(id);
     }
 
+    function toggleO2Input() {
+        const check = document.getElementById('tc6_usa_o2');
+        const div = document.getElementById('div_litragem');
+        if(check.checked) { div.classList.remove('d-none'); div.classList.add('d-flex'); }
+        else { div.classList.add('d-none'); div.classList.remove('d-flex'); document.getElementById('tc6_litros').value = ''; }
+    }
+
     function carregarEvolucoes(id) {
         fetch(`/api/evolucoes/${id}`).then(r => r.json()).then(data => {
-            const lista = document.getElementById('listaEvolucoes');
-            lista.innerHTML = '';
-            data.forEach(ev => {
-                lista.innerHTML += `
-                    <div class="card border-0 shadow-sm mb-3">
-                        <div class="card-body">
-                            <small class="text-muted fw-bold">${ev.data}</small>
-                            <p class="mb-0 mt-2" style="white-space: pre-wrap;">${ev.texto}</p>
-                        </div>
-                    </div>`;
-            });
+            const l = document.getElementById('listaEvolucoes'); l.innerHTML = '';
+            data.forEach(e => l.innerHTML += `<div class="card mb-2 shadow-sm"><div class="card-body py-2"><small class="fw-bold">${e.data}</small><p class="m-0">${e.texto}</p></div></div>`);
         });
     }
 
     function salvarEvolucao() {
-        const id = document.getElementById('idPacienteAtual').value;
-        const texto = document.getElementById('txtEvolucao').value;
-        if(!texto.trim()) return alert("Escreva algo na evolução!");
-        fetch('/api/nova_evolucao', {
-            method: 'POST',
-            headers: {'Content-Type': 'application/json'},
-            body: JSON.stringify({ paciente_id: id, texto: texto })
-        }).then(() => {
-            document.getElementById('txtEvolucao').value = '';
-            carregarEvolucoes(id);
-            alert("Evolução salva!");
-        });
+        const id = document.getElementById('idPacienteAtual').value, txt = document.getElementById('txtEvolucao').value;
+        if(!txt) return alert("Vazio!");
+        fetch('/api/nova_evolucao', { method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({paciente_id: id, texto: txt}) })
+        .then(() => { document.getElementById('txtEvolucao').value = ''; carregarEvolucoes(id); });
     }
 
     function carregarAvaliacao(id) {
@@ -364,70 +272,50 @@
                 document.getElementById('av_objetivos').value = d.objetivos || '';
                 document.getElementById('av_conduta').value = d.conduta || '';
                 
-                // Novos Módulos - Preenchimento
                 document.getElementById('pilates_exercicios').value = d.dados_pilates || '';
                 document.getElementById('quiro_obs').value = d.dados_quiro || '';
+                
+                // Cardio: Exibe histórico no campo de texto grande para referência
+                if(d.dados_cardio) document.getElementById('cardio_treino').value = "--- ÚLTIMO REGISTRO ---\n" + d.dados_cardio + "\n-----------------------\n";
+                else document.getElementById('cardio_treino').value = "";
+                
+                // Limpa campos numéricos do TC6 para nova entrada
+                document.getElementById('tc6_distancia').value = '';
+                document.getElementById('tc6_paradas').value = '';
+                document.getElementById('tc6_borg').value = '';
+                document.getElementById('tc6_sinais').value = '';
+                document.getElementById('tc6_usa_o2').checked = false; toggleO2Input();
             } else {
-                document.querySelectorAll('input, textarea').forEach(el => el.value = '');
-                document.querySelectorAll('.check-hpp, .check-pilates, .check-quiro').forEach(el => el.checked = false);
+                document.querySelectorAll('input, textarea').forEach(e => e.value = '');
+                document.querySelectorAll('input[type=checkbox]').forEach(e => e.checked = false);
             }
         });
     }
 
     function salvarAvaliacaoCompleta() {
         const id = document.getElementById('idPacienteAtual').value;
+        let hpp = []; document.querySelectorAll('.check-hpp:checked').forEach(e => hpp.push(e.value));
+        const hppFinal = "Items: " + hpp.join(", ") + ". Obs: " + document.getElementById('av_hpp_texto').value;
 
-        // HPP LOGIC
-        let hpp = [];
-        document.querySelectorAll('.check-hpp:checked').forEach(el => hpp.push(el.value));
-        const hppFinal = "Comorbidades: " + hpp.join(", ") + ". Obs: " + document.getElementById('av_hpp_texto').value;
-
-        // PILATES LOGIC
-        let pilates = [];
-        document.querySelectorAll('.check-pilates:checked').forEach(el => pilates.push(el.value));
+        let pilates = []; document.querySelectorAll('.check-pilates:checked').forEach(e => pilates.push(e.value));
         const pilatesFinal = "Aparelhos: " + pilates.join(", ") + " | " + document.getElementById('pilates_exercicios').value;
 
-        // QUIRO LOGIC
-        let quiro = [];
-        document.querySelectorAll('.check-quiro:checked').forEach(el => quiro.push(el.value));
-        let quiroTecs = [];
-        document.querySelectorAll('.check-quiro-tec:checked').forEach(el => quiroTecs.push(el.value));
-        const quiroFinal = "Regiões: " + quiro.join(", ") + " | Técnicas: " + quiroTecs.join(", ") + " | " + document.getElementById('quiro_obs').value;
+        let quiro = []; document.querySelectorAll('.check-quiro:checked').forEach(e => quiro.push(e.value));
+        let quiroTec = []; document.querySelectorAll('.check-quiro-tec:checked').forEach(e => quiroTec.push(e.value));
+        const quiroFinal = "Reg: " + quiro.join(", ") + " | Tec: " + quiroTec.join(", ") + " | " + document.getElementById('quiro_obs').value;
+
+        let cardioEq = []; document.querySelectorAll('.check-cardio:checked').forEach(e => cardioEq.push(e.value));
+        const usaO2 = document.getElementById('tc6_usa_o2').checked;
+        const cardioFinal = `TC6: ${document.getElementById('tc6_distancia').value}m | Paradas: ${document.getElementById('tc6_paradas').value} | O2: ${usaO2 ? document.getElementById('tc6_litros').value + 'L' : 'Não'} | Borg: ${document.getElementById('tc6_borg').value} | Sinais: ${document.getElementById('tc6_sinais').value} | MRC: ${document.getElementById('cardio_mrc').value} | Espiro: ${document.getElementById('cardio_espiro').value} | Eq: ${cardioEq.join(", ")} | Treino: ${document.getElementById('cardio_treino').value}`;
 
         const dados = {
             paciente_id: id,
-            ocupacao: document.getElementById('av_ocupacao').value,
-            lateralidade: "Destro", 
-            diagnostico_medico: document.getElementById('av_diag_medico').value,
-            queixa_principal: document.getElementById('av_qp').value,
-            hma: document.getElementById('av_hma').value,
-            hpp: hppFinal,
-            habitos: "",
-            sinais_vitais: document.getElementById('av_sinais').value,
-            avaliacao_dor: document.getElementById('av_palpacao').value,
-            inspecao: document.getElementById('av_inspecao').value,
-            palpacao: "Ver campo dor", 
-            adm: document.getElementById('av_adm').value,
-            forca_muscular: "",
-            neuro: "", 
-            testes_especiais: document.getElementById('av_testes').value,
-            diagnostico_cif: document.getElementById('av_cif').value,
-            objetivos: document.getElementById('av_objetivos').value,
-            conduta: document.getElementById('av_conduta').value,
-            
-            // Novos campos
-            dados_pilates: pilatesFinal,
-            dados_quiro: quiroFinal
+            ocupacao: document.getElementById('av_ocupacao').value, lateralidade: "Destro", diagnostico_medico: document.getElementById('av_diag_medico').value, queixa_principal: document.getElementById('av_qp').value, hma: document.getElementById('av_hma').value, hpp: hppFinal, habitos: "", sinais_vitais: document.getElementById('av_sinais').value, avaliacao_dor: document.getElementById('av_palpacao').value, inspecao: document.getElementById('av_inspecao').value, palpacao: "Ver dor", adm: document.getElementById('av_adm').value, forca_muscular: "", neuro: "", testes_especiais: document.getElementById('av_testes').value, diagnostico_cif: document.getElementById('av_cif').value, objetivos: document.getElementById('av_objetivos').value, conduta: document.getElementById('av_conduta').value,
+            dados_pilates: pilatesFinal, dados_quiro: quiroFinal, dados_cardio: cardioFinal
         };
 
-        fetch('/api/salvar_avaliacao', {
-            method: 'POST',
-            headers: {'Content-Type': 'application/json'},
-            body: JSON.stringify(dados)
-        }).then(r => r.json()).then(res => {
-            if(res.status === 'success') alert("Avaliação salva!");
-            else alert("Erro: " + res.msg);
-        });
+        fetch('/api/salvar_avaliacao', { method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify(dados) })
+        .then(r => r.json()).then(res => { if(res.status==='success') alert('Salvo!'); else alert('Erro: '+res.msg); });
     }
 </script>
 {% endblock %}

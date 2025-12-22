@@ -32,11 +32,16 @@ def reparar_banco():
     cursor = conn.cursor()
     log = []
     try:
-        # 1. Tabela Status na Agenda
-        try:
-            cursor.execute("ALTER TABLE agendamentos ADD COLUMN IF NOT EXISTS status TEXT DEFAULT 'Agendado';")
-            log.append("Coluna Status: OK")
-        except Exception as e: log.append(f"Erro Status: {e}")
+        # 1. Tabela Financeiro
+        cursor.execute('''CREATE TABLE IF NOT EXISTS financeiro (
+            id SERIAL PRIMARY KEY,
+            descricao TEXT NOT NULL,
+            valor NUMERIC(10, 2) NOT NULL,
+            tipo VARCHAR(10) NOT NULL,
+            categoria TEXT,
+            data DATE DEFAULT CURRENT_DATE
+        );''')
+        log.append("Tabela Financeiro: OK")
 
         # 2. Tabela Evoluções
         cursor.execute('''CREATE TABLE IF NOT EXISTS evolucoes (
@@ -44,24 +49,33 @@ def reparar_banco():
             data TIMESTAMP DEFAULT CURRENT_TIMESTAMP, texto TEXT);''')
         log.append("Tabela Evoluções: OK")
 
-        # 3. Tabela Avaliação Completa (Atualizada com Pilates e Quiro)
+        # 3. Tabela Avaliação Completa (Criação Base)
         cursor.execute('''CREATE TABLE IF NOT EXISTS avaliacoes_completa (
             id SERIAL PRIMARY KEY, paciente_id INTEGER REFERENCES pacientes(id) ON DELETE CASCADE,
             data_avaliacao TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
             ocupacao TEXT, lateralidade TEXT, diagnostico_medico TEXT, queixa_principal TEXT,
             hma TEXT, hpp TEXT, habitos TEXT, sinais_vitais TEXT, avaliacao_dor TEXT,
             inspecao TEXT, palpacao TEXT, adm TEXT, forca_muscular TEXT, neuro TEXT,
-            testes_especiais TEXT, diagnostico_cif TEXT, objetivos TEXT, conduta TEXT,
-            dados_pilates TEXT, dados_quiro TEXT);''')
-        log.append("Tabela Avaliação Completa: OK")
+            testes_especiais TEXT, diagnostico_cif TEXT, objetivos TEXT, conduta TEXT);''')
+        
+        # 4. Atualização de Colunas Extras (Pilates, Quiro, Cardio)
+        cursor.execute("ALTER TABLE avaliacoes_completa ADD COLUMN IF NOT EXISTS dados_pilates TEXT;")
+        cursor.execute("ALTER TABLE avaliacoes_completa ADD COLUMN IF NOT EXISTS dados_quiro TEXT;")
+        cursor.execute("ALTER TABLE avaliacoes_completa ADD COLUMN IF NOT EXISTS dados_cardio TEXT;") # <--- IMPORTANTE PARA O TC6
+        log.append("Colunas Extras Avaliação (Pilates/Quiro/Cardio): OK")
 
-        # 4. Tabela Fotos
+        # 5. Tabela Fotos
         cursor.execute('''CREATE TABLE IF NOT EXISTS avaliacao_postural (
             id SERIAL PRIMARY KEY, paciente_id INTEGER REFERENCES pacientes(id) ON DELETE CASCADE,
             data_foto TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
             foto_frontal TEXT, foto_posterior TEXT, foto_lat_dir TEXT, foto_lat_esq TEXT,
             analise_ia TEXT);''')
         log.append("Tabela Fotos: OK")
+
+        # 6. Status na Agenda
+        try:
+            cursor.execute("ALTER TABLE agendamentos ADD COLUMN IF NOT EXISTS status TEXT DEFAULT 'Agendado';")
+        except: pass
 
         conn.commit()
         return jsonify({'status': 'Sucesso', 'log': log})
@@ -97,14 +111,8 @@ def dashboard():
     cursor = conn.cursor()
     cursor.execute("SELECT COUNT(*) FROM pacientes;")
     total_pacientes = cursor.fetchone()[0]
-    try:
-        cursor.execute("SELECT COUNT(*) FROM agendamentos;")
-        total_agendamentos = cursor.fetchone()[0]
-    except:
-        conn.rollback()
-        total_agendamentos = 0
     conn.close()
-    return render_template('dashboard.html', total_pacientes=total_pacientes, total_agendamentos=total_agendamentos)
+    return render_template('dashboard.html', total_pacientes=total_pacientes)
 
 @app.route('/pacientes', methods=['GET', 'POST'])
 def pacientes():
@@ -114,11 +122,9 @@ def pacientes():
     
     if request.method == 'POST':
         nome = request.form['nome']
-        data_nascimento = request.form.get('data_nascimento') or None
-        telefone = request.form.get('telefone')
-            
-        cursor.execute("INSERT INTO pacientes (nome, data_nascimento, telefone) VALUES (%s, %s, %s)", 
-                       (nome, data_nascimento, telefone))
+        dt = request.form.get('data_nascimento') or None
+        tel = request.form.get('telefone')
+        cursor.execute("INSERT INTO pacientes (nome, data_nascimento, telefone) VALUES (%s, %s, %s)", (nome, dt, tel))
         conn.commit()
         conn.close()
         return redirect(url_for('pacientes')) 
@@ -159,7 +165,118 @@ def prontuarios():
     return render_template('prontuarios.html', pacientes=pacientes)
 
 # ==========================================
-# APIs E FUNÇÕES ESPECIAIS
+# API INTELIGENTE DO DASHBOARD (GRÁFICOS)
+# ==========================================
+@app.route('/api/dados_dashboard')
+def dados_dashboard():
+    if not session.get('logged_in'): return jsonify({}), 403
+    conn = get_db_connection()
+    cur = conn.cursor()
+    
+    mes = request.args.get('mes', datetime.now().month, type=int)
+    ano = request.args.get('ano', datetime.now().year, type=int)
+
+    # 1. Sessões por Paciente
+    cur.execute("""
+        SELECT p.nome, COUNT(a.id) FROM agendamentos a 
+        JOIN pacientes p ON a.paciente_id = p.id 
+        WHERE a.status = 'Realizado' AND EXTRACT(MONTH FROM a.start_time) = %s AND EXTRACT(YEAR FROM a.start_time) = %s 
+        GROUP BY p.nome ORDER BY COUNT(a.id) DESC LIMIT 10
+    """, (mes, ano))
+    raw_sessoes = cur.fetchall()
+    
+    # 2. Status
+    cur.execute("""
+        SELECT COALESCE(status, 'Agendado'), COUNT(*) FROM agendamentos 
+        WHERE EXTRACT(MONTH FROM start_time) = %s AND EXTRACT(YEAR FROM start_time) = %s GROUP BY 1
+    """, (mes, ano))
+    raw_status = dict(cur.fetchall())
+
+    # 3. Financeiro (6 meses)
+    cur.execute("""
+        SELECT TO_CHAR(data, 'MM/YYYY'), tipo, SUM(valor) FROM financeiro 
+        WHERE data >= CURRENT_DATE - INTERVAL '5 months' GROUP BY 1, 2 ORDER BY MAX(data) ASC
+    """)
+    raw_fin = cur.fetchall()
+
+    fin_labels, fin_entradas, fin_saidas, temp_fin = [], [], [], {}
+    for data_str, tipo, valor in raw_fin:
+        if data_str not in temp_fin: temp_fin[data_str] = {'entrada': 0, 'saida': 0}
+        temp_fin[data_str][tipo] = float(valor)
+    for m in temp_fin:
+        fin_labels.append(m)
+        fin_entradas.append(temp_fin[m]['entrada'])
+        fin_saidas.append(temp_fin[m]['saida'])
+
+    # 4. Totais
+    cur.execute("SELECT SUM(valor) FROM financeiro WHERE tipo='entrada' AND EXTRACT(MONTH FROM data)=%s AND EXTRACT(YEAR FROM data)=%s", (mes, ano))
+    faturamento = cur.fetchone()[0] or 0
+
+    conn.close()
+    return jsonify({
+        'sessoes_paciente': {'nomes': [r[0] for r in raw_sessoes], 'qtd': [r[1] for r in raw_sessoes]},
+        'status_agendamentos': {'labels': list(raw_status.keys()), 'values': list(raw_status.values())},
+        'financeiro': {'labels': fin_labels, 'entradas': fin_entradas, 'saidas': fin_saidas},
+        'resumo_mes': {'faturamento': float(faturamento), 'realizadas': int(raw_status.get('Realizado', 0))}
+    })
+
+# ==========================================
+# APIs FINANCEIRO
+# ==========================================
+
+@app.route('/financeiro')
+def financeiro():
+    if not session.get('logged_in'): return redirect(url_for('login'))
+    return render_template('financeiro.html')
+
+@app.route('/api/financeiro/resumo')
+def financeiro_resumo():
+    conn = get_db_connection()
+    cur = conn.cursor()
+    try:
+        cur.execute("SELECT SUM(valor) FROM financeiro WHERE tipo = 'entrada'")
+        entradas = cur.fetchone()[0] or 0
+        cur.execute("SELECT SUM(valor) FROM financeiro WHERE tipo = 'saida'")
+        saidas = cur.fetchone()[0] or 0
+        return jsonify({'entradas': float(entradas), 'saidas': float(saidas), 'saldo': float(entradas - saidas)})
+    except: return jsonify({'entradas': 0, 'saidas': 0, 'saldo': 0})
+    finally: conn.close()
+
+@app.route('/api/financeiro/listar')
+def financeiro_listar():
+    conn = get_db_connection()
+    cur = conn.cursor()
+    cur.execute("SELECT id, descricao, valor, tipo, categoria, data FROM financeiro ORDER BY data DESC, id DESC LIMIT 50")
+    rows = cur.fetchall()
+    conn.close()
+    return jsonify([{'id':r[0], 'descricao':r[1], 'valor':float(r[2]), 'tipo':r[3], 'categoria':r[4], 'data':r[5].strftime('%d/%m/%Y')} for r in rows])
+
+@app.route('/api/financeiro/salvar', methods=['POST'])
+def financeiro_salvar():
+    d = request.json
+    conn = get_db_connection()
+    cur = conn.cursor()
+    try:
+        cur.execute("INSERT INTO financeiro (descricao, valor, tipo, categoria, data) VALUES (%s, %s, %s, %s, %s)",
+                    (d['descricao'], d['valor'], d['tipo'], d['categoria'], d['data']))
+        conn.commit()
+        return jsonify({'status': 'success'})
+    except Exception as e:
+        return jsonify({'status': 'error', 'msg': str(e)}), 500
+    finally: conn.close()
+
+@app.route('/api/financeiro/deletar', methods=['POST'])
+def financeiro_deletar():
+    d = request.json
+    conn = get_db_connection()
+    cur = conn.cursor()
+    cur.execute("DELETE FROM financeiro WHERE id = %s", (d['id'],))
+    conn.commit()
+    conn.close()
+    return jsonify({'status': 'success'})
+
+# ==========================================
+# APIs E FUNÇÕES GERAIS (Pacientes, Agenda, Avaliação)
 # ==========================================
 
 # --- EXCLUSÃO SEGURA ---
@@ -168,31 +285,24 @@ def deletar_paciente():
     if not session.get('logged_in'): return jsonify({'status': 'error'}), 403
     data = request.json
     pid = data['id']
-    
     conn = get_db_connection()
     cur = conn.cursor()
     try:
         def delete_if_exists(table_name):
             cur.execute(f"SELECT to_regclass('public.{table_name}')")
-            if cur.fetchone()[0]: 
-                cur.execute(f"DELETE FROM {table_name} WHERE paciente_id = %s", (pid,))
-
-        delete_if_exists('agendamentos')
-        delete_if_exists('evolucoes')
-        delete_if_exists('avaliacoes_completa')
-        delete_if_exists('avaliacao_postural')
-        delete_if_exists('avaliacoes')
+            if cur.fetchone()[0]: cur.execute(f"DELETE FROM {table_name} WHERE paciente_id = %s", (pid,))
+        
+        # Limpa dependências
+        for t in ['agendamentos', 'evolucoes', 'avaliacoes_completa', 'avaliacao_postural', 'avaliacoes']:
+            delete_if_exists(t)
 
         cur.execute("DELETE FROM pacientes WHERE id = %s", (pid,))
-        
         conn.commit()
         return jsonify({'status': 'success'})
     except Exception as e:
         conn.rollback()
-        print(f"ERRO DELECAO: {e}")
         return jsonify({'status': 'error', 'message': str(e)}), 500
-    finally:
-        conn.close()
+    finally: conn.close()
 
 # --- APIs DE AGENDA ---
 @app.route('/api/eventos')
@@ -220,9 +330,7 @@ def criar_evento():
                     (d['paciente_id'], start, start + timedelta(hours=1), d.get('obs', '')))
         conn.commit()
         return jsonify({'status': 'success'})
-    except Exception as e:
-        conn.rollback()
-        return jsonify({'status': 'error', 'message': str(e)}), 500
+    except: return jsonify({'status': 'error'}), 500
     finally: conn.close()
 
 @app.route('/api/mover_evento', methods=['POST'])
@@ -275,22 +383,23 @@ def nova_evolucao():
     conn.close()
     return jsonify({'status': 'success'})
 
-# --- APIs DE AVALIAÇÃO (ATUALIZADA COM PILATES E QUIRO) ---
+# --- APIs DE AVALIAÇÃO (COMPLETA + PILATES + QUIRO + CARDIO) ---
 @app.route('/api/salvar_avaliacao', methods=['POST'])
 def salvar_avaliacao():
     d = request.json
     conn = get_db_connection()
     cur = conn.cursor()
     try:
-        # Prepara campos novos (Pilates/Quiro) - Evita erro se vier vazio
+        # Prepara campos novos
         dados_pilates = d.get('dados_pilates', '')
         dados_quiro = d.get('dados_quiro', '')
+        dados_cardio = d.get('dados_cardio', '') # <--- NOVO (TC6/Cardio)
 
         cur.execute("""
             INSERT INTO avaliacoes_completa 
-            (paciente_id, ocupacao, lateralidade, diagnostico_medico, queixa_principal, hma, hpp, habitos, sinais_vitais, avaliacao_dor, inspecao, palpacao, adm, forca_muscular, neuro, testes_especiais, diagnostico_cif, objetivos, conduta, dados_pilates, dados_quiro) 
-            VALUES (%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s)
-        """, (d['paciente_id'], d['ocupacao'], d['lateralidade'], d['diagnostico_medico'], d['queixa_principal'], d['hma'], d['hpp'], d['habitos'], d['sinais_vitais'], d['avaliacao_dor'], d['inspecao'], d['palpacao'], d['adm'], d['forca_muscular'], d['neuro'], d['testes_especiais'], d['diagnostico_cif'], d['objetivos'], d['conduta'], dados_pilates, dados_quiro))
+            (paciente_id, ocupacao, lateralidade, diagnostico_medico, queixa_principal, hma, hpp, habitos, sinais_vitais, avaliacao_dor, inspecao, palpacao, adm, forca_muscular, neuro, testes_especiais, diagnostico_cif, objetivos, conduta, dados_pilates, dados_quiro, dados_cardio) 
+            VALUES (%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s)
+        """, (d['paciente_id'], d['ocupacao'], d['lateralidade'], d['diagnostico_medico'], d['queixa_principal'], d['hma'], d['hpp'], d['habitos'], d['sinais_vitais'], d['avaliacao_dor'], d['inspecao'], d['palpacao'], d['adm'], d['forca_muscular'], d['neuro'], d['testes_especiais'], d['diagnostico_cif'], d['objetivos'], d['conduta'], dados_pilates, dados_quiro, dados_cardio))
         
         conn.commit()
         return jsonify({'status': 'success'})
@@ -304,8 +413,8 @@ def get_avaliacao(pid):
     conn = get_db_connection()
     cur = conn.cursor()
     try:
-        # Adicionamos a leitura das novas colunas no final
-        cur.execute("SELECT ocupacao, lateralidade, diagnostico_medico, queixa_principal, hma, hpp, habitos, sinais_vitais, avaliacao_dor, inspecao, palpacao, adm, forca_muscular, neuro, testes_especiais, diagnostico_cif, objetivos, conduta, data_avaliacao, dados_pilates, dados_quiro FROM avaliacoes_completa WHERE paciente_id = %s ORDER BY id DESC LIMIT 1", (pid,))
+        # Adicionamos a leitura de dados_cardio
+        cur.execute("SELECT ocupacao, lateralidade, diagnostico_medico, queixa_principal, hma, hpp, habitos, sinais_vitais, avaliacao_dor, inspecao, palpacao, adm, forca_muscular, neuro, testes_especiais, diagnostico_cif, objetivos, conduta, data_avaliacao, dados_pilates, dados_quiro, dados_cardio FROM avaliacoes_completa WHERE paciente_id = %s ORDER BY id DESC LIMIT 1", (pid,))
         r = cur.fetchone()
         
         if r: 
@@ -314,11 +423,11 @@ def get_avaliacao(pid):
                 'ocupacao': r[0], 'lateralidade': r[1], 'diagnostico_medico': r[2], 'queixa_principal': r[3], 'hma': r[4], 'hpp': r[5], 'habitos': r[6], 'sinais_vitais': r[7], 'avaliacao_dor': r[8], 'inspecao': r[9], 'palpacao': r[10], 'adm': r[11], 'forca_muscular': r[12], 'neuro': r[13], 'testes_especiais': r[14], 'diagnostico_cif': r[15], 'objetivos': r[16], 'conduta': r[17], 
                 'data': r[18].strftime("%d/%m/%Y"),
                 'dados_pilates': r[19] if len(r) > 19 else '', 
-                'dados_quiro': r[20] if len(r) > 20 else ''
+                'dados_quiro': r[20] if len(r) > 20 else '',
+                'dados_cardio': r[21] if len(r) > 21 else '' # <--- NOVO (TC6/Cardio)
             })
         return jsonify({'encontrado': False})
     except Exception as e:
-        print(f"Erro get_avaliacao: {e}")
         return jsonify({'encontrado': False})
     finally:
         conn.close()
@@ -348,26 +457,15 @@ def get_fotos(pid):
     if r: return jsonify({'encontrado': True, 'frontal': r[0], 'posterior': r[1], 'lat_dir': r[2], 'lat_esq': r[3], 'analise': r[4], 'data': r[5].strftime("%d/%m/%Y")})
     return jsonify({'encontrado': False})
 
-# --- APIs DE PACIENTE (CRUD) ---
-
+# --- APIs PACIENTE ---
 @app.route('/api/get_paciente/<int:id>', methods=['GET'])
 def get_paciente(id):
     conn = get_db_connection()
     cur = conn.cursor()
     cur.execute('SELECT id, nome, data_nascimento, telefone, cpf, endereco FROM pacientes WHERE id = %s', (id,))
     p = cur.fetchone()
-    cur.close()
     conn.close()
-    
-    if p:
-        return jsonify({
-            'id': p[0],
-            'nome': p[1],
-            'data_nascimento': p[2].strftime('%Y-%m-%d') if p[2] else '',
-            'telefone': p[3],
-            'cpf': p[4],
-            'endereco': p[5]
-        })
+    if p: return jsonify({'id': p[0], 'nome': p[1], 'data_nascimento': p[2].strftime('%Y-%m-%d') if p[2] else '', 'telefone': p[3], 'cpf': p[4], 'endereco': p[5]})
     return jsonify({'erro': 'Paciente não encontrado'}), 404
 
 @app.route('/api/salvar_paciente', methods=['POST'])
@@ -375,229 +473,32 @@ def salvar_paciente():
     data = request.json
     conn = get_db_connection()
     cur = conn.cursor()
-    
     try:
         nome = data.get('nome')
         if not nome: return jsonify({'erro': 'O nome é obrigatório!'}), 400
-
-        dt_nasc = data.get('data_nascimento') or None
-        telefone = data.get('telefone') or None
-        cpf = data.get('cpf') or None
-        endereco = data.get('endereco') or None
-
-        if data.get('id'): # UPDATE
-            cur.execute('''
-                UPDATE pacientes 
-                SET nome=%s, data_nascimento=%s, telefone=%s, cpf=%s, endereco=%s
-                WHERE id=%s
-            ''', (nome, dt_nasc, telefone, cpf, endereco, data['id']))
-        else: # INSERT
-            cur.execute('''
-                INSERT INTO pacientes (nome, data_nascimento, telefone, cpf, endereco)
-                VALUES (%s, %s, %s, %s, %s)
-            ''', (nome, dt_nasc, telefone, cpf, endereco))
-        
+        args = (nome, data.get('data_nascimento') or None, data.get('telefone') or None, data.get('cpf') or None, data.get('endereco') or None)
+        if data.get('id'):
+            cur.execute("UPDATE pacientes SET nome=%s, data_nascimento=%s, telefone=%s, cpf=%s, endereco=%s WHERE id=%s", args + (data['id'],))
+        else:
+            cur.execute("INSERT INTO pacientes (nome, data_nascimento, telefone, cpf, endereco) VALUES (%s, %s, %s, %s, %s)", args)
         conn.commit()
         return jsonify({'mensagem': 'Salvo com sucesso!'})
-
     except Exception as e:
         conn.rollback()
-        print(f"ERRO AO SALVAR: {e}") 
         return jsonify({'erro': f"Erro no sistema: {str(e)}"}), 500
-    finally:
-        cur.close()
-        conn.close()
+    finally: conn.close()
 
 @app.route('/delete_paciente_via_form/<int:id>', methods=['POST'])
 def delete_paciente_via_form(id):
     if not session.get('logged_in'): return redirect(url_for('login'))
-    
     conn = get_db_connection()
     cur = conn.cursor()
     try:
         cur.execute("DELETE FROM pacientes WHERE id = %s", (id,))
         conn.commit()
-    except Exception as e:
-        conn.rollback()
-        print(f"Erro ao excluir: {e}")
-    finally:
-        cur.close()
-        conn.close()
-        
+    except: pass
+    finally: conn.close()
     return redirect(url_for('pacientes'))
-
-# ==========================================
-# MÓDULO FINANCEIRO
-# ==========================================
-
-@app.route('/financeiro')
-def financeiro():
-    if not session.get('logged_in'): return redirect(url_for('login'))
-    return render_template('financeiro.html')
-
-@app.route('/api/financeiro/resumo')
-def financeiro_resumo():
-    conn = get_db_connection()
-    cur = conn.cursor()
-    try:
-        # Soma Entradas
-        cur.execute("SELECT SUM(valor) FROM financeiro WHERE tipo = 'entrada'")
-        entradas = cur.fetchone()[0] or 0
-        
-        # Soma Saídas
-        cur.execute("SELECT SUM(valor) FROM financeiro WHERE tipo = 'saida'")
-        saidas = cur.fetchone()[0] or 0
-        
-        return jsonify({
-            'entradas': float(entradas),
-            'saidas': float(saidas),
-            'saldo': float(entradas - saidas)
-        })
-    except Exception as e:
-        return jsonify({'entradas': 0, 'saidas': 0, 'saldo': 0})
-    finally: conn.close()
-
-@app.route('/api/financeiro/listar')
-def financeiro_listar():
-    conn = get_db_connection()
-    cur = conn.cursor()
-    # Pega as últimas 50 transações
-    cur.execute("SELECT id, descricao, valor, tipo, categoria, data FROM financeiro ORDER BY data DESC, id DESC LIMIT 50")
-    rows = cur.fetchall()
-    conn.close()
-    
-    lista = []
-    for r in rows:
-        lista.append({
-            'id': r[0],
-            'descricao': r[1],
-            'valor': float(r[2]),
-            'tipo': r[3],
-            'categoria': r[4],
-            'data': r[5].strftime('%d/%m/%Y')
-        })
-    return jsonify(lista)
-
-@app.route('/api/financeiro/salvar', methods=['POST'])
-def financeiro_salvar():
-    d = request.json
-    conn = get_db_connection()
-    cur = conn.cursor()
-    try:
-        # O valor deve ser positivo no banco, o 'tipo' define se soma ou subtrai
-        valor = float(d['valor'])
-        cur.execute("INSERT INTO financeiro (descricao, valor, tipo, categoria, data) VALUES (%s, %s, %s, %s, %s)",
-                    (d['descricao'], valor, d['tipo'], d['categoria'], d['data']))
-        conn.commit()
-        return jsonify({'status': 'success'})
-    except Exception as e:
-        conn.rollback()
-        return jsonify({'status': 'error', 'msg': str(e)}), 500
-    finally: conn.close()
-
-@app.route('/api/financeiro/deletar', methods=['POST'])
-def financeiro_deletar():
-    d = request.json
-    conn = get_db_connection()
-    cur = conn.cursor()
-    cur.execute("DELETE FROM financeiro WHERE id = %s", (d['id'],))
-    conn.commit()
-    conn.close()
-    return jsonify({'status': 'success'})
-
-# ==========================================
-# API INTELIGENTE DO DASHBOARD (GRÁFICOS)
-# ==========================================
-@app.route('/api/dados_dashboard')
-def dados_dashboard():
-    if not session.get('logged_in'): return jsonify({}), 403
-    
-    conn = get_db_connection()
-    cur = conn.cursor()
-    
-    # Pega mês e ano da URL (ou usa o atual se não vier nada)
-    mes = request.args.get('mes', datetime.now().month, type=int)
-    ano = request.args.get('ano', datetime.now().year, type=int)
-
-    # 1. SESSÕES REALIZADAS POR PACIENTE (No mês selecionado)
-    cur.execute("""
-        SELECT p.nome, COUNT(a.id) 
-        FROM agendamentos a 
-        JOIN pacientes p ON a.paciente_id = p.id 
-        WHERE a.status = 'Realizado' 
-          AND EXTRACT(MONTH FROM a.start_time) = %s 
-          AND EXTRACT(YEAR FROM a.start_time) = %s 
-        GROUP BY p.nome 
-        ORDER BY COUNT(a.id) DESC
-        LIMIT 10
-    """, (mes, ano))
-    raw_sessoes = cur.fetchall()
-    
-    # 2. STATUS DOS AGENDAMENTOS (No mês selecionado)
-    cur.execute("""
-        SELECT COALESCE(status, 'Agendado'), COUNT(*) 
-        FROM agendamentos 
-        WHERE EXTRACT(MONTH FROM start_time) = %s 
-          AND EXTRACT(YEAR FROM start_time) = %s 
-        GROUP BY 1
-    """, (mes, ano))
-    raw_status = dict(cur.fetchall()) # Ex: {'Realizado': 5, 'Faltou': 1}
-
-    # 3. FINANCEIRO (Histórico dos últimos 6 meses para comparação)
-    cur.execute("""
-        SELECT TO_CHAR(data, 'MM/YYYY') as mes_ano, tipo, SUM(valor) 
-        FROM financeiro 
-        WHERE data >= CURRENT_DATE - INTERVAL '5 months' 
-        GROUP BY 1, 2 
-        ORDER BY MAX(data) ASC
-    """)
-    raw_fin = cur.fetchall()
-
-    # Organiza Financeiro para o Gráfico
-    fin_labels = []
-    fin_entradas = []
-    fin_saidas = []
-    temp_fin = {}
-    
-    # Agrupa dados
-    for data_str, tipo, valor in raw_fin:
-        if data_str not in temp_fin: temp_fin[data_str] = {'entrada': 0, 'saida': 0}
-        temp_fin[data_str][tipo] = float(valor)
-    
-    for m in temp_fin:
-        fin_labels.append(m)
-        fin_entradas.append(temp_fin[m]['entrada'])
-        fin_saidas.append(temp_fin[m]['saida'])
-
-    # 4. TOTAIS DO MÊS (Cards do Topo)
-    # Total Faturado no Mês
-    cur.execute("SELECT SUM(valor) FROM financeiro WHERE tipo='entrada' AND EXTRACT(MONTH FROM data)=%s AND EXTRACT(YEAR FROM data)=%s", (mes, ano))
-    faturamento_mes = cur.fetchone()[0] or 0
-    
-    # Total Sessões Realizadas no Mês
-    sess_realizadas = raw_status.get('Realizado', 0)
-
-    conn.close()
-
-    return jsonify({
-        'sessoes_paciente': {
-            'nomes': [r[0] for r in raw_sessoes],
-            'qtd': [r[1] for r in raw_sessoes]
-        },
-        'status_agendamentos': {
-            'labels': list(raw_status.keys()),
-            'values': list(raw_status.values())
-        },
-        'financeiro': {
-            'labels': fin_labels,
-            'entradas': fin_entradas,
-            'saidas': fin_saidas
-        },
-        'resumo_mes': {
-            'faturamento': float(faturamento_mes),
-            'realizadas': int(sess_realizadas)
-        }
-    })
 
 if __name__ == '__main__':
     app.run(debug=True)
