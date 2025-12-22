@@ -44,14 +44,15 @@ def reparar_banco():
             data TIMESTAMP DEFAULT CURRENT_TIMESTAMP, texto TEXT);''')
         log.append("Tabela Evoluções: OK")
 
-        # 3. Tabela Avaliação Completa
+        # 3. Tabela Avaliação Completa (Atualizada com Pilates e Quiro)
         cursor.execute('''CREATE TABLE IF NOT EXISTS avaliacoes_completa (
             id SERIAL PRIMARY KEY, paciente_id INTEGER REFERENCES pacientes(id) ON DELETE CASCADE,
             data_avaliacao TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
             ocupacao TEXT, lateralidade TEXT, diagnostico_medico TEXT, queixa_principal TEXT,
             hma TEXT, hpp TEXT, habitos TEXT, sinais_vitais TEXT, avaliacao_dor TEXT,
             inspecao TEXT, palpacao TEXT, adm TEXT, forca_muscular TEXT, neuro TEXT,
-            testes_especiais TEXT, diagnostico_cif TEXT, objetivos TEXT, conduta TEXT);''')
+            testes_especiais TEXT, diagnostico_cif TEXT, objetivos TEXT, conduta TEXT,
+            dados_pilates TEXT, dados_quiro TEXT);''')
         log.append("Tabela Avaliação Completa: OK")
 
         # 4. Tabela Fotos
@@ -120,7 +121,7 @@ def pacientes():
                        (nome, data_nascimento, telefone))
         conn.commit()
         conn.close()
-        return redirect(url_for('pacientes')) # Evita duplicação F5
+        return redirect(url_for('pacientes')) 
     
     cursor.execute("SELECT id, nome, data_nascimento, telefone FROM pacientes ORDER BY id DESC")
     dados = cursor.fetchall()
@@ -161,7 +162,7 @@ def prontuarios():
 # APIs E FUNÇÕES ESPECIAIS
 # ==========================================
 
-# --- EXCLUSÃO SEGURA (CORRIGIDA) ---
+# --- EXCLUSÃO SEGURA ---
 @app.route('/api/deletar_paciente', methods=['POST'])
 def deletar_paciente():
     if not session.get('logged_in'): return jsonify({'status': 'error'}), 403
@@ -171,20 +172,17 @@ def deletar_paciente():
     conn = get_db_connection()
     cur = conn.cursor()
     try:
-        # Função auxiliar para deletar apenas se a tabela existir
         def delete_if_exists(table_name):
             cur.execute(f"SELECT to_regclass('public.{table_name}')")
-            if cur.fetchone()[0]: # Se a tabela existe
+            if cur.fetchone()[0]: 
                 cur.execute(f"DELETE FROM {table_name} WHERE paciente_id = %s", (pid,))
 
-        # Limpa tabelas filhas com segurança
         delete_if_exists('agendamentos')
         delete_if_exists('evolucoes')
         delete_if_exists('avaliacoes_completa')
         delete_if_exists('avaliacao_postural')
-        delete_if_exists('avaliacoes') # Tabela antiga, se houver
+        delete_if_exists('avaliacoes')
 
-        # Por fim, apaga o paciente
         cur.execute("DELETE FROM pacientes WHERE id = %s", (pid,))
         
         conn.commit()
@@ -196,8 +194,7 @@ def deletar_paciente():
     finally:
         conn.close()
 
-# --- OUTRAS APIs (Agenda, Evolução, Avaliação, Fotos) ---
-# Mantendo o código padrão das APIs, apenas condensado para caber aqui
+# --- APIs DE AGENDA ---
 @app.route('/api/eventos')
 def api_eventos():
     conn = get_db_connection()
@@ -218,7 +215,6 @@ def criar_evento():
     conn = get_db_connection()
     cur = conn.cursor()
     try:
-        # Lógica simplificada de recorrência
         start = datetime.fromisoformat(d['start'])
         cur.execute("INSERT INTO agendamentos (paciente_id, start_time, end_time, obs, status) VALUES (%s, %s, %s, %s, 'Agendado')", 
                     (d['paciente_id'], start, start + timedelta(hours=1), d.get('obs', '')))
@@ -259,6 +255,7 @@ def deletar_evento():
     conn.close()
     return jsonify({'status': 'success'})
 
+# --- APIs DE EVOLUÇÃO ---
 @app.route('/api/evolucoes/<int:pid>', methods=['GET'])
 def get_evolucoes(pid):
     conn = get_db_connection()
@@ -278,14 +275,23 @@ def nova_evolucao():
     conn.close()
     return jsonify({'status': 'success'})
 
+# --- APIs DE AVALIAÇÃO (ATUALIZADA COM PILATES E QUIRO) ---
 @app.route('/api/salvar_avaliacao', methods=['POST'])
 def salvar_avaliacao():
     d = request.json
     conn = get_db_connection()
     cur = conn.cursor()
     try:
-        cur.execute("INSERT INTO avaliacoes_completa (paciente_id, ocupacao, lateralidade, diagnostico_medico, queixa_principal, hma, hpp, habitos, sinais_vitais, avaliacao_dor, inspecao, palpacao, adm, forca_muscular, neuro, testes_especiais, diagnostico_cif, objetivos, conduta) VALUES (%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s)", 
-                    (d['paciente_id'], d['ocupacao'], d['lateralidade'], d['diagnostico_medico'], d['queixa_principal'], d['hma'], d['hpp'], d['habitos'], d['sinais_vitais'], d['avaliacao_dor'], d['inspecao'], d['palpacao'], d['adm'], d['forca_muscular'], d['neuro'], d['testes_especiais'], d['diagnostico_cif'], d['objetivos'], d['conduta']))
+        # Prepara campos novos (Pilates/Quiro) - Evita erro se vier vazio
+        dados_pilates = d.get('dados_pilates', '')
+        dados_quiro = d.get('dados_quiro', '')
+
+        cur.execute("""
+            INSERT INTO avaliacoes_completa 
+            (paciente_id, ocupacao, lateralidade, diagnostico_medico, queixa_principal, hma, hpp, habitos, sinais_vitais, avaliacao_dor, inspecao, palpacao, adm, forca_muscular, neuro, testes_especiais, diagnostico_cif, objetivos, conduta, dados_pilates, dados_quiro) 
+            VALUES (%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s)
+        """, (d['paciente_id'], d['ocupacao'], d['lateralidade'], d['diagnostico_medico'], d['queixa_principal'], d['hma'], d['hpp'], d['habitos'], d['sinais_vitais'], d['avaliacao_dor'], d['inspecao'], d['palpacao'], d['adm'], d['forca_muscular'], d['neuro'], d['testes_especiais'], d['diagnostico_cif'], d['objetivos'], d['conduta'], dados_pilates, dados_quiro))
+        
         conn.commit()
         return jsonify({'status': 'success'})
     except Exception as e:
@@ -297,11 +303,25 @@ def salvar_avaliacao():
 def get_avaliacao(pid):
     conn = get_db_connection()
     cur = conn.cursor()
-    cur.execute("SELECT ocupacao, lateralidade, diagnostico_medico, queixa_principal, hma, hpp, habitos, sinais_vitais, avaliacao_dor, inspecao, palpacao, adm, forca_muscular, neuro, testes_especiais, diagnostico_cif, objetivos, conduta, data_avaliacao FROM avaliacoes_completa WHERE paciente_id = %s ORDER BY id DESC LIMIT 1", (pid,))
-    r = cur.fetchone()
-    conn.close()
-    if r: return jsonify({'encontrado': True, 'ocupacao': r[0], 'lateralidade': r[1], 'diagnostico_medico': r[2], 'queixa_principal': r[3], 'hma': r[4], 'hpp': r[5], 'habitos': r[6], 'sinais_vitais': r[7], 'avaliacao_dor': r[8], 'inspecao': r[9], 'palpacao': r[10], 'adm': r[11], 'forca_muscular': r[12], 'neuro': r[13], 'testes_especiais': r[14], 'diagnostico_cif': r[15], 'objetivos': r[16], 'conduta': r[17], 'data': r[18].strftime("%d/%m/%Y")})
-    return jsonify({'encontrado': False})
+    try:
+        # Adicionamos a leitura das novas colunas no final
+        cur.execute("SELECT ocupacao, lateralidade, diagnostico_medico, queixa_principal, hma, hpp, habitos, sinais_vitais, avaliacao_dor, inspecao, palpacao, adm, forca_muscular, neuro, testes_especiais, diagnostico_cif, objetivos, conduta, data_avaliacao, dados_pilates, dados_quiro FROM avaliacoes_completa WHERE paciente_id = %s ORDER BY id DESC LIMIT 1", (pid,))
+        r = cur.fetchone()
+        
+        if r: 
+            return jsonify({
+                'encontrado': True, 
+                'ocupacao': r[0], 'lateralidade': r[1], 'diagnostico_medico': r[2], 'queixa_principal': r[3], 'hma': r[4], 'hpp': r[5], 'habitos': r[6], 'sinais_vitais': r[7], 'avaliacao_dor': r[8], 'inspecao': r[9], 'palpacao': r[10], 'adm': r[11], 'forca_muscular': r[12], 'neuro': r[13], 'testes_especiais': r[14], 'diagnostico_cif': r[15], 'objetivos': r[16], 'conduta': r[17], 
+                'data': r[18].strftime("%d/%m/%Y"),
+                'dados_pilates': r[19] if len(r) > 19 else '', 
+                'dados_quiro': r[20] if len(r) > 20 else ''
+            })
+        return jsonify({'encontrado': False})
+    except Exception as e:
+        print(f"Erro get_avaliacao: {e}")
+        return jsonify({'encontrado': False})
+    finally:
+        conn.close()
 
 @app.route('/api/salvar_fotos', methods=['POST'])
 def salvar_fotos():
@@ -328,14 +348,12 @@ def get_fotos(pid):
     if r: return jsonify({'encontrado': True, 'frontal': r[0], 'posterior': r[1], 'lat_dir': r[2], 'lat_esq': r[3], 'analise': r[4], 'data': r[5].strftime("%d/%m/%Y")})
     return jsonify({'encontrado': False})
 
-# --- NO FINAL DO SEU APP.PY, MAS ANTES DO if __name__ == '__main__': ---
+# --- APIs DE PACIENTE (CRUD) ---
 
-# Rota para buscar dados de um paciente (para edição)
 @app.route('/api/get_paciente/<int:id>', methods=['GET'])
 def get_paciente(id):
     conn = get_db_connection()
     cur = conn.cursor()
-    # Ajuste os campos conforme sua tabela real
     cur.execute('SELECT id, nome, data_nascimento, telefone, cpf, endereco FROM pacientes WHERE id = %s', (id,))
     p = cur.fetchone()
     cur.close()
@@ -352,7 +370,6 @@ def get_paciente(id):
         })
     return jsonify({'erro': 'Paciente não encontrado'}), 404
 
-# Rota Unificada: Salvar (Novo) ou Editar (Existente)
 @app.route('/api/salvar_paciente', methods=['POST'])
 def salvar_paciente():
     data = request.json
@@ -360,26 +377,21 @@ def salvar_paciente():
     cur = conn.cursor()
     
     try:
-        # 1. PEGA O NOME (Obrigatório)
         nome = data.get('nome')
-        if not nome:
-            return jsonify({'erro': 'O nome é obrigatório!'}), 400
+        if not nome: return jsonify({'erro': 'O nome é obrigatório!'}), 400
 
-        # 2. TRATA OS CAMPOS OPCIONAIS
-        # O segredo: 'data.get(x) or None' transforma texto vazio "" em None
         dt_nasc = data.get('data_nascimento') or None
         telefone = data.get('telefone') or None
         cpf = data.get('cpf') or None
         endereco = data.get('endereco') or None
 
-        # 3. SALVA NO BANCO
-        if data.get('id'): # EDIÇÃO
+        if data.get('id'): # UPDATE
             cur.execute('''
                 UPDATE pacientes 
                 SET nome=%s, data_nascimento=%s, telefone=%s, cpf=%s, endereco=%s
                 WHERE id=%s
             ''', (nome, dt_nasc, telefone, cpf, endereco, data['id']))
-        else: # NOVO CADASTRO
+        else: # INSERT
             cur.execute('''
                 INSERT INTO pacientes (nome, data_nascimento, telefone, cpf, endereco)
                 VALUES (%s, %s, %s, %s, %s)
@@ -390,14 +402,12 @@ def salvar_paciente():
 
     except Exception as e:
         conn.rollback()
-        # Loga o erro no painel do Render para você saber o que houve
         print(f"ERRO AO SALVAR: {e}") 
         return jsonify({'erro': f"Erro no sistema: {str(e)}"}), 500
     finally:
         cur.close()
         conn.close()
 
-# --- ROTA PARA O BOTÃO DE EXCLUIR (VIA FORMULÁRIO HTML) ---
 @app.route('/delete_paciente_via_form/<int:id>', methods=['POST'])
 def delete_paciente_via_form(id):
     if not session.get('logged_in'): return redirect(url_for('login'))
@@ -405,7 +415,6 @@ def delete_paciente_via_form(id):
     conn = get_db_connection()
     cur = conn.cursor()
     try:
-        # A exclusão em cascata (configurada no banco) remove agendamentos/evoluções automaticamente
         cur.execute("DELETE FROM pacientes WHERE id = %s", (id,))
         conn.commit()
     except Exception as e:

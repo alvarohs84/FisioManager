@@ -1,221 +1,299 @@
 {% extends "layout.html" %}
 
 {% block content %}
-<div class="d-flex flex-column flex-md-row justify-content-between align-items-center mb-4">
-    <h2 class="brand-title mb-3 mb-md-0 fs-3"><i class="bi bi-journal-medical text-primary me-2"></i> Prontuário</h2>
-</div>
+<div class="container-fluid px-4">
+    <h2 class="mt-4 mb-4 fw-bold text-primary"><i class="bi bi-folder2-open me-2"></i>Prontuários Eletrônicos</h2>
 
-<div class="card border-0 shadow-sm mb-4">
-    <div class="card-body p-3">
-        <div class="input-group input-group-lg">
-            <span class="input-group-text bg-white border-end-0"><i class="bi bi-search text-muted"></i></span>
-            <input type="text" id="filtroPaciente" class="form-control border-start-0" placeholder="Buscar paciente..." onkeyup="filtrarLista()">
-        </div>
-    </div>
-</div>
-
-<div class="row g-3" id="listaPacientesCards">
-    {% for p in pacientes %}
-    <div class="col-12 col-md-4 item-paciente">
-        <div class="card h-100 border-0 shadow-sm" onclick="abrirProntuario({{ p[0] }}, '{{ p[1] }}')">
-            <div class="card-body d-flex align-items-center p-3">
-                <div class="rounded-circle bg-primary bg-opacity-10 p-3 me-3 text-primary"><i class="bi bi-person-fill fs-1"></i></div>
-                <div>
-                    <h5 class="card-title fw-bold text-dark mb-1 fs-5 nome-paciente">{{ p[1] }}</h5>
-                    <p class="text-muted mb-0"><i class="bi bi-cake2"></i> {% if p[2] %} {{ p[2].strftime('%d/%m/%Y') }} {% else %} --/--/-- {% endif %}</p>
+    <div class="row">
+        <div class="col-12">
+            <div class="card shadow-sm border-0 rounded-4">
+                <div class="card-body p-0">
+                    <div class="list-group list-group-flush rounded-4 overflow-hidden">
+                        {% for p in pacientes %}
+                        <button type="button" class="list-group-item list-group-item-action p-4 d-flex align-items-center justify-content-between transition-hover" 
+                                onclick="abrirProntuario({{ p[0] }}, '{{ p[1] }}')">
+                            <div class="d-flex align-items-center">
+                                <div class="rounded-circle bg-primary text-white fw-bold fs-4 d-flex align-items-center justify-content-center me-3" style="width: 50px; height: 50px;">
+                                    {{ p[1][0] | upper }}
+                                </div>
+                                <div>
+                                    <h5 class="mb-0 fw-bold text-dark">{{ p[1] }}</h5>
+                                    <small class="text-muted"><i class="bi bi-calendar-event me-1"></i> Nascimento: {{ p[2].strftime('%d/%m/%Y') if p[2] else 'N/D' }}</small>
+                                </div>
+                            </div>
+                            <i class="bi bi-chevron-right text-muted"></i>
+                        </button>
+                        {% else %}
+                        <div class="p-5 text-center text-muted">
+                            <i class="bi bi-people fs-1 mb-2"></i>
+                            <p>Nenhum paciente encontrado.</p>
+                        </div>
+                        {% endfor %}
+                    </div>
                 </div>
-                <div class="ms-auto"><i class="bi bi-chevron-right text-muted fs-4"></i></div>
             </div>
         </div>
     </div>
-    {% else %}
-    <div class="col-12 text-center py-5"><p class="text-muted">Nenhum paciente encontrado.</p></div>
-    {% endfor %}
 </div>
 
-<div class="modal fade" id="modalProntuario" tabindex="-1">
-    <div class="modal-dialog modal-fullscreen-lg-down modal-xl modal-dialog-scrollable">
-        <div class="modal-content">
-            <div class="modal-header bg-primary text-white py-3">
-                <h5 class="modal-title fs-5 text-truncate"><i class="bi bi-person-circle me-2"></i><span id="tituloProntuario">Nome</span></h5>
-                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
-            </div>
+<div class="modal fade" id="modalProntuario" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-fullscreen">
+        <div class="modal-content bg-light">
             
-            <div class="modal-body bg-light p-0">
-                <input type="hidden" id="idPacienteProntuario">
-
-                <div class="bg-white shadow-sm sticky-top" style="z-index: 1020;">
-                    <ul class="nav nav-tabs nav-fill" id="prontuarioTabs" role="tablist">
-                        <li class="nav-item"><button class="nav-link active py-3 fs-6" data-bs-toggle="tab" data-bs-target="#tab-evolucao"><i class="bi bi-clock"></i> Evolução</button></li>
-                        <li class="nav-item"><button class="nav-link py-3 fs-6" data-bs-toggle="tab" data-bs-target="#tab-avaliacao"><i class="bi bi-clipboard-pulse"></i> Avaliação</button></li>
-                        <li class="nav-item"><button class="nav-link py-3 fs-6" data-bs-toggle="tab" data-bs-target="#tab-funcional"><i class="bi bi-lungs"></i> TC6 & Func.</button></li>
-                        <li class="nav-item"><button class="nav-link py-3 fs-6" data-bs-toggle="tab" data-bs-target="#tab-postural"><i class="bi bi-camera"></i> Fotos</button></li>
-                    </ul>
+            <div class="modal-header bg-primary text-white py-2">
+                <div class="d-flex align-items-center">
+                    <i class="bi bi-person-vcard fs-3 me-3"></i>
+                    <div>
+                        <small class="opacity-75 d-block">Paciente</small>
+                        <h5 class="modal-title fw-bold" id="lblNomePaciente">Carregando...</h5>
+                    </div>
                 </div>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
 
-                <div class="tab-content p-3">
+            <div class="modal-body p-0">
+                <div class="d-flex h-100 flex-column flex-lg-row">
                     
-                    <div class="tab-pane fade show active" id="tab-evolucao">
-                        <div class="d-flex flex-column gap-3">
-                            <div class="card border-0 shadow-sm">
-                                <div class="card-body">
-                                    <label class="form-label fw-bold text-primary">Nova Evolução</label>
-                                    <div class="input-group mb-3">
-                                        <textarea id="textoEvolucao" class="form-control form-control-lg" rows="4" placeholder="Toque para escrever..."></textarea>
-                                        <button class="btn btn-outline-secondary px-3" type="button" id="btnVoiceEvo"><i class="bi bi-mic-fill fs-3"></i></button>
-                                    </div>
-                                    <button onclick="salvarEvolucao()" class="btn btn-success btn-lg w-100 py-3 fw-bold">Salvar Agora</button>
-                                </div>
-                            </div>
-                            <h6 class="text-muted fw-bold mt-2 ms-1">Histórico Anterior</h6>
-                            <div id="listaHistorico"></div>
+                    <div class="bg-white border-end col-lg-2 col-12">
+                        <div class="nav flex-column nav-pills p-3" id="v-pills-tab" role="tablist">
+                            <button class="nav-link active text-start mb-2 rounded-3 py-3" data-bs-toggle="pill" data-bs-target="#tab-evolucao">
+                                <i class="bi bi-clock-history me-2"></i> Evolução Diária
+                            </button>
+                            <button class="nav-link text-start mb-2 rounded-3 py-3" data-bs-toggle="pill" data-bs-target="#tab-avaliacao">
+                                <i class="bi bi-file-medical me-2"></i> Avaliação Físio
+                            </button>
+                            <button class="nav-link text-start mb-2 rounded-3 py-3" data-bs-toggle="pill" data-bs-target="#tab-pilates">
+                                <i class="bi bi-yin-yang me-2"></i> Pilates
+                            </button>
+                            <button class="nav-link text-start mb-2 rounded-3 py-3" data-bs-toggle="pill" data-bs-target="#tab-quiro">
+                                <i class="bi bi-hand-index-thumb me-2"></i> Quiro / T. Manual
+                            </button>
+                            
+                            <button class="nav-link text-start mb-2 rounded-3 py-3" data-bs-toggle="pill" data-bs-target="#tab-fotos">
+                                <i class="bi bi-images me-2"></i> Fotos / Postural
+                            </button>
                         </div>
                     </div>
 
-                    <div class="tab-pane fade" id="tab-avaliacao">
-                        <div class="accordion" id="accordionAvaliacao">
-                            
-                            <div class="accordion-item shadow-sm mb-3 border-0 rounded">
-                                <h2 class="accordion-header"><button class="accordion-button fw-bold fs-5 py-3" type="button" data-bs-toggle="collapse" data-bs-target="#collapseOne">I. Anamnese</button></h2>
-                                <div id="collapseOne" class="accordion-collapse collapse show" data-bs-parent="#accordionAvaliacao">
-                                    <div class="accordion-body p-3">
-                                        <div class="alert alert-danger shadow-sm">
-                                            <label class="fw-bold mb-2 d-block small"><i class="bi bi-shield-exclamation"></i> Red Flags</label>
-                                            <div class="d-flex flex-wrap gap-2">
-                                                <button class="btn btn-sm btn-outline-danger flex-grow-1" onclick="addRedFlag('Perda Peso')">Perda Peso</button>
-                                                <button class="btn btn-sm btn-outline-danger flex-grow-1" onclick="addRedFlag('Dor Noturna')">Dor Noturna</button>
-                                                <button class="btn btn-sm btn-outline-danger flex-grow-1" onclick="addRedFlag('Câncer')">Câncer</button>
-                                                <button class="btn btn-sm btn-outline-danger flex-grow-1" onclick="addRedFlag('Febre')">Febre</button>
-                                                <button class="btn btn-sm btn-outline-danger flex-grow-1" onclick="addRedFlag('Neuro')">Neuro</button>
-                                                <button class="btn btn-sm btn-outline-danger flex-grow-1" onclick="addRedFlag('Bexiga')">Bexiga</button>
-                                            </div>
-                                        </div>
-                                        <div class="row g-2 mb-2"><div class="col-12"><div class="form-floating"><input type="text" class="form-control" id="avOcupacao" placeholder="Oc"><label>Ocupação</label></div></div><div class="col-6"><div class="form-floating"><select class="form-select" id="avLateralidade"><option>Destro</option><option>Canhoto</option></select><label>Lado</label></div></div><div class="col-6"><div class="form-floating"><input type="text" class="form-control" id="avDiagMedico" placeholder="Dx"><label>Diag. Med</label></div></div></div>
-                                        <div class="form-floating mb-2"><input type="text" class="form-control" id="avQP" placeholder="QP"><label>Queixa Principal (QP)</label><button class="btn btn-sm btn-light position-absolute top-50 end-0 translate-middle-y me-2" onclick="startVoice('avQP', this)"><i class="bi bi-mic-fill"></i></button></div>
-                                        <div class="form-floating mb-3"><textarea class="form-control" id="avHMA" placeholder="HDA" style="height: 100px"></textarea><label>HDA (História)</label><button class="btn btn-sm btn-light position-absolute top-0 end-0 mt-2 me-2" onclick="startVoice('avHMA', this)"><i class="bi bi-mic-fill"></i></button></div>
-                                        <div class="card bg-light border-0 mb-3"><div class="card-body"><label class="fw-bold text-dark mb-2 small">Comorbidades (HPP)</label><select class="form-select form-select-lg mb-2" onchange="addComorbidade(this)"><option value="" disabled selected>🧠 Neurológicas</option><option>AVC</option><option>Parkinson</option><option>Alzheimer</option></select><select class="form-select form-select-lg mb-2" onchange="addComorbidade(this)"><option value="" disabled selected>⚖️ Metabólicas</option><option>Diabetes</option><option>Hipertensão</option><option>Obesidade</option></select><select class="form-select form-select-lg mb-2" onchange="addComorbidade(this)"><option value="" disabled selected>🦴 Ortopédicas</option><option>Artrose</option><option>Hérnia Discal</option><option>Lombalgia</option></select><div class="form-floating mt-2"><textarea class="form-control" id="avHPP" style="height: 80px" placeholder="HPP"></textarea><label>Texto HPP</label></div></div></div>
-                                        <div class="card border-0 mb-3"><div class="card-body p-0"><label class="fw-bold text-primary mb-2 small">Hábitos</label><div class="row g-2"><div class="col-12"><select id="selAtividade" class="form-select form-select-lg" onchange="gerarTextoHabitos()"><option>Sedentário</option><option>Ativo Leve</option><option>Ativo Moderado</option><option>Atleta</option></select></div><div class="col-6"><select id="selEtilismo" class="form-select form-select-lg" onchange="gerarTextoHabitos()"><option>Nega Etilismo</option><option>Social</option><option>Moderado</option></select></div><div class="col-6"><select id="selTabagismo" class="form-select form-select-lg" onchange="toggleTabagismo()"><option>Nega Tabagismo</option><option>Ex-tabagista</option><option>Tabagista</option></select></div></div><div id="divCargaTabagica" class="bg-warning-subtle p-3 rounded mt-2 d-none"><div class="row g-2 align-items-center"><div class="col-4"><div class="form-floating"><input type="number" inputmode="numeric" id="numCigarros" class="form-control" value="20" oninput="gerarTextoHabitos()"><label>Cigs/Dia</label></div></div><div class="col-4"><div class="form-floating"><input type="number" inputmode="numeric" id="numAnosFumo" class="form-control" value="10" oninput="gerarTextoHabitos()"><label>Anos</label></div></div><div class="col-4 text-end"><span class="badge bg-danger fs-6" id="resCargaTabagica">--</span></div></div></div><input type="text" id="avHabitos" class="form-control bg-light mt-2" readonly></div></div>
-                                    </div>
-                                </div>
-                            </div>
-                            
-                            <div class="accordion-item shadow-sm mb-3 border-0 rounded">
-                                <h2 class="accordion-header"><button class="accordion-button collapsed fw-bold fs-5 py-3" type="button" data-bs-toggle="collapse" data-bs-target="#collapseTwo">II. Exame Físico</button></h2>
-                                <div id="collapseTwo" class="accordion-collapse collapse" data-bs-parent="#accordionAvaliacao">
-                                    <div class="accordion-body p-3">
-                                        <div class="mb-3"><label class="fw-bold small">Sinais Vitais</label><div class="input-group input-group-lg"><input type="tel" class="form-control" id="sinPA" placeholder="PA"><input type="tel" class="form-control" id="sinFC" placeholder="FC"><input type="tel" class="form-control" id="sinSpO2" placeholder="SpO2"><input type="tel" class="form-control" id="sinTemp" placeholder="Temp"></div></div>
-                                        <div class="card bg-light border-0 mb-3"><div class="card-body"><label class="fw-bold mb-2 text-danger small">Dor</label><div class="row g-2 mb-2"><div class="col-3"><div class="form-floating"><input type="number" inputmode="numeric" class="form-control" id="dorEVA" placeholder="EVA"><label>EVA</label></div></div><div class="col-9"><div class="form-floating"><input type="text" class="form-control" id="dorLocal" placeholder="Local"><label>Local</label></div></div><div class="col-12"><select class="form-select form-select-lg" id="dorTipo"><option value="">Tipo...</option><option>Pontada</option><option>Queimação</option><option>Pulsátil</option><option>Cansaço</option><option>Choque</option></select></div><div class="col-6"><input type="text" class="form-control" id="dorPiora" placeholder="Piora..."></div><div class="col-6"><input type="text" class="form-control" id="dorAlivio" placeholder="Alivia..."></div></div></div></div>
-                                        <div class="card border-warning mb-3"><div class="card-header bg-warning text-dark fw-bold small"><i class="bi bi-lightning"></i> Neurológico</div><div class="card-body p-2 bg-light"><select id="neuroCat" class="form-select form-select-lg mb-2" onchange="atualizarTestesNeuro()"><option value="" disabled selected>1. Tipo</option><option value="Reflexos">Reflexos</option><option value="Sensibilidade">Sensibilidade</option><option value="Tensão Neural">Tensão Neural (ULTT)</option></select><select id="neuroTeste" class="form-select form-select-lg mb-2" disabled><option selected>2. Teste</option></select><div class="row g-1 mb-2"><div class="col-6"><div class="btn-group w-100"><input type="radio" class="btn-check" name="neuroLat" id="nLatD" value="D" checked><label class="btn btn-outline-warning text-dark" for="nLatD">Dir</label><input type="radio" class="btn-check" name="neuroLat" id="nLatE" value="E"><label class="btn btn-outline-warning text-dark" for="nLatE">Esq</label></div></div><div class="col-6"><select id="neuroRes" class="form-select" disabled><option selected>3. Result.</option></select></div></div><button class="btn btn-warning w-100" onclick="adicionarNeuro()">Adicionar</button><ul id="listaNeuro" class="list-group mt-2 small"></ul><textarea id="avNeuro" class="d-none"></textarea></div></div>
-                                        <div class="card border-info mb-3"><div class="card-header bg-info text-white fw-bold small"><i class="bi bi-ui-checks"></i> Testes Ortopédicos</div><div class="card-body p-2 bg-light"><select id="testeRegiao" class="form-select form-select-lg mb-2" onchange="atualizarListaTestes()"><option value="" disabled selected>1. Região</option><option value="Cervical">Cervical</option><option value="Ombro">Ombro</option><option value="Cotovelo">Cotovelo</option><option value="Lombar">Lombar</option><option value="Joelho">Joelho</option></select><select id="testeNome" class="form-select form-select-lg mb-2" disabled><option selected>2. Teste</option></select><div class="row g-1 mb-2"><div class="col-6"><div class="btn-group w-100"><input type="radio" class="btn-check" name="testeLat" id="tLatD" value="D" checked><label class="btn btn-outline-info text-dark" for="tLatD">Dir</label><input type="radio" class="btn-check" name="testeLat" id="tLatE" value="E"><label class="btn btn-outline-info text-dark" for="tLatE">Esq</label></div></div><div class="col-6"><select id="testeRes" class="form-select fw-bold"><option value="NEGATIVO" class="text-success">Negativo</option><option value="POSITIVO" class="text-danger">POSITIVO</option></select></div></div><button class="btn btn-info text-white w-100" onclick="adicionarTeste()">Adicionar</button><ul id="listaTestes" class="list-group mt-2 small"></ul><textarea id="avTestes" class="d-none"></textarea></div></div>
-                                        <div class="card border-primary mb-3"><div class="card-header bg-primary text-white fw-bold small">Goniometria</div><div class="card-body p-2 bg-light"><select id="gonioRegiao" class="form-select form-select-lg mb-2" onchange="atualizarArticulacoes()"><option value="" disabled selected>1. Região</option><option value="coluna">Coluna</option><option value="superior">Membros Sup.</option><option value="inferior">Membros Inf.</option></select><div class="row g-2 mb-2"><div class="col-6"><select id="gonioArticulacao" class="form-select" onchange="atualizarMovimentos()" disabled><option selected>2. Artic.</option></select></div><div class="col-6"><select id="gonioMovimento" class="form-select" onchange="atualizarGraus()" disabled><option selected>3. Mov.</option></select></div></div><div class="btn-group w-100 mb-2"><input type="radio" class="btn-check" name="gonioLat" id="gLatD" value="D" checked><label class="btn btn-outline-primary py-2" for="gLatD">Dir</label><input type="radio" class="btn-check" name="gonioLat" id="gLatE" value="E"><label class="btn btn-outline-primary py-2" for="gLatE">Esq</label></div><div class="row g-1 align-items-center"><div class="col-12"><select id="gonioGraus" class="form-select form-select-lg mb-2" disabled><option selected>4. Grau</option></select></div><div class="col-6"><div class="form-check form-switch ms-2"><input class="form-check-input" type="checkbox" id="gonioDor" style="transform: scale(1.3);"><label class="form-check-label fw-bold ms-2" for="gonioDor">Dor?</label></div></div><div class="col-6"><button class="btn btn-success w-100" onclick="adicionarGoniometria()">Add</button></div></div><ul id="listaGoniometria" class="list-group mt-2 small"></ul><textarea id="avADM" class="d-none"></textarea></div></div>
-                                        <div class="card border-success mb-3"><div class="card-header bg-success text-white fw-bold small">Força (MRC)</div><div class="card-body p-2 bg-light"><select id="forcaRegiao" class="form-select form-select-lg mb-2" onchange="atualizarMusculosForca()"><option value="" disabled selected>1. Região</option><option value="superior">Superior</option><option value="inferior">Inferior</option><option value="tronco">Tronco</option></select><select id="forcaMusculo" class="form-select form-select-lg mb-2" disabled><option selected>2. Músculo</option></select><div class="btn-group w-100 mb-2"><input type="radio" class="btn-check" name="forcaLat" id="fLatD" value="D" checked><label class="btn btn-outline-success py-2" for="fLatD">Dir</label><input type="radio" class="btn-check" name="forcaLat" id="fLatE" value="E"><label class="btn btn-outline-success py-2" for="fLatE">Esq</label></div><select id="forcaGrau" class="form-select form-select-lg mb-3" disabled><option selected>3. Grau (0-5)</option><option value="0 - Plegia">0 - Plegia</option><option value="1 - Contração">1 - Contração</option><option value="2 - S/ Gravidade">2 - S/ Gravidade</option><option value="3 - Vence Gravidade">3 - Vence Gravidade</option><option value="4 - Resistência">4 - Resistência</option><option value="5 - Normal">5 - Normal</option></select><button class="btn btn-success btn-lg w-100" onclick="adicionarForca()">Adicionar</button><ul id="listaForca" class="list-group mt-2 small"></ul><textarea id="avForca" class="d-none"></textarea></div></div>
-                                        <div class="form-floating mb-2"><textarea id="avInspecao" class="form-control" style="height: 80px" placeholder="Insp"></textarea><label>Inspeção</label></div>
-                                        <div class="form-floating mb-3"><textarea id="avPalpacao" class="form-control" style="height: 80px" placeholder="Palp"></textarea><label>Palpação</label></div>
-                                    </div>
-                                </div>
-                            </div>
-
-                            <div class="accordion-item shadow-sm border-0 rounded">
-                                <h2 class="accordion-header"><button class="accordion-button collapsed fw-bold fs-5 py-3" type="button" data-bs-toggle="collapse" data-bs-target="#collapseThree">III. Conduta</button></h2>
-                                <div id="collapseThree" class="accordion-collapse collapse" data-bs-parent="#accordionAvaliacao">
-                                    <div class="accordion-body p-3">
-                                        <div class="form-floating mb-2"><textarea id="avCIF" class="form-control" style="height: 80px" placeholder="CIF"></textarea><label>Diagnóstico (CIF)</label></div>
-                                        <div class="form-floating mb-2"><textarea id="avObjetivos" class="form-control" style="height: 80px" placeholder="Obj"></textarea><label>Objetivos</label></div>
-                                        <div class="form-floating"><textarea id="avConduta" class="form-control" style="height: 100px" placeholder="Conduta"></textarea><label>Conduta</label></div>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                        <div class="d-grid mt-4 mb-5">
-                            <button onclick="salvarAvaliacao()" class="btn btn-primary btn-lg py-3 fs-4 shadow"><i class="bi bi-save2"></i> SALVAR FICHA</button>
-                            <small class="text-center mt-2 text-muted" id="dataUltimaAvaliacao"></small>
-                        </div>
-                    </div>
-
-                    <div class="tab-pane fade p-3" id="tab-funcional">
+                    <div class="col-lg-10 col-12 bg-light overflow-auto p-4" style="height: calc(100vh - 70px);">
+                        <input type="hidden" id="idPacienteAtual">
                         
-                        <div class="accordion accordion-flush rounded-4 shadow-sm bg-white overflow-hidden mb-3" id="accTC6">
-                            <div class="accordion-item">
-                                <h2 class="accordion-header">
-                                    <button class="accordion-button fw-bold py-3 bg-primary text-white" type="button" data-bs-toggle="collapse" data-bs-target="#collapseTC6">
-                                        <i class="bi bi-lungs-fill me-2"></i> TC6 (Caminhada 6 min)
-                                    </button>
-                                </h2>
-                                <div id="collapseTC6" class="accordion-collapse collapse show" data-bs-parent="#accTC6">
-                                    <div class="accordion-body bg-light">
-                                        <div class="alert alert-primary small mb-3">Calcula predito (Enright & Sherrill + Britto/Brasil).</div>
-                                        
-                                        <div class="row g-2 mb-3">
-                                            <div class="col-3"><div class="form-floating"><input type="number" inputmode="numeric" id="tc6Idade" class="form-control" placeholder="Idade"><label>Idade</label></div></div>
-                                            <div class="col-3"><div class="form-floating"><input type="number" inputmode="numeric" id="tc6Altura" class="form-control" placeholder="cm"><label>Alt(cm)</label></div></div>
-                                            <div class="col-3"><div class="form-floating"><input type="number" inputmode="numeric" id="tc6Peso" class="form-control" placeholder="kg"><label>Peso</label></div></div>
-                                            <div class="col-3"><div class="form-floating"><select id="tc6Sexo" class="form-select"><option value="M">M</option><option value="F">F</option></select><label>Sexo</label></div></div>
+                        <div class="tab-content" id="v-pills-tabContent">
+                            
+                            <div class="tab-pane fade show active" id="tab-evolucao">
+                                <div class="card border-0 shadow-sm rounded-4 mb-4">
+                                    <div class="card-body">
+                                        <h5 class="fw-bold text-primary mb-3">Nova Evolução</h5>
+                                        <textarea class="form-control bg-light border-0 rounded-3 p-3 mb-3" id="txtEvolucao" rows="4" placeholder="Descreva o atendimento de hoje..."></textarea>
+                                        <div class="text-end">
+                                            <button onclick="salvarEvolucao()" class="btn btn-primary rounded-pill px-4">
+                                                <i class="bi bi-send me-2"></i> Salvar Evolução
+                                            </button>
                                         </div>
+                                    </div>
+                                </div>
+                                <h6 class="text-muted ms-2 mb-3">Histórico Recente</h6>
+                                <div id="listaEvolucoes"></div>
+                            </div>
 
-                                        <div class="card border-0 shadow-sm mb-3">
-                                            <div class="card-body">
-                                                <div class="form-floating mb-3">
-                                                    <input type="number" inputmode="numeric" id="tc6Distancia" class="form-control form-control-lg fw-bold text-primary" placeholder="Metros">
-                                                    <label>Distância Percorrida (m)</label>
+                            <div class="tab-pane fade" id="tab-avaliacao">
+                                <div class="container p-0" style="max-width: 900px;">
+                                    
+                                    <div class="card border-0 shadow-sm rounded-4 mb-4">
+                                        <div class="card-header bg-white border-0 py-3">
+                                            <h5 class="fw-bold text-primary mb-0"><i class="bi bi-journal-text me-2"></i> Anamnese</h5>
+                                        </div>
+                                        <div class="card-body">
+                                            <div class="row g-3">
+                                                <div class="col-md-6">
+                                                    <label class="form-label fw-bold small text-muted">Ocupação</label>
+                                                    <input type="text" id="av_ocupacao" class="form-control bg-light border-0">
                                                 </div>
-                                                <div class="row g-2 align-items-center">
-                                                    <div class="col-6"><div class="form-floating"><input type="number" inputmode="numeric" id="tc6Paradas" class="form-control" placeholder="0"><label>Nº Paradas</label></div></div>
-                                                    <div class="col-6">
-                                                        <div class="form-check form-switch border p-2 rounded bg-white">
-                                                            <input class="form-check-input ms-0 me-2" type="checkbox" id="tc6O2" onchange="toggleO2()">
-                                                            <label class="form-check-label fw-bold small" for="tc6O2">Usou O2?</label>
-                                                        </div>
-                                                    </div>
+                                                <div class="col-md-6">
+                                                    <label class="form-label fw-bold small text-muted">Diagnóstico Médico</label>
+                                                    <input type="text" id="av_diag_medico" class="form-control bg-light border-0">
                                                 </div>
-                                                <div class="mt-2 d-none" id="divFluxoO2">
-                                                    <div class="form-floating"><input type="number" inputmode="numeric" id="tc6Fluxo" class="form-control" placeholder="L/min"><label>Fluxo (L/min)</label></div>
+                                                <div class="col-12">
+                                                    <label class="form-label fw-bold small text-muted">Queixa Principal (QP)</label>
+                                                    <textarea id="av_qp" class="form-control bg-light border-0" rows="2"></textarea>
+                                                </div>
+                                                <div class="col-12">
+                                                    <label class="form-label fw-bold small text-muted">História da Doença Atual (HDA)</label>
+                                                    <textarea id="av_hma" class="form-control bg-light border-0" rows="3"></textarea>
                                                 </div>
                                             </div>
                                         </div>
+                                    </div>
 
-                                        <button class="btn btn-primary w-100 btn-lg mb-3" onclick="calcularTC6()">CALCULAR & ADICIONAR</button>
-                                        <div id="resTC6" class="d-none alert alert-success small"></div>
+                                    <div class="card border-0 shadow-sm rounded-4 mb-4">
+                                        <div class="card-header bg-white border-0 py-3">
+                                            <h5 class="fw-bold text-danger mb-0"><i class="bi bi-activity me-2"></i> Histórico Patológico (Comorbidades)</h5>
+                                        </div>
+                                        <div class="card-body">
+                                            <div class="border rounded-3 mb-2 overflow-hidden">
+                                                <button class="btn btn-light w-100 text-start d-flex justify-content-between py-3 px-3 fw-bold" type="button" data-bs-toggle="collapse" data-bs-target="#collapseNeuro">
+                                                    <span><i class="bi bi-brain text-secondary me-2"></i> Neurológicas</span> <i class="bi bi-chevron-down"></i>
+                                                </button>
+                                                <div id="collapseNeuro" class="collapse bg-white border-top p-3">
+                                                    <div class="form-check"><input class="form-check-input check-hpp" type="checkbox" value="AVE/AVC"><label class="form-check-label">AVE/AVC</label></div>
+                                                    <div class="form-check"><input class="form-check-input check-hpp" type="checkbox" value="Parkinson"><label class="form-check-label">Parkinson</label></div>
+                                                    <div class="form-check"><input class="form-check-input check-hpp" type="checkbox" value="Alzheimer"><label class="form-check-label">Alzheimer</label></div>
+                                                </div>
+                                            </div>
+                                            <div class="border rounded-3 mb-2 overflow-hidden">
+                                                <button class="btn btn-light w-100 text-start d-flex justify-content-between py-3 px-3 fw-bold" type="button" data-bs-toggle="collapse" data-bs-target="#collapseMeta">
+                                                    <span><i class="bi bi-droplet text-warning me-2"></i> Metabólicas</span> <i class="bi bi-chevron-down"></i>
+                                                </button>
+                                                <div id="collapseMeta" class="collapse bg-white border-top p-3">
+                                                    <div class="form-check"><input class="form-check-input check-hpp" type="checkbox" value="Diabetes Tipo 1"><label class="form-check-label">Diabetes Tipo 1</label></div>
+                                                    <div class="form-check"><input class="form-check-input check-hpp" type="checkbox" value="Diabetes Tipo 2"><label class="form-check-label">Diabetes Tipo 2</label></div>
+                                                    <div class="form-check"><input class="form-check-input check-hpp" type="checkbox" value="Dislipidemia"><label class="form-check-label">Dislipidemia (Colesterol)</label></div>
+                                                </div>
+                                            </div>
+                                            <div class="border rounded-3 mb-2 overflow-hidden">
+                                                <button class="btn btn-light w-100 text-start d-flex justify-content-between py-3 px-3 fw-bold" type="button" data-bs-toggle="collapse" data-bs-target="#collapseOrto">
+                                                    <span><i class="bi bi-bone text-success me-2"></i> Ortopédicas</span> <i class="bi bi-chevron-down"></i>
+                                                </button>
+                                                <div id="collapseOrto" class="collapse bg-white border-top p-3">
+                                                    <div class="form-check"><input class="form-check-input check-hpp" type="checkbox" value="Artrose"><label class="form-check-label">Artrose/Artrite</label></div>
+                                                    <div class="form-check"><input class="form-check-input check-hpp" type="checkbox" value="Hernia de Disco"><label class="form-check-label">Hérnia de Disco</label></div>
+                                                    <div class="form-check"><input class="form-check-input check-hpp" type="checkbox" value="Osteoporose"><label class="form-check-label">Osteoporose</label></div>
+                                                </div>
+                                            </div>
+                                            <div class="border rounded-3 mb-2 overflow-hidden">
+                                                <button class="btn btn-light w-100 text-start d-flex justify-content-between py-3 px-3 fw-bold" type="button" data-bs-toggle="collapse" data-bs-target="#collapseCardio">
+                                                    <span><i class="bi bi-heart-pulse text-danger me-2"></i> Cardiovasculares</span> <i class="bi bi-chevron-down"></i>
+                                                </button>
+                                                <div id="collapseCardio" class="collapse bg-white border-top p-3">
+                                                    <div class="form-check"><input class="form-check-input check-hpp" type="checkbox" value="HAS (Hipertensão)"><label class="form-check-label">HAS (Hipertensão)</label></div>
+                                                    <div class="form-check"><input class="form-check-input check-hpp" type="checkbox" value="ICC"><label class="form-check-label">ICC (Insuficiência Cardíaca)</label></div>
+                                                    <div class="form-check"><input class="form-check-input check-hpp" type="checkbox" value="Arritmia"><label class="form-check-label">Arritmia</label></div>
+                                                    <div class="form-check"><input class="form-check-input check-hpp" type="checkbox" value="IAM Prévio"><label class="form-check-label">IAM Prévio (Infarto)</label></div>
+                                                </div>
+                                            </div>
+                                            <div class="border rounded-3 mb-2 overflow-hidden">
+                                                <button class="btn btn-light w-100 text-start d-flex justify-content-between py-3 px-3 fw-bold" type="button" data-bs-toggle="collapse" data-bs-target="#collapseResp">
+                                                    <span><i class="bi bi-lungs text-info me-2"></i> Respiratórias</span> <i class="bi bi-chevron-down"></i>
+                                                </button>
+                                                <div id="collapseResp" class="collapse bg-white border-top p-3">
+                                                    <div class="form-check"><input class="form-check-input check-hpp" type="checkbox" value="Asma"><label class="form-check-label">Asma</label></div>
+                                                    <div class="form-check"><input class="form-check-input check-hpp" type="checkbox" value="DPOC"><label class="form-check-label">DPOC</label></div>
+                                                    <div class="form-check"><input class="form-check-input check-hpp" type="checkbox" value="Pneumonia Recente"><label class="form-check-label">Pneumonia Recente</label></div>
+                                                    <div class="form-check"><input class="form-check-input check-hpp" type="checkbox" value="Sequelas COVID"><label class="form-check-label">Sequelas COVID-19</label></div>
+                                                </div>
+                                            </div>
+
+                                            <div class="mt-3">
+                                                <label class="form-label small text-muted">Outras Observações HPP</label>
+                                                <textarea id="av_hpp_texto" class="form-control bg-light border-0" rows="3"></textarea>
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    <div class="card border-0 shadow-sm rounded-4 mb-4">
+                                        <div class="card-header bg-white border-0 py-3">
+                                            <h5 class="fw-bold text-success mb-0"><i class="bi bi-person-check me-2"></i> Exame Físico</h5>
+                                        </div>
+                                        <div class="card-body">
+                                            <div class="row g-3">
+                                                <div class="col-12"><label class="fw-bold small text-muted">Sinais Vitais</label><input type="text" id="av_sinais" class="form-control bg-light border-0"></div>
+                                                <div class="col-12"><label class="fw-bold small text-muted">Inspeção</label><textarea id="av_inspecao" class="form-control bg-light border-0" rows="2"></textarea></div>
+                                                <div class="col-md-6"><label class="fw-bold small text-muted">Palpação / Dor</label><textarea id="av_palpacao" class="form-control bg-light border-0" rows="2"></textarea></div>
+                                                <div class="col-md-6"><label class="fw-bold small text-muted">ADM</label><textarea id="av_adm" class="form-control bg-light border-0" rows="2"></textarea></div>
+                                                <div class="col-12"><label class="fw-bold small text-muted">Testes Especiais</label><textarea id="av_testes" class="form-control bg-light border-0" rows="2"></textarea></div>
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    <div class="card border-0 shadow-sm rounded-4 mb-5">
+                                        <div class="card-header bg-white border-0 py-3">
+                                            <h5 class="fw-bold text-dark mb-0"><i class="bi bi-clipboard-check me-2"></i> Conclusão</h5>
+                                        </div>
+                                        <div class="card-body">
+                                            <div class="mb-3"><label class="fw-bold small text-muted">Diagnóstico CIF</label><textarea id="av_cif" class="form-control bg-light border-0" rows="2"></textarea></div>
+                                            <div class="mb-3"><label class="fw-bold small text-muted">Objetivos</label><textarea id="av_objetivos" class="form-control bg-light border-0" rows="3"></textarea></div>
+                                            <div class="mb-3"><label class="fw-bold small text-muted">Conduta</label><textarea id="av_conduta" class="form-control bg-light border-0" rows="3"></textarea></div>
+                                        </div>
+                                    </div>
+                                    
+                                    <div class="position-fixed bottom-0 end-0 p-4" style="z-index: 1050;">
+                                        <button onclick="salvarAvaliacaoCompleta()" class="btn btn-success btn-lg rounded-pill shadow-lg px-5 fw-bold">SALVAR TUDO</button>
                                     </div>
                                 </div>
                             </div>
-                        </div>
 
-                        <div class="card border-dark shadow-sm">
-                            <div class="card-header bg-dark text-white fw-bold"><i class="bi bi-stopwatch"></i> Outros Testes Funcionais</div>
-                            <div class="card-body">
-                                <select id="funcNome" class="form-select form-select-lg mb-3" onchange="atualizarUnidadeFuncional()">
-                                    <option value="" disabled selected>Selecione...</option>
-                                    <option value="TUG">TUG (Timed Up & Go)</option>
-                                    <option value="Sentar-Levantar 5x">Sentar-Levantar (5x)</option>
-                                    <option value="Sentar-Levantar 30s">Sentar-Levantar (30s)</option>
-                                    <option value="Alcance Funcional">Alcance Funcional</option>
-                                    <option value="Apoio Unipodal">Apoio Unipodal</option>
-                                    <option value="Step Test">Teste do Degrau</option>
-                                </select>
+                            <div class="tab-pane fade" id="tab-pilates">
+                                <div class="card border-0 shadow-sm rounded-4 mb-4">
+                                    <div class="card-header bg-white border-0 py-3">
+                                        <h5 class="fw-bold text-success mb-0"><i class="bi bi-yin-yang me-2"></i> Avaliação de Pilates</h5>
+                                    </div>
+                                    <div class="card-body">
+                                        <h6 class="text-muted fw-bold mb-3">Aparelhos / Equipamentos Indicados</h6>
+                                        <div class="row g-3 mb-4">
+                                            <div class="col-6 col-md-3"><div class="form-check p-3 border rounded"><input class="form-check-input check-pilates" type="checkbox" value="Solo (Mat)"><label class="form-check-label fw-bold">Solo (Mat)</label></div></div>
+                                            <div class="col-6 col-md-3"><div class="form-check p-3 border rounded"><input class="form-check-input check-pilates" type="checkbox" value="Bola Suíça"><label class="form-check-label fw-bold">Bola Suíça</label></div></div>
+                                            <div class="col-6 col-md-3"><div class="form-check p-3 border rounded"><input class="form-check-input check-pilates" type="checkbox" value="Reformer"><label class="form-check-label fw-bold">Reformer</label></div></div>
+                                            <div class="col-6 col-md-3"><div class="form-check p-3 border rounded"><input class="form-check-input check-pilates" type="checkbox" value="Cadillac"><label class="form-check-label fw-bold">Cadillac</label></div></div>
+                                            <div class="col-6 col-md-3"><div class="form-check p-3 border rounded"><input class="form-check-input check-pilates" type="checkbox" value="Chair"><label class="form-check-label fw-bold">Chair</label></div></div>
+                                            <div class="col-6 col-md-3"><div class="form-check p-3 border rounded"><input class="form-check-input check-pilates" type="checkbox" value="Barrel"><label class="form-check-label fw-bold">Barrel</label></div></div>
+                                        </div>
 
-                                <div class="form-floating mb-3">
-                                    <input type="number" inputmode="numeric" class="form-control form-control-lg" id="funcRes" placeholder="Resultado">
-                                    <label id="lblFuncUnidade">Resultado</label>
+                                        <div class="mb-3">
+                                            <label class="fw-bold small text-muted">Exercícios e Progressão</label>
+                                            <textarea id="pilates_exercicios" class="form-control bg-light border-0" rows="5" placeholder="Descreva a série, repetições ou observações específicas do método..."></textarea>
+                                        </div>
+                                    </div>
                                 </div>
-
-                                <button class="btn btn-outline-dark w-100 btn-lg mb-3" onclick="adicionarFuncional()">Adicionar Resultado</button>
-
-                                <h6 class="fw-bold border-bottom pb-2">Histórico (Sessão Atual)</h6>
-                                <ul id="listaFuncional" class="list-group list-group-flush"></ul>
-                                <textarea id="avFuncional" class="d-none"></textarea>
+                                <div class="text-end">
+                                    <button onclick="salvarAvaliacaoCompleta()" class="btn btn-success rounded-pill px-4">Salvar Tudo</button>
+                                </div>
                             </div>
-                        </div>
-                    </div>
 
-                    <div class="tab-pane fade p-3" id="tab-postural">
-                        <div class="row g-2 text-center mb-3">
-                            <div class="col-6"><div class="card h-100 bg-light shadow-sm" onclick="document.getElementById('fileFrontal').click()"><div class="card-body d-flex align-items-center justify-content-center p-1" style="height:140px"><img id="imgFrontal" class="d-none mw-100 mh-100"><i id="iconFrontal" class="bi bi-person fs-1 text-secondary"></i></div><div class="card-footer fw-bold small">Frontal</div><input type="file" id="fileFrontal" accept="image/*" capture="environment" hidden onchange="processarImagem(this,'imgFrontal','iconFrontal')"></div></div>
-                            <div class="col-6"><div class="card h-100 bg-light shadow-sm" onclick="document.getElementById('filePosterior').click()"><div class="card-body d-flex align-items-center justify-content-center p-1" style="height:140px"><img id="imgPosterior" class="d-none mw-100 mh-100"><i id="iconPosterior" class="bi bi-person fs-1 text-secondary"></i></div><div class="card-footer fw-bold small">Posterior</div><input type="file" id="filePosterior" accept="image/*" capture="environment" hidden onchange="processarImagem(this,'imgPosterior','iconPosterior')"></div></div>
-                            <div class="col-6"><div class="card h-100 bg-light shadow-sm" onclick="document.getElementById('fileLatDir').click()"><div class="card-body d-flex align-items-center justify-content-center p-1" style="height:140px"><img id="imgLatDir" class="d-none mw-100 mh-100"><i id="iconLatDir" class="bi bi-arrow-right fs-1 text-secondary"></i></div><div class="card-footer fw-bold small">Lat. Dir</div><input type="file" id="fileLatDir" accept="image/*" capture="environment" hidden onchange="processarImagem(this,'imgLatDir','iconLatDir')"></div></div>
-                            <div class="col-6"><div class="card h-100 bg-light shadow-sm" onclick="document.getElementById('fileLatEsq').click()"><div class="card-body d-flex align-items-center justify-content-center p-1" style="height:140px"><img id="imgLatEsq" class="d-none mw-100 mh-100"><i id="iconLatEsq" class="bi bi-arrow-left fs-1 text-secondary"></i></div><div class="card-footer fw-bold small">Lat. Esq</div><input type="file" id="fileLatEsq" accept="image/*" capture="environment" hidden onchange="processarImagem(this,'imgLatEsq','iconLatEsq')"></div></div>
+                            <div class="tab-pane fade" id="tab-quiro">
+                                <div class="card border-0 shadow-sm rounded-4 mb-4">
+                                    <div class="card-header bg-white border-0 py-3">
+                                        <h5 class="fw-bold text-primary mb-0"><i class="bi bi-hand-index-thumb me-2"></i> Quiropraxia & T. Manual</h5>
+                                    </div>
+                                    <div class="card-body">
+                                        <h6 class="text-muted fw-bold mb-3">Regiões para Manipulação/Ajuste</h6>
+                                        <div class="d-flex flex-wrap gap-2 mb-4">
+                                            <div class="form-check form-check-inline"><input class="form-check-input check-quiro" type="checkbox" value="Cervical Alta (C0-C2)"><label class="form-check-label">Cervical Alta</label></div>
+                                            <div class="form-check form-check-inline"><input class="form-check-input check-quiro" type="checkbox" value="Cervical Baixa (C3-C7)"><label class="form-check-label">Cervical Baixa</label></div>
+                                            <div class="form-check form-check-inline"><input class="form-check-input check-quiro" type="checkbox" value="Torácica"><label class="form-check-label">Torácica</label></div>
+                                            <div class="form-check form-check-inline"><input class="form-check-input check-quiro" type="checkbox" value="Lombar"><label class="form-check-label">Lombar</label></div>
+                                            <div class="form-check form-check-inline"><input class="form-check-input check-quiro" type="checkbox" value="Sacroilíaca"><label class="form-check-label">Sacroilíaca</label></div>
+                                        </div>
+
+                                        <h6 class="text-muted fw-bold mb-3">Técnicas Utilizadas</h6>
+                                        <div class="row g-2 mb-4">
+                                            <div class="col-md-4"><div class="form-check"><input class="form-check-input check-quiro-tec" type="checkbox" value="HVLA (Trust)"><label class="form-check-label">HVLA (Trust)</label></div></div>
+                                            <div class="col-md-4"><div class="form-check"><input class="form-check-input check-quiro-tec" type="checkbox" value="Mobilização"><label class="form-check-label">Mobilização</label></div></div>
+                                            <div class="col-md-4"><div class="form-check"><input class="form-check-input check-quiro-tec" type="checkbox" value="Liberação Miofascial"><label class="form-check-label">Liberação</label></div></div>
+                                            <div class="col-md-4"><div class="form-check"><input class="form-check-input check-quiro-tec" type="checkbox" value="Dry Needling"><label class="form-check-label">Dry Needling</label></div></div>
+                                            <div class="col-md-4"><div class="form-check"><input class="form-check-input check-quiro-tec" type="checkbox" value="Ventosa"><label class="form-check-label">Ventosa</label></div></div>
+                                            <div class="col-md-4"><div class="form-check"><input class="form-check-input check-quiro-tec" type="checkbox" value="Thompson"><label class="form-check-label">Thompson</label></div></div>
+                                        </div>
+
+                                        <div class="mb-3">
+                                            <label class="fw-bold small text-muted">Descrição da Conduta / Ajustes</label>
+                                            <textarea id="quiro_obs" class="form-control bg-light border-0" rows="5" placeholder="Detalhes dos ilíacos, vértebras específicas..."></textarea>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="text-end">
+                                    <button onclick="salvarAvaliacaoCompleta()" class="btn btn-success rounded-pill px-4">Salvar Tudo</button>
+                                </div>
+                            </div>
+
+                            <div class="tab-pane fade" id="tab-fotos">
+                                <div class="text-center py-5">
+                                    <i class="bi bi-camera fs-1 text-muted"></i>
+                                    <h4 class="mt-3">Avaliação Postural</h4>
+                                    <p class="text-muted">Funcionalidade em desenvolvimento.</p>
+                                </div>
+                            </div>
+
                         </div>
-                        <div class="form-floating mb-3"><textarea id="analiseIA" class="form-control" style="height: 100px" placeholder="IA"></textarea><label>Análise IA</label></div>
-                        <button onclick="salvarFotos()" class="btn btn-success w-100 btn-lg py-3 shadow">Salvar Fotos</button>
                     </div>
                 </div>
             </div>
@@ -224,149 +302,126 @@
 </div>
 
 <script>
-    // REFERÊNCIAS
-    const REF_GONIO = {'coluna':{'Cervical':{'Flexão':65,'Extensão':50},'Lombar':{'Flexão':95,'Extensão':35}},'superior':{'Ombro':{'Flexão':180,'Abdução':180},'Cotovelo':{'Flexão':145}},'inferior':{'Quadril':{'Flexão':125},'Joelho':{'Flexão':140}}};
-    const REF_FORCA = {'superior':['Ombro-Flex','Cotovelo-Flex'],'inferior':['Quadril-Flex','Joelho-Ext']};
-    const REF_TESTES = {'Lombar':['Lasegue','Slump'],'Ombro':['Neer','Hawkins'],'Joelho':['Lachman','Gaveta']};
-    const REF_NEURO = {'Reflexos':['Patelar','Bicipital'],'Sensibilidade':['L4','L5','S1'],'Tensão Neural':['ULTT1','ULTT2']};
-    const REF_FUNC = {'TUG':'Segundos (s)','Sentar-Levantar 5x':'Segundos (s)','Sentar-Levantar 30s':'Repetições','Alcance Funcional':'cm','Apoio Unipodal':'Segundos (s)','Step Test':'Repetições'};
-
-    // --- CÁLCULO TC6 (Enright & Britto) ---
-    function toggleO2() { document.getElementById('divFluxoO2').classList.toggle('d-none'); }
-    
-    function calcularTC6() {
-        const id = parseFloat(document.getElementById('tc6Idade').value);
-        const alt = parseFloat(document.getElementById('tc6Altura').value); // cm
-        const peso = parseFloat(document.getElementById('tc6Peso').value);
-        const sexo = document.getElementById('tc6Sexo').value;
-        const dist = parseFloat(document.getElementById('tc6Distancia').value);
-        
-        if(!id || !alt || !peso || !dist) return alert("Preencha Idade, Altura, Peso e Distância.");
-
-        let preditoEnright = 0;
-        let preditoBritto = 0;
-
-        // Fórmulas
-        if(sexo === 'M') {
-            // Enright & Sherrill (1998) Homens
-            preditoEnright = (7.57 * alt) - (5.02 * id) - (1.76 * peso) - 309;
-            // Britto et al. (2013) Homens (Brasil)
-            preditoBritto = 890.46 - (6.11 * id) + (0.0345 * alt * alt) + 48.87;
-        } else {
-            // Enright & Sherrill (1998) Mulheres
-            preditoEnright = (2.11 * alt) - (2.29 * peso) - (5.78 * id) + 667;
-            // Britto et al. (2013) Mulheres (Brasil)
-            preditoBritto = 890.46 - (6.11 * id) + (0.0345 * alt * alt);
-        }
-
-        const percEnright = (dist / preditoEnright) * 100;
-        const percBritto = (dist / preditoBritto) * 100;
-        
-        // Detalhes extras
-        const paradas = document.getElementById('tc6Paradas').value || "0";
-        const usaO2 = document.getElementById('tc6O2').checked ? `Sim (${document.getElementById('tc6Fluxo').value} L/min)` : "Não";
-
-        // Exibir na tela (Feedback)
-        const divRes = document.getElementById('resTC6');
-        divRes.innerHTML = `<strong>Predito (Brasil):</strong> ${preditoBritto.toFixed(0)}m <br> <strong>Alcançado:</strong> ${percBritto.toFixed(0)}% do predito`;
-        divRes.classList.remove('d-none');
-
-        // Adicionar à lista
-        const hoje = new Date().toLocaleDateString('pt-BR', {day: '2-digit', month: '2-digit'});
-        const texto = `${hoje} - TC6: <strong>${dist}m</strong> (${percBritto.toFixed(0)}% Br / ${percEnright.toFixed(0)}% Int). Paradas: ${paradas}. O2: ${usaO2}.`;
-        
-        document.getElementById('listaFuncional').innerHTML += `<li class="list-group-item d-flex justify-content-between align-items-center small">${texto} <button class="btn btn-sm btn-outline-danger" onclick="this.parentElement.remove();atualizarCampoFuncional()">X</button></li>`;
-        atualizarCampoFuncional();
+    function abrirProntuario(id, nome) {
+        document.getElementById('idPacienteAtual').value = id;
+        document.getElementById('lblNomePaciente').innerText = nome;
+        new bootstrap.Modal(document.getElementById('modalProntuario')).show();
+        carregarEvolucoes(id);
+        carregarAvaliacao(id);
     }
 
-    // --- FUNCIONAL GERAL ---
-    function atualizarUnidadeFuncional() {
-        const teste = document.getElementById('funcNome').value;
-        document.getElementById('lblFuncUnidade').innerText = REF_FUNC[teste] ? "Resultado em " + REF_FUNC[teste] : "Resultado";
-    }
-    function adicionarFuncional() {
-        const teste = document.getElementById('funcNome').value;
-        const val = document.getElementById('funcRes').value;
-        if(!teste || !val) return alert("Preencha teste e valor.");
-        const hoje = new Date().toLocaleDateString('pt-BR', {day: '2-digit', month: '2-digit'});
-        const un = REF_FUNC[teste] || "";
-        const texto = `${hoje} - ${teste}: <strong>${val}</strong> <small class="text-muted">${un}</small>`;
-        document.getElementById('listaFuncional').innerHTML += `<li class="list-group-item d-flex justify-content-between align-items-center">${texto} <button class="btn btn-sm btn-outline-danger" onclick="this.parentElement.remove();atualizarCampoFuncional()">X</button></li>`;
-        document.getElementById('funcRes').value='';
-        atualizarCampoFuncional();
-    }
-    function atualizarCampoFuncional() {
-        let txt = "";
-        for(let i of document.getElementById('listaFuncional').children) {
-            let limpo = i.innerHTML.replace('<button class="btn btn-sm btn-outline-danger" onclick="this.parentElement.remove();atualizarCampoFuncional()">X</button>', '').trim();
-            limpo = limpo.replace(/<[^>]*>?/gm, ''); 
-            txt += limpo + "\n";
-        }
-        document.getElementById('avFuncional').value = txt;
+    function carregarEvolucoes(id) {
+        fetch(`/api/evolucoes/${id}`).then(r => r.json()).then(data => {
+            const lista = document.getElementById('listaEvolucoes');
+            lista.innerHTML = '';
+            data.forEach(ev => {
+                lista.innerHTML += `
+                    <div class="card border-0 shadow-sm mb-3">
+                        <div class="card-body">
+                            <small class="text-muted fw-bold">${ev.data}</small>
+                            <p class="mb-0 mt-2" style="white-space: pre-wrap;">${ev.texto}</p>
+                        </div>
+                    </div>`;
+            });
+        });
     }
 
-    // --- OUTROS ---
-    function atualizarTestesNeuro(){ const c=document.getElementById('neuroCat').value, s=document.getElementById('neuroTeste'), r=document.getElementById('neuroRes'); s.innerHTML='<option>2. Teste</option>';s.disabled=false; r.innerHTML='<option>3. Res</option>';r.disabled=false; if(REF_NEURO[c]) REF_NEURO[c].forEach(k=>s.add(new Option(k,k))); if(c=='Reflexos'){['0','1+','2+','3+','4+'].forEach(k=>r.add(new Option(k,k)));}else if(c=='Sensibilidade'){['Normal','Hipo','Anestesia'].forEach(k=>r.add(new Option(k,k)));}else{['(-)','(+)'].forEach(k=>r.add(new Option(k,k)));}}
-    function adicionarNeuro(){ document.getElementById('listaNeuro').innerHTML+=`<li class="list-group-item d-flex justify-content-between">${document.getElementById('neuroTeste').value} (${document.querySelector('input[name="neuroLat"]:checked').value}): ${document.getElementById('neuroRes').value} <button class="btn btn-sm btn-outline-secondary" onclick="this.parentElement.remove();updt('avNeuro','listaNeuro')">X</button></li>`; updt('avNeuro','listaNeuro');}
-    function atualizarListaTestes(){ const r=document.getElementById('testeRegiao').value,s=document.getElementById('testeNome'); s.innerHTML='<option>2. Teste</option>';s.disabled=false; if(REF_TESTES[r]) REF_TESTES[r].forEach(k=>s.add(new Option(k,k))); }
-    function adicionarTeste(){ const r=document.getElementById('testeRes').value, c=r=='POSITIVO'?'text-danger':'text-success'; document.getElementById('listaTestes').innerHTML+=`<li class="list-group-item d-flex justify-content-between">${document.getElementById('testeNome').value}: <span class="${c} fw-bold">${r}</span> <button class="btn btn-sm btn-outline-secondary" onclick="this.parentElement.remove();updt('avTestes','listaTestes')">X</button></li>`; updt('avTestes','listaTestes');}
-    function atualizarMusculosForca(){ const r=document.getElementById('forcaRegiao').value,s=document.getElementById('forcaMusculo'); s.innerHTML='<option>2. Músculo</option>';s.disabled=false; if(REF_FORCA[r]) REF_FORCA[r].forEach(k=>s.add(new Option(k,k))); document.getElementById('forcaGrau').disabled=false;}
-    function adicionarForca(){ document.getElementById('listaForca').innerHTML+=`<li class="list-group-item d-flex justify-content-between">${document.getElementById('forcaMusculo').value} (${document.querySelector('input[name="forcaLat"]:checked').value}): ${document.getElementById('forcaGrau').value} <button class="btn btn-sm btn-outline-danger" onclick="this.parentElement.remove();updt('avForca','listaForca')">X</button></li>`; updt('avForca','listaForca');}
-    function atualizarArticulacoes(){ const r=document.getElementById('gonioRegiao').value,s=document.getElementById('gonioArticulacao'); s.innerHTML='<option>2. Artic.</option>';s.disabled=false; if(REF_GONIO[r]) Object.keys(REF_GONIO[r]).forEach(k=>s.add(new Option(k,k))); document.getElementById('gonioMovimento').disabled=true;}
-    function atualizarMovimentos(){ const r=document.getElementById('gonioRegiao').value,a=document.getElementById('gonioArticulacao').value,s=document.getElementById('gonioMovimento'); s.innerHTML='<option>3. Mov.</option>';s.disabled=false; if(REF_GONIO[r][a]) Object.keys(REF_GONIO[r][a]).forEach(k=>s.add(new Option(k,k)));}
-    function atualizarGraus(){ const r=document.getElementById('gonioRegiao').value,a=document.getElementById('gonioArticulacao').value,m=document.getElementById('gonioMovimento').value,s=document.getElementById('gonioGraus'); s.innerHTML='<option>4. Grau</option>';s.disabled=false; const max=REF_GONIO[r][a][m]; s.add(new Option(`Normal (${max}°)`,`${max}`)); s.add(new Option(`Limitado (${Math.round(max/2)}°)`,`${Math.round(max/2)}`)); }
-    function adicionarGoniometria(){ document.getElementById('listaGoniometria').innerHTML+=`<li class="list-group-item d-flex justify-content-between">${document.getElementById('gonioArticulacao').value} ${document.getElementById('gonioMovimento').value}: ${document.getElementById('gonioGraus').value} <button class="btn btn-sm btn-outline-danger" onclick="this.parentElement.remove();updt('avADM','listaGoniometria')">X</button></li>`; updt('avADM','listaGoniometria');}
-    
-    function updt(idInput, idLista) { let t=""; for(let i of document.getElementById(idLista).children) t+=i.innerText.replace("X","").trim()+"\n"; document.getElementById(idInput).value=t; }
-    function filtrarLista() { var f=document.getElementById("filtroPaciente").value.toUpperCase(), c=document.getElementsByClassName("item-paciente"); for(let i=0;i<c.length;i++) c[i].style.display=c[i].innerText.toUpperCase().indexOf(f)>-1?"":"none"; }
-    function addComorbidade(s) { document.getElementById('avHPP').value += (document.getElementById('avHPP').value?", ":"") + s.value; s.selectedIndex=0; }
-    function addRedFlag(t) { document.getElementById('avHMA').value = `[🚩 ${t}] ` + document.getElementById('avHMA').value; }
-    function toggleTabagismo() { var s=document.getElementById('selTabagismo').value; document.getElementById('divCargaTabagica').className=(s.includes('Tabagista')||s.includes('Ex-tabagista'))?'bg-warning-subtle p-3 rounded mt-2':'d-none'; gerarTextoHabitos(); }
-    function gerarTextoHabitos() { var a=document.getElementById('selAtividade').value, e=document.getElementById('selEtilismo').value, t=document.getElementById('selTabagismo').value; var txt=`Atividade: ${a}. Etilismo: ${e}. Tabagismo: ${t}`; if(t.includes('Tabagista')||t.includes('Ex-tabagista')) { var c=document.getElementById('numCigarros').value, y=document.getElementById('numAnosFumo').value, r=(c/20)*y; document.getElementById('resCargaTabagica').innerText=r.toFixed(1)+" Maços-ano"; txt+=` (${c} cigs/dia, ${y} anos = ${r.toFixed(1)} maços-ano)`; } document.getElementById('avHabitos').value=txt; }
-
-    function salvarAvaliacao() {
-        // ESTRATÉGIA: Juntar Testes Especiais + Funcional
-        const testesCombinados = (document.getElementById('avTestes').value || "") + "\n--- FUNCIONAL ---\n" + (document.getElementById('avFuncional').value || "");
-        const d = {
-            paciente_id: document.getElementById('idPacienteProntuario').value,
-            ocupacao: document.getElementById('avOcupacao').value, lateralidade: document.getElementById('avLateralidade').value, diagnostico_medico: document.getElementById('avDiagMedico').value,
-            queixa_principal: document.getElementById('avQP').value, hma: document.getElementById('avHMA').value, hpp: document.getElementById('avHPP').value, habitos: document.getElementById('avHabitos').value,
-            inspecao: document.getElementById('avInspecao').value, palpacao: document.getElementById('avPalpacao').value,
-            adm: document.getElementById('avADM').value, forca_muscular: document.getElementById('avForca').value, neuro: document.getElementById('avNeuro').value,
-            testes_especiais: testesCombinados,
-            diagnostico_cif: document.getElementById('avCIF').value, objetivos: document.getElementById('avObjetivos').value, conduta: document.getElementById('avConduta').value,
-            sinais_vitais: JSON.stringify({pa:document.getElementById('sinPA').value, fc:document.getElementById('sinFC').value, spo2:document.getElementById('sinSpO2').value, temp:document.getElementById('sinTemp').value}),
-            avaliacao_dor: JSON.stringify({eva:document.getElementById('dorEVA').value, local:document.getElementById('dorLocal').value, tipo:document.getElementById('dorTipo').value, piora:document.getElementById('dorPiora').value, alivia:document.getElementById('dorAlivio').value})
-        };
-        fetch('/api/salvar_avaliacao', {method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify(d)}).then(()=>{ alert("Salvo!"); });
+    function salvarEvolucao() {
+        const id = document.getElementById('idPacienteAtual').value;
+        const texto = document.getElementById('txtEvolucao').value;
+        if(!texto.trim()) return alert("Escreva algo na evolução!");
+        fetch('/api/nova_evolucao', {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify({ paciente_id: id, texto: texto })
+        }).then(() => {
+            document.getElementById('txtEvolucao').value = '';
+            carregarEvolucoes(id);
+            alert("Evolução salva!");
+        });
     }
 
     function carregarAvaliacao(id) {
-        fetch(`/api/get_avaliacao/${id}`).then(r=>r.json()).then(d=>{
+        fetch(`/api/get_avaliacao/${id}`).then(r => r.json()).then(d => {
             if(d.encontrado) {
-                ['avOcupacao','avDiagMedico','avQP','avHMA','avHPP','avInspecao','avPalpacao','avCIF','avObjetivos','avConduta'].forEach(k=>document.getElementById(k).value=d[k.replace('av','').toLowerCase()]||d[k]||'');
-                document.getElementById('avADM').value=d.adm||''; if(d.adm) document.getElementById('listaGoniometria').innerHTML=d.adm.split('\n').filter(x=>x).map(x=>`<li class="list-group-item d-flex justify-content-between">${x} <button onclick="this.parentElement.remove();updt('avADM','listaGoniometria')" class="btn btn-sm btn-outline-danger">X</button></li>`).join('');
-                document.getElementById('avForca').value=d.forca_muscular||''; if(d.forca_muscular) document.getElementById('listaForca').innerHTML=d.forca_muscular.split('\n').filter(x=>x).map(x=>`<li class="list-group-item d-flex justify-content-between">${x} <button onclick="this.parentElement.remove();updt('avForca','listaForca')" class="btn btn-sm btn-outline-danger">X</button></li>`).join('');
-                document.getElementById('avNeuro').value=d.neuro||''; if(d.neuro) document.getElementById('listaNeuro').innerHTML=d.neuro.split('\n').filter(x=>x).map(x=>`<li class="list-group-item d-flex justify-content-between">${x} <button onclick="this.parentElement.remove();updt('avNeuro','listaNeuro')" class="btn btn-sm btn-outline-secondary">X</button></li>`).join('');
+                document.getElementById('av_ocupacao').value = d.ocupacao || '';
+                document.getElementById('av_diag_medico').value = d.diagnostico_medico || '';
+                document.getElementById('av_qp').value = d.queixa_principal || '';
+                document.getElementById('av_hma').value = d.hma || '';
+                document.getElementById('av_hpp_texto').value = d.hpp || ''; // HPP vem como texto completo
+                document.getElementById('av_sinais').value = d.sinais_vitais || '';
+                document.getElementById('av_inspecao').value = d.inspecao || '';
+                document.getElementById('av_palpacao').value = d.avaliacao_dor || '';
+                document.getElementById('av_adm').value = d.adm || '';
+                document.getElementById('av_testes').value = d.testes_especiais || '';
+                document.getElementById('av_cif').value = d.diagnostico_cif || '';
+                document.getElementById('av_objetivos').value = d.objetivos || '';
+                document.getElementById('av_conduta').value = d.conduta || '';
                 
-                // SEPARAR ORTO x FUNCIONAL
-                if(d.testes_especiais) {
-                    const partes = d.testes_especiais.split("--- FUNCIONAL ---");
-                    if(partes[0]) { document.getElementById('avTestes').value=partes[0].trim(); document.getElementById('listaTestes').innerHTML=partes[0].trim().split('\n').filter(x=>x).map(x=>`<li class="list-group-item d-flex justify-content-between">${x} <button onclick="this.parentElement.remove();updt('avTestes','listaTestes')" class="btn btn-sm btn-outline-secondary">X</button></li>`).join(''); }
-                    if(partes[1]) { document.getElementById('avFuncional').value=partes[1].trim(); document.getElementById('listaFuncional').innerHTML=partes[1].trim().split('\n').filter(x=>x).map(x=>`<li class="list-group-item d-flex justify-content-between">${x} <button onclick="this.parentElement.remove();atualizarCampoFuncional()" class="btn btn-sm btn-outline-danger">X</button></li>`).join(''); }
-                }
-                try{let s=JSON.parse(d.sinais_vitais);document.getElementById('sinPA').value=s.pa;document.getElementById('sinFC').value=s.fc;document.getElementById('sinSpO2').value=s.spo2;document.getElementById('sinTemp').value=s.temp;}catch(e){}
-                try{let o=JSON.parse(d.avaliacao_dor);document.getElementById('dorEVA').value=o.eva;document.getElementById('dorLocal').value=o.local;document.getElementById('dorTipo').value=o.tipo;document.getElementById('dorPiora').value=o.piora;document.getElementById('dorAlivio').value=o.alivia;}catch(e){}
-                document.getElementById('dataUltimaAvaliacao').innerText = "Salvo em: " + d.data;
+                // Novos Módulos
+                document.getElementById('pilates_exercicios').value = d.dados_pilates || '';
+                document.getElementById('quiro_obs').value = d.dados_quiro || '';
+            } else {
+                document.querySelectorAll('input, textarea').forEach(el => el.value = '');
+                document.querySelectorAll('.check-hpp, .check-pilates, .check-quiro').forEach(el => el.checked = false);
             }
         });
     }
-    
-    function abrirProntuario(id,n){ document.getElementById('idPacienteProntuario').value=id; document.getElementById('tituloProntuario').innerText=n; new bootstrap.Modal(document.getElementById('modalProntuario')).show(); carregarHistorico(id); carregarAvaliacao(id); }
-    function salvarEvolucao(){ fetch('/api/nova_evolucao',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({paciente_id:document.getElementById('idPacienteProntuario').value, texto:document.getElementById('textoEvolucao').value})}).then(()=>{ document.getElementById('textoEvolucao').value=''; carregarHistorico(document.getElementById('idPacienteProntuario').value); }); }
-    function carregarHistorico(id){ fetch(`/api/evolucoes/${id}`).then(r=>r.json()).then(d=>{ document.getElementById('listaHistorico').innerHTML=d.map(i=>`<div class="card p-2 border-0 bg-white shadow-sm"><small class="fw-bold text-primary">${i.data}</small><div>${i.texto}</div></div>`).join(''); }); }
-    function processarImagem(i,m,c){ if(i.files[0]){var r=new FileReader();r.onload=function(e){var img=new Image();img.src=e.target.result;img.onload=function(){var cv=document.createElement('canvas');var ctx=cv.getContext('2d');var rt=Math.min(600/img.width,1);cv.width=img.width*rt;cv.height=img.height*rt;ctx.drawImage(img,0,0,cv.width,cv.height);document.getElementById(m).src=cv.toDataURL('image/jpeg',0.7);document.getElementById(m).classList.remove('d-none');}};r.readAsDataURL(i.files[0]);}}
-    function salvarFotos(){ const d={paciente_id:document.getElementById('idPacienteProntuario').value, frontal:document.getElementById('imgFrontal').src, posterior:document.getElementById('imgPosterior').src, lat_dir:document.getElementById('imgLatDir').src, lat_esq:document.getElementById('imgLatEsq').src, analise_ia:document.getElementById('analiseIA').value}; if(d.frontal.length<100)return alert('Adicione foto'); fetch('/api/salvar_fotos',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(d)}).then(()=>alert('Fotos Salvas')); }
-    const v=document.getElementById('btnVoiceEvo');if(v)v.addEventListener('click',()=>{const r=new webkitSpeechRecognition();r.lang='pt-BR';r.start();r.onresult=(e)=>{document.getElementById('textoEvolucao').value+=e.results[0][0].transcript+'. '}});
+
+    function salvarAvaliacaoCompleta() {
+        const id = document.getElementById('idPacienteAtual').value;
+
+        // HPP LOGIC
+        let hpp = [];
+        document.querySelectorAll('.check-hpp:checked').forEach(el => hpp.push(el.value));
+        const hppFinal = "Comorbidades: " + hpp.join(", ") + ". Obs: " + document.getElementById('av_hpp_texto').value;
+
+        // PILATES LOGIC
+        let pilates = [];
+        document.querySelectorAll('.check-pilates:checked').forEach(el => pilates.push(el.value));
+        const pilatesFinal = "Aparelhos: " + pilates.join(", ") + " | " + document.getElementById('pilates_exercicios').value;
+
+        // QUIRO LOGIC
+        let quiro = [];
+        document.querySelectorAll('.check-quiro:checked').forEach(el => quiro.push(el.value));
+        let quiroTecs = [];
+        document.querySelectorAll('.check-quiro-tec:checked').forEach(el => quiroTecs.push(el.value));
+        const quiroFinal = "Regiões: " + quiro.join(", ") + " | Técnicas: " + quiroTecs.join(", ") + " | " + document.getElementById('quiro_obs').value;
+
+        const dados = {
+            paciente_id: id,
+            ocupacao: document.getElementById('av_ocupacao').value,
+            lateralidade: "Destro", 
+            diagnostico_medico: document.getElementById('av_diag_medico').value,
+            queixa_principal: document.getElementById('av_qp').value,
+            hma: document.getElementById('av_hma').value,
+            hpp: hppFinal,
+            habitos: "",
+            sinais_vitais: document.getElementById('av_sinais').value,
+            avaliacao_dor: document.getElementById('av_palpacao').value,
+            inspecao: document.getElementById('av_inspecao').value,
+            palpacao: "Ver campo dor", 
+            adm: document.getElementById('av_adm').value,
+            forca_muscular: "",
+            neuro: "", 
+            testes_especiais: document.getElementById('av_testes').value,
+            diagnostico_cif: document.getElementById('av_cif').value,
+            objetivos: document.getElementById('av_objetivos').value,
+            conduta: document.getElementById('av_conduta').value,
+            
+            // Novos campos
+            dados_pilates: pilatesFinal,
+            dados_quiro: quiroFinal
+        };
+
+        fetch('/api/salvar_avaliacao', {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify(dados)
+        }).then(r => r.json()).then(res => {
+            if(res.status === 'success') alert("Avaliação salva!");
+            else alert("Erro: " + res.msg);
+        });
+    }
 </script>
 {% endblock %}
