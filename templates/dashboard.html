@@ -1,45 +1,245 @@
 {% extends "layout.html" %}
 
 {% block content %}
-<h2>Painel de Controle</h2>
-<p class="text-muted">Bem-vindo à gestão da sua clínica.</p>
-<hr>
-
-<div class="row mt-4">
-    <div class="col-md-4">
-        <div class="card border-0 shadow-sm p-3 mb-3">
-            <div class="d-flex justify-content-between align-items-center">
-                <div>
-                    <h6 class="text-muted">Total de Pacientes</h6>
-                    <h3>{{ total_pacientes }}</h3>
-                </div>
-                <i class="bi bi-people fs-1 text-primary"></i>
-            </div>
-        </div>
-    </div>
+<div class="container-fluid px-4">
     
-    <div class="col-md-4">
-        <div class="card border-0 shadow-sm p-3 mb-3">
-            <div class="d-flex justify-content-between align-items-center">
-                <div>
-                    <h6 class="text-muted">Consultas</h6>
-                    <h3>{{ total_agendamentos }}</h3>
+    <div class="d-flex flex-column flex-md-row justify-content-between align-items-center mt-4 mb-4">
+        <div>
+            <h2 class="fw-bold text-dark m-0">Painel de Controle</h2>
+            <p class="text-muted m-0">Visão geral da sua clínica</p>
+        </div>
+        
+        <div class="d-flex align-items-center bg-white p-2 rounded-pill shadow-sm mt-3 mt-md-0">
+            <i class="bi bi-calendar-month fs-5 text-primary ms-2 me-2"></i>
+            <select id="filtroMes" class="form-select border-0 bg-transparent fw-bold" style="width: 160px; cursor: pointer;" onchange="carregarDashboard()">
+                </select>
+            <select id="filtroAno" class="form-select border-0 bg-transparent fw-bold" style="width: 100px; cursor: pointer;" onchange="carregarDashboard()">
+                </select>
+        </div>
+    </div>
+
+    <div class="row g-3 mb-4">
+        <div class="col-md-4">
+            <div class="card border-0 shadow-sm rounded-4 bg-primary text-white h-100">
+                <div class="card-body p-4 d-flex justify-content-between align-items-center">
+                    <div>
+                        <h6 class="opacity-75">Pacientes Totais</h6>
+                        <h2 class="fw-bold mb-0">{{ total_pacientes }}</h2>
+                    </div>
+                    <i class="bi bi-people fs-1 opacity-50"></i>
                 </div>
-                <i class="bi bi-calendar-check fs-1 text-success"></i>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="card border-0 shadow-sm rounded-4 bg-success text-white h-100">
+                <div class="card-body p-4 d-flex justify-content-between align-items-center">
+                    <div>
+                        <h6 class="opacity-75">Sessões Realizadas (Mês)</h6>
+                        <h2 class="fw-bold mb-0" id="cardSessoes">0</h2>
+                    </div>
+                    <i class="bi bi-check-circle fs-1 opacity-50"></i>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="card border-0 shadow-sm rounded-4 bg-info text-white h-100">
+                <div class="card-body p-4 d-flex justify-content-between align-items-center">
+                    <div>
+                        <h6 class="opacity-75">Faturamento (Mês)</h6>
+                        <h2 class="fw-bold mb-0" id="cardFat">R$ 0,00</h2>
+                    </div>
+                    <i class="bi bi-wallet2 fs-1 opacity-50"></i>
+                </div>
             </div>
         </div>
     </div>
 
-    <div class="col-md-4">
-        <div class="card border-0 shadow-sm p-3 mb-3">
-            <div class="d-flex justify-content-between align-items-center">
-                <div>
-                    <h6 class="text-muted">Faturamento</h6>
-                    <h3>R$ --</h3>
+    <div class="row g-3 mb-4">
+        
+        <div class="col-lg-8">
+            <div class="card border-0 shadow-sm rounded-4 h-100">
+                <div class="card-header bg-white border-0 py-3">
+                    <h5 class="fw-bold mb-0 text-primary"><i class="bi bi-trophy me-2"></i>Sessões Realizadas por Paciente</h5>
                 </div>
-                <i class="bi bi-wallet2 fs-1 text-warning"></i>
+                <div class="card-body">
+                    <canvas id="chartPacientes" style="max-height: 300px;"></canvas>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-lg-4">
+            <div class="card border-0 shadow-sm rounded-4 h-100">
+                <div class="card-header bg-white border-0 py-3">
+                    <h5 class="fw-bold mb-0 text-dark"><i class="bi bi-pie-chart me-2"></i>Status da Agenda</h5>
+                </div>
+                <div class="card-body position-relative">
+                    <canvas id="chartStatus" style="max-height: 250px;"></canvas>
+                </div>
             </div>
         </div>
     </div>
+
+    <div class="row g-3 mb-5">
+        <div class="col-12">
+            <div class="card border-0 shadow-sm rounded-4">
+                <div class="card-header bg-white border-0 py-3">
+                    <h5 class="fw-bold mb-0 text-success"><i class="bi bi-graph-up-arrow me-2"></i>Fluxo de Caixa (Últimos 6 Meses)</h5>
+                </div>
+                <div class="card-body">
+                    <canvas id="chartFinanceiro" style="max-height: 300px; width: 100%;"></canvas>
+                </div>
+            </div>
+        </div>
+    </div>
+
 </div>
+
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+<script>
+    let chartPacientesRef = null;
+    let chartStatusRef = null;
+    let chartFinanceiroRef = null;
+
+    document.addEventListener('DOMContentLoaded', () => {
+        setupDateSelects();
+        carregarDashboard();
+    });
+
+    function setupDateSelects() {
+        const mesSelect = document.getElementById('filtroMes');
+        const anoSelect = document.getElementById('filtroAno');
+        const hoje = new Date();
+        
+        const meses = ["Janeiro", "Fevereiro", "Março", "Abril", "Maio", "Junho", "Julho", "Agosto", "Setembro", "Outubro", "Novembro", "Dezembro"];
+        
+        meses.forEach((m, i) => {
+            let opt = document.createElement('option');
+            opt.value = i + 1;
+            opt.text = m;
+            if(i + 1 === hoje.getMonth() + 1) opt.selected = true;
+            mesSelect.appendChild(opt);
+        });
+
+        const anoAtual = hoje.getFullYear();
+        for(let i = anoAtual; i >= anoAtual - 2; i--) {
+            let opt = document.createElement('option');
+            opt.value = i;
+            opt.text = i;
+            anoSelect.appendChild(opt);
+        }
+    }
+
+    function carregarDashboard() {
+        const mes = document.getElementById('filtroMes').value;
+        const ano = document.getElementById('filtroAno').value;
+
+        fetch(`/api/dados_dashboard?mes=${mes}&ano=${ano}`)
+            .then(r => r.json())
+            .then(data => {
+                atualizarCards(data.resumo_mes);
+                renderChartPacientes(data.sessoes_paciente);
+                renderChartStatus(data.status_agendamentos);
+                renderChartFinanceiro(data.financeiro);
+            });
+    }
+
+    function atualizarCards(resumo) {
+        document.getElementById('cardSessoes').innerText = resumo.realizadas;
+        document.getElementById('cardFat').innerText = resumo.faturamento.toLocaleString('pt-BR', {style: 'currency', currency: 'BRL'});
+    }
+
+    // GRÁFICO 1: SESSÕES POR PACIENTE (Barras Horizontais)
+    function renderChartPacientes(dados) {
+        const ctx = document.getElementById('chartPacientes').getContext('2d');
+        if(chartPacientesRef) chartPacientesRef.destroy();
+
+        chartPacientesRef = new Chart(ctx, {
+            type: 'bar',
+            data: {
+                labels: dados.nomes,
+                datasets: [{
+                    label: 'Sessões Realizadas',
+                    data: dados.qtd,
+                    backgroundColor: 'rgba(13, 110, 253, 0.7)',
+                    borderRadius: 5,
+                    barThickness: 20
+                }]
+            },
+            options: {
+                indexAxis: 'y', // Faz ser horizontal
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: { legend: { display: false } },
+                scales: { x: { beginAtZero: true, ticks: { stepSize: 1 } } }
+            }
+        });
+    }
+
+    // GRÁFICO 2: STATUS (Pizza)
+    function renderChartStatus(dados) {
+        const ctx = document.getElementById('chartStatus').getContext('2d');
+        if(chartStatusRef) chartStatusRef.destroy();
+
+        // Cores personalizadas
+        const cores = dados.labels.map(l => {
+            if(l === 'Realizado') return '#198754'; // Verde
+            if(l === 'Agendado') return '#0d6efd'; // Azul
+            if(l === 'Cancelado') return '#dc3545'; // Vermelho
+            if(l === 'Faltou') return '#ffc107'; // Amarelo
+            return '#6c757d';
+        });
+
+        chartStatusRef = new Chart(ctx, {
+            type: 'doughnut',
+            data: {
+                labels: dados.labels,
+                datasets: [{
+                    data: dados.values,
+                    backgroundColor: cores,
+                    borderWidth: 0
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: { position: 'bottom' }
+                }
+            }
+        });
+    }
+
+    // GRÁFICO 3: FINANCEIRO (Linhas/Barras Mistas)
+    function renderChartFinanceiro(dados) {
+        const ctx = document.getElementById('chartFinanceiro').getContext('2d');
+        if(chartFinanceiroRef) chartFinanceiroRef.destroy();
+
+        chartFinanceiroRef = new Chart(ctx, {
+            type: 'bar',
+            data: {
+                labels: dados.labels,
+                datasets: [
+                    {
+                        label: 'Entradas',
+                        data: dados.entradas,
+                        backgroundColor: 'rgba(25, 135, 84, 0.7)', // Verde
+                        order: 2
+                    },
+                    {
+                        label: 'Saídas',
+                        data: dados.saidas,
+                        backgroundColor: 'rgba(220, 53, 69, 0.7)', // Vermelho
+                        order: 3
+                    }
+                ]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                scales: { y: { beginAtZero: true } }
+            }
+        });
+    }
+</script>
 {% endblock %}

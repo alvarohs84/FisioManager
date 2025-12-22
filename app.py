@@ -505,5 +505,99 @@ def financeiro_deletar():
     conn.close()
     return jsonify({'status': 'success'})
 
+# ==========================================
+# API INTELIGENTE DO DASHBOARD (GRÁFICOS)
+# ==========================================
+@app.route('/api/dados_dashboard')
+def dados_dashboard():
+    if not session.get('logged_in'): return jsonify({}), 403
+    
+    conn = get_db_connection()
+    cur = conn.cursor()
+    
+    # Pega mês e ano da URL (ou usa o atual se não vier nada)
+    mes = request.args.get('mes', datetime.now().month, type=int)
+    ano = request.args.get('ano', datetime.now().year, type=int)
+
+    # 1. SESSÕES REALIZADAS POR PACIENTE (No mês selecionado)
+    cur.execute("""
+        SELECT p.nome, COUNT(a.id) 
+        FROM agendamentos a 
+        JOIN pacientes p ON a.paciente_id = p.id 
+        WHERE a.status = 'Realizado' 
+          AND EXTRACT(MONTH FROM a.start_time) = %s 
+          AND EXTRACT(YEAR FROM a.start_time) = %s 
+        GROUP BY p.nome 
+        ORDER BY COUNT(a.id) DESC
+        LIMIT 10
+    """, (mes, ano))
+    raw_sessoes = cur.fetchall()
+    
+    # 2. STATUS DOS AGENDAMENTOS (No mês selecionado)
+    cur.execute("""
+        SELECT COALESCE(status, 'Agendado'), COUNT(*) 
+        FROM agendamentos 
+        WHERE EXTRACT(MONTH FROM start_time) = %s 
+          AND EXTRACT(YEAR FROM start_time) = %s 
+        GROUP BY 1
+    """, (mes, ano))
+    raw_status = dict(cur.fetchall()) # Ex: {'Realizado': 5, 'Faltou': 1}
+
+    # 3. FINANCEIRO (Histórico dos últimos 6 meses para comparação)
+    cur.execute("""
+        SELECT TO_CHAR(data, 'MM/YYYY') as mes_ano, tipo, SUM(valor) 
+        FROM financeiro 
+        WHERE data >= CURRENT_DATE - INTERVAL '5 months' 
+        GROUP BY 1, 2 
+        ORDER BY MAX(data) ASC
+    """)
+    raw_fin = cur.fetchall()
+
+    # Organiza Financeiro para o Gráfico
+    fin_labels = []
+    fin_entradas = []
+    fin_saidas = []
+    temp_fin = {}
+    
+    # Agrupa dados
+    for data_str, tipo, valor in raw_fin:
+        if data_str not in temp_fin: temp_fin[data_str] = {'entrada': 0, 'saida': 0}
+        temp_fin[data_str][tipo] = float(valor)
+    
+    for m in temp_fin:
+        fin_labels.append(m)
+        fin_entradas.append(temp_fin[m]['entrada'])
+        fin_saidas.append(temp_fin[m]['saida'])
+
+    # 4. TOTAIS DO MÊS (Cards do Topo)
+    # Total Faturado no Mês
+    cur.execute("SELECT SUM(valor) FROM financeiro WHERE tipo='entrada' AND EXTRACT(MONTH FROM data)=%s AND EXTRACT(YEAR FROM data)=%s", (mes, ano))
+    faturamento_mes = cur.fetchone()[0] or 0
+    
+    # Total Sessões Realizadas no Mês
+    sess_realizadas = raw_status.get('Realizado', 0)
+
+    conn.close()
+
+    return jsonify({
+        'sessoes_paciente': {
+            'nomes': [r[0] for r in raw_sessoes],
+            'qtd': [r[1] for r in raw_sessoes]
+        },
+        'status_agendamentos': {
+            'labels': list(raw_status.keys()),
+            'values': list(raw_status.values())
+        },
+        'financeiro': {
+            'labels': fin_labels,
+            'entradas': fin_entradas,
+            'saidas': fin_saidas
+        },
+        'resumo_mes': {
+            'faturamento': float(faturamento_mes),
+            'realizadas': int(sess_realizadas)
+        }
+    })
+
 if __name__ == '__main__':
     app.run(debug=True)
