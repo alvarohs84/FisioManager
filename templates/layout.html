@@ -2,68 +2,168 @@
 <html lang="pt-br">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>FisioManager</title>
+    
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.0/font/bootstrap-icons.css">
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700&display=swap" rel="stylesheet">
     
-    <style>
-        :root { --bs-primary: #0d6efd; --bs-body-bg: #f8f9fa; }
-        body { font-family: 'Inter', sans-serif; background-color: var(--bs-body-bg); padding-bottom: 80px; /* Espaço para o menu inferior */ }
-        
-        /* Navbar Superior (Desktop/Tablet) */
-        .navbar-brand { font-weight: 700; letter-spacing: -0.5px; }
-        
-        /* Menu Inferior Fixo (Apenas Mobile) */
-        .bottom-nav {
-            position: fixed; bottom: 0; left: 0; right: 0;
-            background: white; border-top: 1px solid #dee2e6;
-            display: flex; justify-content: space-around; padding: 10px 0;
-            z-index: 1040; box-shadow: 0 -4px 10px rgba(0,0,0,0.05);
-        }
-        .nav-item-mobile {
-            text-align: center; color: #6c757d; text-decoration: none; font-size: 0.75rem; flex: 1;
-        }
-        .nav-item-mobile i { font-size: 1.5rem; display: block; margin-bottom: 2px; }
-        .nav-item-mobile.active { color: var(--bs-primary); font-weight: 600; }
+    <script src='https://cdn.jsdelivr.net/npm/fullcalendar@6.1.8/index.global.min.js'></script>
 
-        /* Esconde Menu Inferior no Desktop */
-        @media (min-width: 768px) {
-            .bottom-nav { display: none; }
-            body { padding-bottom: 0; }
+    <style>
+        /* Estilos personalizados para o Menu Lateral */
+        body {
+            background-color: #f8f9fa; /* Fundo cinza bem claro */
+            min-height: 100vh;
+            overflow-x: hidden;
+        }
+
+        /* Sidebar (Menu Lateral) */
+        .sidebar {
+            width: 260px;
+            background: linear-gradient(180deg, #0d6efd 0%, #0a58ca 100%); /* Azul degradê */
+            color: white;
+            min-height: 100vh;
+            position: fixed;
+            left: 0;
+            top: 0;
+            z-index: 1000;
+            transition: all 0.3s;
+        }
+
+        /* Links do Menu */
+        .sidebar .nav-link {
+            color: rgba(255, 255, 255, 0.85);
+            padding: 12px 20px;
+            margin-bottom: 5px;
+            border-radius: 50px; /* Bordas arredondadas nos botões */
+            font-weight: 500;
+            transition: all 0.2s;
+            display: flex;
+            align-items: center;
+        }
+
+        .sidebar .nav-link:hover {
+            background-color: rgba(255, 255, 255, 0.15);
+            color: white;
+            transform: translateX(5px); /* Efeito de mover levemente */
+        }
+
+        .sidebar .nav-link.active {
+            background-color: white;
+            color: #0d6efd; /* Texto azul no botão ativo */
+            font-weight: bold;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+        }
+
+        .sidebar .nav-link i {
+            font-size: 1.2rem;
+            margin-right: 12px;
+            width: 24px;
+            text-align: center;
+        }
+
+        /* Área do Conteúdo Principal */
+        .content {
+            margin-left: 260px; /* Mesma largura da sidebar */
+            padding: 20px;
+            transition: all 0.3s;
+        }
+
+        /* Logotipo / Título no Menu */
+        .brand-section {
+            padding: 25px 20px;
+            border-bottom: 1px solid rgba(255,255,255,0.1);
+            margin-bottom: 20px;
+        }
+
+        .brand-text {
+            font-size: 1.4rem;
+            font-weight: 700;
+            letter-spacing: 1px;
+        }
+
+        /* Adaptação para Celulares (Responsivo) */
+        @media (max-width: 768px) {
+            .sidebar {
+                margin-left: -260px; /* Esconde a sidebar */
+            }
+            .sidebar.active {
+                margin-left: 0; /* Mostra quando ativo */
+            }
+            .content {
+                margin-left: 0; /* Conteúdo ocupa tudo */
+            }
         }
     </style>
 </head>
 <body>
 
-    <nav class="navbar navbar-expand-md navbar-dark bg-primary shadow-sm d-none d-md-flex">
-        <div class="container">
-            <a class="navbar-brand" href="/"><i class="bi bi-activity"></i> FisioManager</a>
-            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
-                <span class="navbar-toggler-icon"></span>
-            </button>
-            <div class="collapse navbar-collapse" id="navbarNav">
-                <ul class="navbar-nav ms-auto">
-                    <li class="nav-item"><a class="nav-link" href="/"><i class="bi bi-speedometer2"></i> Painel</a></li>
-                    <li class="nav-item"><a class="nav-link" href="/pacientes"><i class="bi bi-people"></i> Pacientes</a></li>
-                    <li class="nav-item"><a class="nav-link" href="/prontuarios"><i class="bi bi-journal-medical"></i> Prontuários</a></li>
-                    <li class="nav-item"><a class="nav-link" href="/financeiro"><i class="bi bi-cash-coin"></i> Financeiro</a></li>
-                </ul>
-            </div>
+    <nav class="sidebar" id="sidebar">
+        
+        <div class="brand-section d-flex align-items-center">
+            <i class="bi bi-activity fs-3 me-2"></i>
+            <span class="brand-text">FisioManager</span>
+        </div>
+
+        <div class="px-3">
+            <ul class="nav flex-column">
+                
+                <li class="nav-item">
+                    <a href="{{ url_for('dashboard') }}" class="nav-link {% if request.endpoint == 'dashboard' %}active{% endif %}">
+                        <i class="bi bi-speedometer2"></i> Painel
+                    </a>
+                </li>
+
+                <li class="nav-item">
+                    <a href="{{ url_for('pacientes') }}" class="nav-link {% if request.endpoint == 'pacientes' %}active{% endif %}">
+                        <i class="bi bi-people-fill"></i> Pacientes
+                    </a>
+                </li>
+
+                <li class="nav-item">
+                    <a href="{{ url_for('agenda') }}" class="nav-link {% if request.endpoint == 'agenda' %}active{% endif %}">
+                        <i class="bi bi-calendar-check"></i> Agenda
+                    </a>
+                </li>
+
+                <li class="nav-item">
+                    <a href="{{ url_for('prontuarios') }}" class="nav-link {% if request.endpoint == 'prontuarios' %}active{% endif %}">
+                        <i class="bi bi-folder2-open"></i> Prontuários
+                    </a>
+                </li>
+
+                <li class="nav-item">
+                    <a href="{{ url_for('financeiro') }}" class="nav-link {% if request.endpoint == 'financeiro' %}active{% endif %}">
+                        <i class="bi bi-wallet2"></i> Financeiro
+                    </a>
+                </li>
+
+            </ul>
+        </div>
+
+        <div class="position-absolute bottom-0 w-100 p-3">
+            <a href="{{ url_for('logout') }}" class="nav-link text-white-50 hover-danger">
+                <i class="bi bi-box-arrow-left"></i> Sair do Sistema
+            </a>
         </div>
     </nav>
 
-    <div class="d-md-none bg-primary text-white p-3 shadow-sm d-flex justify-content-between align-items-center">
-        <span class="fw-bold fs-5"><i class="bi bi-activity"></i> FisioManager</span>
-        <i class="bi bi-person-circle fs-4"></i>
-    </div>
+    <div class="content" id="content">
+        
+        <nav class="navbar navbar-light bg-white shadow-sm mb-4 d-md-none rounded-3">
+            <div class="container-fluid">
+                <button class="btn btn-primary" id="sidebarToggle">
+                    <i class="bi bi-list"></i> Menu
+                </button>
+                <span class="fw-bold text-primary">FisioManager</span>
+            </div>
+        </nav>
 
-    <div class="container mt-4">
-        {% with messages = get_flashed_messages(with_categories=true) %}
+        {% with messages = get_flashed_messages() %}
             {% if messages %}
-                {% for category, message in messages %}
-                    <div class="alert alert-{{ category }} alert-dismissible fade show" role="alert">
+                {% for message in messages %}
+                    <div class="alert alert-warning alert-dismissible fade show shadow-sm" role="alert">
                         {{ message }}
                         <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
                     </div>
@@ -72,34 +172,16 @@
         {% endwith %}
 
         {% block content %}{% endblock %}
+
     </div>
 
-    <nav class="bottom-nav d-md-none">
-        <a href="/" class="nav-item-mobile {% if request.path == '/' %}active{% endif %}">
-            <i class="bi bi-house-door"></i> Início
-        </a>
-        <a href="/pacientes" class="nav-item-mobile {% if request.path == '/pacientes' %}active{% endif %}">
-            <i class="bi bi-people"></i> Pacientes
-        </a>
-        <a href="/prontuarios" class="nav-item-mobile {% if request.path == '/prontuarios' %}active{% endif %}">
-            <i class="bi bi-clipboard2-pulse"></i> Fichas
-        </a>
-        <a href="/financeiro" class="nav-item-mobile {% if request.path == '/financeiro' %}active{% endif %}">
-            <i class="bi bi-wallet2"></i> Caixa
-        </a>
-    </nav>
-
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
-    
+
     <script>
-        // Fecha alertas automaticamente após 4s
-        setTimeout(function() {
-            var alerts = document.querySelectorAll('.alert');
-            alerts.forEach(function(alert) {
-                var bsAlert = new bootstrap.Alert(alert);
-                bsAlert.close();
-            });
-        }, 4000);
+        document.getElementById('sidebarToggle').addEventListener('click', function() {
+            document.getElementById('sidebar').classList.toggle('active');
+        });
     </script>
+
 </body>
 </html>

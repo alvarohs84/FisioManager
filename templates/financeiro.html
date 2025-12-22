@@ -1,0 +1,236 @@
+{% extends "layout.html" %}
+
+{% block content %}
+<div class="container-fluid px-4">
+    <div class="d-flex justify-content-between align-items-center mt-4 mb-4">
+        <h2 class="fw-bold text-dark"><i class="bi bi-wallet2 me-2"></i>Controle Financeiro</h2>
+        <button class="btn btn-primary rounded-pill px-4 shadow-sm" onclick="abrirModalTransacao()">
+            <i class="bi bi-plus-lg me-2"></i> Nova Transação
+        </button>
+    </div>
+
+    <div class="row g-3 mb-4">
+        <div class="col-md-4">
+            <div class="card border-0 shadow-sm rounded-4 bg-success text-white h-100">
+                <div class="card-body p-4">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div>
+                            <p class="mb-0 opacity-75">Entradas (Total)</p>
+                            <h3 class="fw-bold mb-0" id="valEntradas">R$ 0,00</h3>
+                        </div>
+                        <div class="bg-white bg-opacity-25 rounded-circle p-3">
+                            <i class="bi bi-arrow-up-circle fs-3"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-md-4">
+            <div class="card border-0 shadow-sm rounded-4 bg-danger text-white h-100">
+                <div class="card-body p-4">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div>
+                            <p class="mb-0 opacity-75">Saídas (Total)</p>
+                            <h3 class="fw-bold mb-0" id="valSaidas">R$ 0,00</h3>
+                        </div>
+                        <div class="bg-white bg-opacity-25 rounded-circle p-3">
+                            <i class="bi bi-arrow-down-circle fs-3"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-4">
+            <div class="card border-0 shadow-sm rounded-4 bg-primary text-white h-100">
+                <div class="card-body p-4">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div>
+                            <p class="mb-0 opacity-75">Saldo Atual</p>
+                            <h3 class="fw-bold mb-0" id="valSaldo">R$ 0,00</h3>
+                        </div>
+                        <div class="bg-white bg-opacity-25 rounded-circle p-3">
+                            <i class="bi bi-bank fs-3"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="card border-0 shadow-sm rounded-4">
+        <div class="card-header bg-white border-0 py-3">
+            <h5 class="fw-bold mb-0">Últimas Movimentações</h5>
+        </div>
+        <div class="card-body p-0">
+            <div class="table-responsive">
+                <table class="table table-hover align-middle mb-0">
+                    <thead class="bg-light">
+                        <tr>
+                            <th class="ps-4">Data</th>
+                            <th>Descrição</th>
+                            <th>Categoria</th>
+                            <th>Valor</th>
+                            <th class="text-end pe-4">Ações</th>
+                        </tr>
+                    </thead>
+                    <tbody id="tabelaFinanceiro">
+                        </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="modal fade" id="modalTransacao" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content rounded-4 border-0">
+            <div class="modal-header border-0 pb-0">
+                <h5 class="modal-title fw-bold">Nova Transação</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body pt-4">
+                
+                <div class="d-flex gap-2 mb-3">
+                    <input type="radio" class="btn-check" name="tipoTransacao" id="optEntrada" value="entrada" checked>
+                    <label class="btn btn-outline-success flex-fill rounded-pill" for="optEntrada">
+                        <i class="bi bi-arrow-up-circle me-1"></i> Entrada
+                    </label>
+
+                    <input type="radio" class="btn-check" name="tipoTransacao" id="optSaida" value="saida">
+                    <label class="btn btn-outline-danger flex-fill rounded-pill" for="optSaida">
+                        <i class="bi bi-arrow-down-circle me-1"></i> Saída
+                    </label>
+                </div>
+
+                <div class="form-floating mb-3">
+                    <input type="text" class="form-control rounded-3" id="descTransacao" placeholder="Ex: Mensalidade João">
+                    <label>Descrição</label>
+                </div>
+
+                <div class="row g-2 mb-3">
+                    <div class="col-6">
+                        <div class="form-floating">
+                            <input type="number" step="0.01" class="form-control rounded-3" id="valorTransacao" placeholder="0,00">
+                            <label>Valor (R$)</label>
+                        </div>
+                    </div>
+                    <div class="col-6">
+                        <div class="form-floating">
+                            <input type="date" class="form-control rounded-3" id="dataTransacao">
+                            <label>Data</label>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="form-floating mb-4">
+                    <select class="form-select rounded-3" id="catTransacao">
+                        <option value="Consulta">Consulta / Sessão</option>
+                        <option value="Mensalidade">Mensalidade</option>
+                        <option value="Aluguel">Aluguel / Condomínio</option>
+                        <option value="Equipamentos">Equipamentos</option>
+                        <option value="Outros">Outros</option>
+                    </select>
+                    <label>Categoria</label>
+                </div>
+
+                <div class="d-grid">
+                    <button onclick="salvarTransacao()" class="btn btn-primary btn-lg rounded-pill fw-bold">Salvar</button>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    // Inicia carregando os dados
+    document.addEventListener('DOMContentLoaded', () => {
+        carregarResumo();
+        carregarLista();
+        document.getElementById('dataTransacao').valueAsDate = new Date();
+    });
+
+    function abrirModalTransacao() {
+        document.getElementById('descTransacao').value = '';
+        document.getElementById('valorTransacao').value = '';
+        new bootstrap.Modal(document.getElementById('modalTransacao')).show();
+    }
+
+    function carregarResumo() {
+        fetch('/api/financeiro/resumo')
+            .then(r => r.json())
+            .then(d => {
+                document.getElementById('valEntradas').innerText = d.entradas.toLocaleString('pt-BR', {style: 'currency', currency: 'BRL'});
+                document.getElementById('valSaidas').innerText = d.saidas.toLocaleString('pt-BR', {style: 'currency', currency: 'BRL'});
+                document.getElementById('valSaldo').innerText = d.saldo.toLocaleString('pt-BR', {style: 'currency', currency: 'BRL'});
+            });
+    }
+
+    function carregarLista() {
+        fetch('/api/financeiro/listar')
+            .then(r => r.json())
+            .then(data => {
+                const tbody = document.getElementById('tabelaFinanceiro');
+                tbody.innerHTML = '';
+                data.forEach(t => {
+                    const cor = t.tipo === 'entrada' ? 'text-success' : 'text-danger';
+                    const sinal = t.tipo === 'entrada' ? '+' : '-';
+                    
+                    tbody.innerHTML += `
+                        <tr>
+                            <td class="ps-4 text-muted small">${t.data}</td>
+                            <td class="fw-bold text-dark">${t.descricao}</td>
+                            <td><span class="badge bg-light text-dark border">${t.categoria}</span></td>
+                            <td class="${cor} fw-bold">${sinal} ${t.valor.toLocaleString('pt-BR', {style: 'currency', currency: 'BRL'})}</td>
+                            <td class="text-end pe-4">
+                                <button onclick="deletarTransacao(${t.id})" class="btn btn-sm btn-link text-muted p-0">
+                                    <i class="bi bi-trash"></i>
+                                </button>
+                            </td>
+                        </tr>
+                    `;
+                });
+            });
+    }
+
+    function salvarTransacao() {
+        const desc = document.getElementById('descTransacao').value;
+        const valor = document.getElementById('valorTransacao').value;
+        const data = document.getElementById('dataTransacao').value;
+        const categoria = document.getElementById('catTransacao').value;
+        const tipo = document.querySelector('input[name="tipoTransacao"]:checked').value;
+
+        if(!desc || !valor) return alert("Preencha descrição e valor!");
+
+        fetch('/api/financeiro/salvar', {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify({
+                descricao: desc,
+                valor: valor,
+                data: data,
+                categoria: categoria,
+                tipo: tipo
+            })
+        }).then(() => {
+            bootstrap.Modal.getInstance(document.getElementById('modalTransacao')).hide();
+            carregarResumo();
+            carregarLista();
+        });
+    }
+
+    function deletarTransacao(id) {
+        if(confirm("Apagar esta transação?")) {
+            fetch('/api/financeiro/deletar', {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({id: id})
+            }).then(() => {
+                carregarResumo();
+                carregarLista();
+            });
+        }
+    }
+</script>
+{% endblock %}

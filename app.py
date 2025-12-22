@@ -426,5 +426,84 @@ def delete_paciente_via_form(id):
         
     return redirect(url_for('pacientes'))
 
+# ==========================================
+# MÓDULO FINANCEIRO
+# ==========================================
+
+@app.route('/financeiro')
+def financeiro():
+    if not session.get('logged_in'): return redirect(url_for('login'))
+    return render_template('financeiro.html')
+
+@app.route('/api/financeiro/resumo')
+def financeiro_resumo():
+    conn = get_db_connection()
+    cur = conn.cursor()
+    try:
+        # Soma Entradas
+        cur.execute("SELECT SUM(valor) FROM financeiro WHERE tipo = 'entrada'")
+        entradas = cur.fetchone()[0] or 0
+        
+        # Soma Saídas
+        cur.execute("SELECT SUM(valor) FROM financeiro WHERE tipo = 'saida'")
+        saidas = cur.fetchone()[0] or 0
+        
+        return jsonify({
+            'entradas': float(entradas),
+            'saidas': float(saidas),
+            'saldo': float(entradas - saidas)
+        })
+    except Exception as e:
+        return jsonify({'entradas': 0, 'saidas': 0, 'saldo': 0})
+    finally: conn.close()
+
+@app.route('/api/financeiro/listar')
+def financeiro_listar():
+    conn = get_db_connection()
+    cur = conn.cursor()
+    # Pega as últimas 50 transações
+    cur.execute("SELECT id, descricao, valor, tipo, categoria, data FROM financeiro ORDER BY data DESC, id DESC LIMIT 50")
+    rows = cur.fetchall()
+    conn.close()
+    
+    lista = []
+    for r in rows:
+        lista.append({
+            'id': r[0],
+            'descricao': r[1],
+            'valor': float(r[2]),
+            'tipo': r[3],
+            'categoria': r[4],
+            'data': r[5].strftime('%d/%m/%Y')
+        })
+    return jsonify(lista)
+
+@app.route('/api/financeiro/salvar', methods=['POST'])
+def financeiro_salvar():
+    d = request.json
+    conn = get_db_connection()
+    cur = conn.cursor()
+    try:
+        # O valor deve ser positivo no banco, o 'tipo' define se soma ou subtrai
+        valor = float(d['valor'])
+        cur.execute("INSERT INTO financeiro (descricao, valor, tipo, categoria, data) VALUES (%s, %s, %s, %s, %s)",
+                    (d['descricao'], valor, d['tipo'], d['categoria'], d['data']))
+        conn.commit()
+        return jsonify({'status': 'success'})
+    except Exception as e:
+        conn.rollback()
+        return jsonify({'status': 'error', 'msg': str(e)}), 500
+    finally: conn.close()
+
+@app.route('/api/financeiro/deletar', methods=['POST'])
+def financeiro_deletar():
+    d = request.json
+    conn = get_db_connection()
+    cur = conn.cursor()
+    cur.execute("DELETE FROM financeiro WHERE id = %s", (d['id'],))
+    conn.commit()
+    conn.close()
+    return jsonify({'status': 'success'})
+
 if __name__ == '__main__':
     app.run(debug=True)
